@@ -1,13 +1,13 @@
 <?php
 class Woo_MyGLSD_Rest {
   private $base;
-  private $typeOfPrinter;
   private $clientNumber;
+  private $printConfig;
 
   public function __construct(){
     $this->base = Woo_MyGLSD_Util::api_base();
-    $this->typeOfPrinter = Woo_MyGLSD_Settings::get('type_of_printer','Thermo');
     $this->clientNumber = Woo_MyGLSD_Util::client_number();
+    $this->printConfig = Woo_MyGLSD_Util::print_config();
   }
 
   private function post($endpoint, $payload){
@@ -69,23 +69,114 @@ class Woo_MyGLSD_Rest {
     return $filtered;
   }
 
+  private function format_pickup_date($value){
+    return Woo_MyGLSD_Util::pickup_date($value);
+  }
+
+  private function normalize_address($address, $label){
+    if (!is_array($address)){
+      throw new \InvalidArgumentException($label.': hibás struktúra.');
+    }
+    $normalized = [];
+    foreach ($address as $key => $value){
+      if ($value === null) continue;
+      if (is_scalar($value)){
+        $value = trim((string)$value);
+        if ($value === '') continue;
+        $normalized[$key] = $value;
+        continue;
+      }
+      if (is_array($value)){
+        $normalized[$key] = $value;
+      }
+    }
+    if (empty($normalized['Name'])){
+      throw new \InvalidArgumentException($label.': Name kötelező.');
+    }
+    if (empty($normalized['CountryIsoCode'])){
+      throw new \InvalidArgumentException($label.': CountryIsoCode kötelező.');
+    }
+    foreach (['Street','City','ZipCode'] as $required){
+      if (empty($normalized[$required])){
+        throw new \InvalidArgumentException($label.': '.$required.' kötelező.');
+      }
+    }
+    return $normalized;
+  }
+
+  private function normalize_parcel($parcel){
+    if (!is_array($parcel)){
+      throw new \InvalidArgumentException('PrintLabels: Parcel struktúra hibás.');
+    }
+    $parcel['ClientNumber'] = $this->require_client_number($parcel['ClientNumber'] ?? null);
+    $parcel['PickupDate'] = $this->format_pickup_date($parcel['PickupDate'] ?? null);
+    if (empty($parcel['PickupAddress'])){
+      $parcel['PickupAddress'] = Woo_MyGLSD_Util::sender_address();
+    }
+    $parcel['PickupAddress'] = $this->normalize_address($parcel['PickupAddress'], 'PickupAddress');
+    if (empty($parcel['DeliveryAddress'])){
+      throw new \InvalidArgumentException('PrintLabels: DeliveryAddress hiányzik.');
+    }
+    $parcel['DeliveryAddress'] = $this->normalize_address($parcel['DeliveryAddress'], 'DeliveryAddress');
+    $parcel['ServiceList'] = Woo_MyGLSD_Util::normalize_service_list($parcel['ServiceList'] ?? []);
+    if (empty($parcel['ServiceList'])){
+      throw new \InvalidArgumentException('PrintLabels: ServiceList üres.');
+    }
+    $parcel['ClientReference'] = isset($parcel['ClientReference']) && trim((string)$parcel['ClientReference']) !== ''
+      ? trim((string)$parcel['ClientReference'])
+      : 'AUTO-'.date('YmdHis');
+    if (isset($parcel['Content'])){
+      $parcel['Content'] = trim((string)$parcel['Content']);
+    }
+    return $parcel;
+  }
+
+  private function print_option_payload(){
+    $cfg = $this->printConfig;
+    $payload = [
+      'TypeOfPrinter' => $cfg['type_of_printer'] ?? 'Thermo',
+    ];
+    if (!empty($cfg['waybill_document_type'])){
+      $payload['WaybillDocumentType'] = $cfg['waybill_document_type'];
+    }
+    if (array_key_exists('show_return_labels', $cfg)){
+      $payload['ShowReturnLabels'] = (bool)$cfg['show_return_labels'];
+    }
+    if (!empty($cfg['return_labels_type'])){
+      $payload['ReturnLabelsType'] = $cfg['return_labels_type'];
+    }
+    if (array_key_exists('print_parcel_count', $cfg)){
+      $payload['PrintParcelCount'] = (bool)$cfg['print_parcel_count'];
+    }
+    return $payload;
+  }
+
   public function PrintLabels(array $parcels){
     $parcels = array_values(array_filter($parcels));
     if (empty($parcels)){
       throw new \Exception('PrintLabels: üres csomag lista.');
     }
-    $clientNumber = $this->require_client_number();
-    foreach ($parcels as &$parcel){
-      if (is_array($parcel) && !isset($parcel['ClientNumber'])){
-        $parcel['ClientNumber'] = $clientNumber;
-      }
+    $normalized = [];
+    foreach ($parcels as $parcel){
+      $normalized[] = $this->normalize_parcel($parcel);
     }
-    unset($parcel);
-    $payload = $this->auth_payload([
-      'PrintLabelsInfoList' => $parcels,
-      'TypeOfPrinter' => $this->typeOfPrinter,
-    ]);
+    $payload = $this->auth_payload(array_merge(
+      ['PrintLabelsInfoList' => $normalized],
+      $this->print_option_payload()
+    ));
     return $this->post('PrintLabels', $payload);
+  }
+
+  public function GetPrintedLabels(array $parcelIds, $clientNumber = null){
+    $ids = $this->clean_list($parcelIds);
+    if (empty($ids)){
+      throw new \Exception('GetPrintedLabels: üres ParcelIdList.');
+    }
+    $payload = $this->auth_payload(array_merge([
+      'ClientNumber' => $this->require_client_number($clientNumber),
+      'ParcelIdList' => $ids,
+    ], $this->print_option_payload()));
+    return $this->post('GetPrintedLabels', $payload);
   }
 
   public function DeleteLabels(array $parcelNumbers){
@@ -104,6 +195,10 @@ class Woo_MyGLSD_Rest {
     $parcelNumber = trim((string)$parcelNumber);
     if ($parcelNumber === ''){
       throw new \Exception('ModifyCOD: hiányzó ParcelNumber.');
+    }
+    $currency = strtoupper(trim((string)$currency));
+    if ($currency === ''){
+      $currency = 'HUF';
     }
     $clientNumber = $this->require_client_number($clientNumber);
     $payload = $this->auth_payload([
@@ -134,8 +229,8 @@ class Woo_MyGLSD_Rest {
     $clientNumber = $this->require_client_number($clientNumber);
     $payload = $this->auth_payload([
       'ClientNumber' => $clientNumber,
-      'DateFrom' => $dateFrom,
-      'DateTo' => $dateTo,
+      'DateFrom' => $this->format_pickup_date($dateFrom),
+      'DateTo' => $this->format_pickup_date($dateTo),
     ]);
     if ($status !== null){
       $payload['Status'] = $status;

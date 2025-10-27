@@ -79,23 +79,29 @@ class Woo_MyGLSD_Admin {
     check_admin_referer('woo_myglsd_print','woo_myglsd_print_nonce');
     try{
       $api = new Woo_MyGLSD_Rest();
-      $sender = Woo_MyGLSD_Util::sender_address();
       $clientNumber = Woo_MyGLSD_Util::client_number();
-      $parcel = [
-        'ClientNumber' => $clientNumber,
-        'ClientReference' => 'DEMO-PRINT-'.time(),
-        'PickupDate' => date('Y-m-d'),
-        'PickupAddress' => $sender,
-        'DeliveryAddress' => [
-          'Name'=>'Teszt Vevő','Street'=>'Kossuth','HouseNumber'=>'1','City'=>'Budapest','ZipCode'=>'1051','CountryIsoCode'=>'HU',
-          'ContactPhone'=>'+361234567','ContactEmail'=>'teszt@example.com'
-        ],
-        'ServiceList' => [ ['Code'=>'24H'] ]
-      ];
+      if ($clientNumber <= 0){
+        throw new \InvalidArgumentException('A GLS ügyfélszám nincs beállítva.');
+      }
+      $parcel = Woo_MyGLSD_Util::demo_print_parcel($clientNumber);
       $res = $api->PrintLabels([$parcel]);
+      $labelBase64 = $res['Labels'] ?? '';
+      if ($labelBase64 === '' && !empty($res['PrintLabelsInfoList'][0]['ParcelId'])){
+        try{
+          $parcelId = $res['PrintLabelsInfoList'][0]['ParcelId'];
+          $printed = $api->GetPrintedLabels([$parcelId], $clientNumber);
+          if (!empty($printed['Labels'])){
+            $labelBase64 = $printed['Labels'];
+          } elseif (!empty($printed['LabelList'][0]['Label'])){
+            $labelBase64 = $printed['LabelList'][0]['Label'];
+          }
+        } catch (\Throwable $fetchErr){
+          $res['GetPrintedLabelsError'] = $fetchErr->getMessage();
+        }
+      }
       // Mentsük le PDF-ként ha van
-      if (!empty($res['Labels'])){
-        $pdf = base64_decode($res['Labels']);
+      if (!empty($labelBase64)){
+        $pdf = base64_decode($labelBase64);
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="mygls-demo.pdf"');
         echo $pdf;

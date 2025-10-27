@@ -3,7 +3,8 @@ Woo MyGLS (DocSpec REST) – v1.0.6
 MyGLS HU REST/JSON integráció a hivatalos dokumentáció alapján (ver. 25.07.08). HPOS-kompatibilis.
 
 Funkciók
-- REST hívások: PrintLabels, GetParcelStatuses, DeleteLabels, ModifyCOD, GetParcelList, GetClientReturnAddress, Ping
+- REST hívások: PrintLabels, GetParcelStatuses, DeleteLabels, ModifyCOD, GetParcelList, GetClientReturnAddress, GetPrintedLabels, Ping
+- PrintLabels opciók: TypeOfPrinter, WaybillDocumentType, ShowReturnLabels, ReturnLabelsType, PrintParcelCount
 - SHA512 jelszó: módok – base64 (alapértelmezett), JSON byte array, hex
 - Admin tesztek: Ping (GetClientReturnAddress), Demó PrintLabels (PDF render)
 - Autentikáció: UserName + CustomerNumber + opcionális ApiKey, WebshopEngine mező támogatással

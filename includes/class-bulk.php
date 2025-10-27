@@ -31,36 +31,17 @@ class Woo_MyGLSD_Bulk {
   }
 
   private static function make_parcel_from_order($order){
-    $s = Woo_MyGLSD_Util::settings();
     $sender = Woo_MyGLSD_Util::sender_address();
     $client = Woo_MyGLSD_Util::client_number();
 
-    $delivery = [
-      'Name' => trim($order->get_formatted_shipping_full_name()) ?: trim($order->get_formatted_billing_full_name()),
-      'Street' => $order->get_shipping_address_1() ?: $order->get_billing_address_1(),
-      'HouseNumber' => $order->get_shipping_address_2() ?: $order->get_billing_address_2(),
-      'City' => $order->get_shipping_city() ?: $order->get_billing_city(),
-      'ZipCode' => $order->get_shipping_postcode() ?: $order->get_billing_postcode(),
-      'CountryIsoCode' => $order->get_shipping_country() ?: $order->get_billing_country(),
-      'ContactPhone' => $order->get_billing_phone(),
-      'ContactEmail' => $order->get_billing_email(),
-    ];
-
-    $service = [ ['Code'=>'24H'] ];
-    $psd = $order->get_meta('_mygls_psd_id');
-    if ($psd){ $service[] = ['Code'=>'PSD','PSDParameter'=>['StringValue'=>$psd]]; }
-
-    if ($order->get_payment_method()==='cod'){
-      $service[] = ['Code'=>'COD'];
-    }
-
     $parcel = [
       'ClientNumber' => $client,
-      'ClientReference' => (string)$order->get_order_number(),
-      'PickupDate' => date('Y-m-d'),
+      'ClientReference' => Woo_MyGLSD_Util::order_reference($order),
+      'PickupDate' => Woo_MyGLSD_Util::pickup_date('now'),
       'PickupAddress' => $sender,
-      'DeliveryAddress' => $delivery,
-      'ServiceList' => $service,
+      'DeliveryAddress' => Woo_MyGLSD_Util::order_delivery_address($order),
+      'ServiceList' => Woo_MyGLSD_Util::order_service_list($order),
+      'Content' => Woo_MyGLSD_Util::order_content($order),
     ];
 
     return $parcel;
