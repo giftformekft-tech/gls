@@ -3,6 +3,17 @@ class Woo_MyGLSD_Admin {
   public static function init(){
     add_action('admin_post_woo_myglsd_ping', [__CLASS__,'handle_ping']);
     add_action('admin_post_woo_myglsd_print', [__CLASS__,'handle_print_demo']);
+    add_action('admin_post_woo_myglsd_tri_ping', [__CLASS__,'handle_tri_ping']);
+  }
+
+  private static function can_manage(){
+    return current_user_can('manage_woocommerce') || current_user_can('manage_options');
+  }
+
+  private static function require_manage(){
+    if (!self::can_manage()){
+      wp_die('Nope');
+    }
   }
 
   public static function render_tools(){
@@ -10,13 +21,18 @@ class Woo_MyGLSD_Admin {
     echo '<p>Pingeljük az API-t (GetClientReturnAddress) – nem módosít semmit.</p>';
     echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
     echo '<input type="hidden" name="action" value="woo_myglsd_ping" />';
-    echo '<input type="text" name="name" placeholder="Link Name (pl. Forme.hu)" value="Forme.hu" /> ';
+    echo '<input type="text" name="name" placeholder="Vevő neve" value="Forme.hu" /> ';
+    echo '<input type="text" name="link_name" placeholder="LinkName" value="" style="width:140px" /> ';
+    echo '<input type="text" name="country" placeholder="Ország" value="HU" style="width:70px" /> ';
+    echo '<input type="text" name="return_type" placeholder="ReturnType" value="1" style="width:90px" /> ';
+    echo wp_nonce_field('woo_myglsd_ping','woo_myglsd_ping_nonce', true, false);
     echo '<button class="button button-primary">Ping MyGLS</button>';
     echo '</form>';
 
     echo '<hr/><p>Demó PrintLabels – NEM küld csomagot, csak kipróbálja a hívást (tesztkörnyezet ajánlott).</p>';
     echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
     echo '<input type="hidden" name="action" value="woo_myglsd_print" />';
+    echo wp_nonce_field('woo_myglsd_print','woo_myglsd_print_nonce', true, false);
     echo '<button class="button">Demó címke generálás</button>';
     echo '</form>';
 
@@ -26,18 +42,32 @@ class Woo_MyGLSD_Admin {
     echo '</div>';
   }
 
-  private static function back_msg($arr){
+  private static function back_msg($arr, $page = 'woo-myglsd'){
     $msg = base64_encode(is_string($arr)?$arr:print_r($arr,true));
-    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd-tools')) ); exit;
-    add_action('admin_post_woo_myglsd_tri_ping', [__CLASS__,'handle_tri_ping']);
+    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page='.$page)) );
+    exit;
   }
 
   public static function handle_ping(){
-    if(!current_user_can('manage_woocommerce')) wp_die('Nope');
+    self::require_manage();
+    check_admin_referer('woo_myglsd_ping','woo_myglsd_ping_nonce');
     try{
-      $s = Woo_MyGLSD_Util::settings();
+      $clientNumber = Woo_MyGLSD_Util::client_number();
+      if ($clientNumber <= 0){
+        throw new \InvalidArgumentException('A GLS ügyfélszám nincs beállítva.');
+      }
       $api = new Woo_MyGLSD_Rest();
-      $res = $api->GetClientReturnAddress( (int)($s['client_number']??0), sanitize_text_field($_POST['name']??'Forme.hu'), 'HU', 1 );
+      $name = sanitize_text_field($_POST['name'] ?? '');
+      $linkName = sanitize_text_field($_POST['link_name'] ?? '');
+      if ($name === '' && $linkName !== ''){
+        $name = $linkName;
+      }
+      if ($name === ''){
+        $name = 'Forme.hu';
+      }
+      $country = strtoupper(sanitize_text_field($_POST['country'] ?? 'HU'));
+      $returnType = sanitize_text_field($_POST['return_type'] ?? '1');
+      $res = $api->GetClientReturnAddress($clientNumber, $name, $country, $returnType, $linkName ?: null);
       self::back_msg($res);
     } catch (\Throwable $e){
       self::back_msg('ERR: '.$e->getMessage());
@@ -45,48 +75,60 @@ class Woo_MyGLSD_Admin {
   }
 
   public static function handle_print_demo(){
-    if(!current_user_can('manage_woocommerce')) wp_die('Nope');
+    self::require_manage();
+    check_admin_referer('woo_myglsd_print','woo_myglsd_print_nonce');
     try{
       $api = new Woo_MyGLSD_Rest();
-      $sender = Woo_MyGLSD_Util::sender_address();
       $clientNumber = Woo_MyGLSD_Util::client_number();
-      $parcel = [
-        'ClientNumber' => $clientNumber,
-        'ClientReference' => 'DEMO-PRINT-'.time(),
-        'PickupDate' => date('Y-m-d'),
-        'PickupAddress' => $sender,
-        'DeliveryAddress' => [
-          'Name'=>'Teszt Vevő','Street'=>'Kossuth','HouseNumber'=>'1','City'=>'Budapest','ZipCode'=>'1051','CountryIsoCode'=>'HU',
-          'ContactPhone'=>'+361234567','ContactEmail'=>'teszt@example.com'
-        ],
-        'ServiceList' => [ ['Code'=>'24H'] ]
-      ];
+      if ($clientNumber <= 0){
+        throw new \InvalidArgumentException('A GLS ügyfélszám nincs beállítva.');
+      }
+      $parcel = Woo_MyGLSD_Util::demo_print_parcel($clientNumber);
       $res = $api->PrintLabels([$parcel]);
+      $labelBase64 = $res['Labels'] ?? '';
+      if ($labelBase64 === '' && !empty($res['PrintLabelsInfoList'][0]['ParcelId'])){
+        try{
+          $parcelId = $res['PrintLabelsInfoList'][0]['ParcelId'];
+          $printed = $api->GetPrintedLabels([$parcelId], $clientNumber);
+          if (!empty($printed['Labels'])){
+            $labelBase64 = $printed['Labels'];
+          } elseif (!empty($printed['LabelList'][0]['Label'])){
+            $labelBase64 = $printed['LabelList'][0]['Label'];
+          }
+        } catch (\Throwable $fetchErr){
+          $res['GetPrintedLabelsError'] = $fetchErr->getMessage();
+        }
+      }
       // Mentsük le PDF-ként ha van
-      if (!empty($res['Labels'])){
-        $pdf = base64_decode($res['Labels']);
+      if (!empty($labelBase64)){
+        $pdf = base64_decode($labelBase64);
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="mygls-demo.pdf"');
-        echo $pdf; exit;
+        echo $pdf;
+        exit;
       }
       self::back_msg($res);
     } catch (\Throwable $e){
       self::back_msg('ERR: '.$e->getMessage());
     }
   }
-}
 
   public static function handle_tri_ping(){
-    if(!current_user_can('manage_woocommerce')) wp_die('Nope');
+    self::require_manage();
+    check_admin_referer('woo_myglsd_tri_ping','woo_myglsd_tri_ping_nonce');
     $s = Woo_MyGLSD_Util::settings();
     $results = [];
+    $clientNumber = (int)($s['client_number'] ?? 0);
+    if ($clientNumber <= 0){
+      self::back_msg('ERR: Állíts be GLS ügyfélszámot a ping teszthez.');
+    }
     $modes = ['base64','hex','byte_array'];
     foreach($modes as $mode){
       try{
         $s['password_mode'] = $mode;
         update_option(Woo_MyGLSD_Settings::OPT, $s);
         $api = new Woo_MyGLSD_Rest();
-        $res = $api->GetClientReturnAddress( (int)($s['client_number']??0), 'Forme.hu', 'HU', 1 );
+        $res = $api->GetClientReturnAddress( $clientNumber, 'Forme.hu', 'HU', 1 );
         $results[$mode] = ['ok'=>true,'data'=>$res];
       } catch (\Throwable $e){
         $results[$mode] = ['ok'=>false,'err'=>$e->getMessage()];
@@ -97,5 +139,7 @@ class Woo_MyGLSD_Admin {
       update_option(Woo_MyGLSD_Settings::OPT, $s);
     }
     $msg = base64_encode(print_r($results,true));
-    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd')) ); exit;
+    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd')) );
+    exit;
   }
+}

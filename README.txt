@@ -1,18 +1,21 @@
-Woo MyGLS (DocSpec REST) – v1.0.5
+Woo MyGLS (DocSpec REST) – v1.0.6
 
 MyGLS HU REST/JSON integráció a hivatalos dokumentáció alapján (ver. 25.07.08). HPOS-kompatibilis.
 
 Funkciók
-- REST hívások: PrintLabels, GetParcelStatuses, DeleteLabels, ModifyCOD, GetParcelList, GetClientReturnAddress
+- REST hívások: PrintLabels, GetParcelStatuses, DeleteLabels, ModifyCOD, GetParcelList, GetClientReturnAddress, GetPrintedLabels, Ping
+- PrintLabels opciók: TypeOfPrinter, WaybillDocumentType, ShowReturnLabels, ReturnLabelsType, PrintParcelCount
 - SHA512 jelszó: módok – base64 (alapértelmezett), JSON byte array, hex
 - Admin tesztek: Ping (GetClientReturnAddress), Demó PrintLabels (PDF render)
+- Autentikáció: UserName + CustomerNumber + opcionális ApiKey, WebshopEngine mező támogatással
 - Pénztár mező: PSD StringValue (ParcelShop/Locker ID) manuális megadás
 - Bulk: MyGLS címke (PrintLabels), menti a csomagszámot + tracking URL-t
 - HPOS (custom order tables) támogatás
 
 Beállítások
 - API Base URL: ha üres, a Környezet alapján töltődik (test/prod)
-- ClientNumber: szerződésed GLS ügyfélszáma
+- ClientNumber: szerződésed GLS ügyfélszáma (az authentikációba is bekerül)
+- API kulcs: ha a MyGLS API dokumentáció előírja, add meg itt (Authentication.ApiKey)
 - TypeOfPrinter: pl. ThermoZPL_300DPI / ShipItThermoPdf / A4_2x2
 - Feladó JSON: PickupAddress objektum (Name, Street, HouseNumber, City, ZipCode, CountryIsoCode, Contact* mezők).
 

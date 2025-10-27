@@ -3,7 +3,7 @@
  * Plugin Name: Woo MyGLS (DocSpec REST)
  * Description: MyGLS integráció (REST/JSON, HU) a hivatalos dokumentáció alapján. HPOS-kompatibilis. Címkegyártás (PrintLabels), státusz lekérdezés, törlés, COD módosítás, listázás, visszáru cím.
  * Author: Szoki Dev
- * Version: 1.0.5
+ * Version: 1.0.7
  * Requires PHP: 7.4
  * Requires at least: 5.8
  * Tested up to: 6.6
