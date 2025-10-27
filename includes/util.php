@@ -32,12 +32,29 @@ class Woo_MyGLSD_Util {
   }
 
   public static function auth_block(){
-    $s=self::settings();
-    return [
-      'Username' => $s['username'] ?? '',
+    $s = self::settings();
+    $block = [
+      'UserName' => $s['username'] ?? '',
       'Password' => self::password_field(),
-      'WebshopEngine' => $s['webshop_engine'] ?? 'WooCommerce'
     ];
+
+    $client = intval($s['client_number'] ?? 0);
+    if ($client > 0){
+      $block['CustomerNumber'] = $client;
+    }
+
+    $engine = trim((string)($s['webshop_engine'] ?? ''));
+    if ($engine === ''){
+      $engine = 'WooCommerce';
+    }
+    $block['WebshopEngine'] = $engine;
+
+    $apiKey = trim((string)($s['api_key'] ?? ''));
+    if ($apiKey !== ''){
+      $block['ApiKey'] = $apiKey;
+    }
+
+    return $block;
   }
 
   public static function sender_address(){

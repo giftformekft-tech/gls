@@ -56,6 +56,7 @@ class Woo_MyGLSD_Settings {
     add_settings_field('base_url','API Base URL',[__CLASS__,'text'],'woo-myglsd','sec_api',['key'=>'base_url','ph'=>'https://api.test.mygls.hu/ParcelService.svc/json/']);
     add_settings_field('username','Felhasználónév (email)',[__CLASS__,'text'],'woo-myglsd','sec_api',['key'=>'username']);
     add_settings_field('password','Jelszó (plain)',[__CLASS__,'password'],'woo-myglsd','sec_api',['key'=>'password']);
+    add_settings_field('api_key','API kulcs (ha van)',[__CLASS__,'text'],'woo-myglsd','sec_api',['key'=>'api_key']);
     add_settings_field('password_mode','Jelszó kódolás módja',[__CLASS__,'select'],'woo-myglsd','sec_api',['key'=>'password_mode','options'=>['base64'=>'SHA512→base64 (ajánlott)','byte_array'=>'SHA512→JSON byte array','hex'=>'SHA512→hex string']]);
 
     add_settings_field('client_number','GLS ClientNumber',[__CLASS__,'text'],'woo-myglsd','sec_api',['key'=>'client_number']);

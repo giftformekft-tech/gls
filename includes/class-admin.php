@@ -53,6 +53,9 @@ class Woo_MyGLSD_Admin {
     check_admin_referer('woo_myglsd_ping','woo_myglsd_ping_nonce');
     try{
       $clientNumber = Woo_MyGLSD_Util::client_number();
+      if ($clientNumber <= 0){
+        throw new \InvalidArgumentException('A GLS ügyfélszám nincs beállítva.');
+      }
       $api = new Woo_MyGLSD_Rest();
       $name = sanitize_text_field($_POST['name'] ?? '');
       $linkName = sanitize_text_field($_POST['link_name'] ?? '');
@@ -109,13 +112,17 @@ class Woo_MyGLSD_Admin {
     check_admin_referer('woo_myglsd_tri_ping','woo_myglsd_tri_ping_nonce');
     $s = Woo_MyGLSD_Util::settings();
     $results = [];
+    $clientNumber = (int)($s['client_number'] ?? 0);
+    if ($clientNumber <= 0){
+      self::back_msg('ERR: Állíts be GLS ügyfélszámot a ping teszthez.');
+    }
     $modes = ['base64','hex','byte_array'];
     foreach($modes as $mode){
       try{
         $s['password_mode'] = $mode;
         update_option(Woo_MyGLSD_Settings::OPT, $s);
         $api = new Woo_MyGLSD_Rest();
-        $res = $api->GetClientReturnAddress( (int)($s['client_number']??0), 'Forme.hu', 'HU', 1 );
+        $res = $api->GetClientReturnAddress( $clientNumber, 'Forme.hu', 'HU', 1 );
         $results[$mode] = ['ok'=>true,'data'=>$res];
       } catch (\Throwable $e){
         $results[$mode] = ['ok'=>false,'err'=>$e->getMessage()];

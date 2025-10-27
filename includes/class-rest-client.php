@@ -2,10 +2,12 @@
 class Woo_MyGLSD_Rest {
   private $base;
   private $typeOfPrinter;
+  private $clientNumber;
 
   public function __construct(){
     $this->base = Woo_MyGLSD_Util::api_base();
     $this->typeOfPrinter = Woo_MyGLSD_Settings::get('type_of_printer','Thermo');
+    $this->clientNumber = Woo_MyGLSD_Util::client_number();
   }
 
   private function post($endpoint, $payload){
@@ -48,6 +50,14 @@ class Woo_MyGLSD_Rest {
     ], $data);
   }
 
+  private function require_client_number($value = null){
+    $number = $value !== null ? (int)$value : (int)$this->clientNumber;
+    if ($number <= 0){
+      throw new \InvalidArgumentException('MyGLS ClientNumber hiányzik vagy érvénytelen.');
+    }
+    return $number;
+  }
+
   private function clean_list(array $values){
     $filtered = [];
     foreach ($values as $value){
@@ -64,6 +74,13 @@ class Woo_MyGLSD_Rest {
     if (empty($parcels)){
       throw new \Exception('PrintLabels: üres csomag lista.');
     }
+    $clientNumber = $this->require_client_number();
+    foreach ($parcels as &$parcel){
+      if (is_array($parcel) && !isset($parcel['ClientNumber'])){
+        $parcel['ClientNumber'] = $clientNumber;
+      }
+    }
+    unset($parcel);
     $payload = $this->auth_payload([
       'PrintLabelsInfoList' => $parcels,
       'TypeOfPrinter' => $this->typeOfPrinter,
@@ -77,17 +94,20 @@ class Woo_MyGLSD_Rest {
       throw new \Exception('DeleteLabels: üres ParcelNumberList.');
     }
     $payload = $this->auth_payload([
+      'ClientNumber' => $this->require_client_number(),
       'ParcelNumberList' => $list,
     ]);
     return $this->post('DeleteLabels', $payload);
   }
 
-  public function ModifyCOD($parcelNumber, $amount, $currency = 'HUF', $reference = ''){
+  public function ModifyCOD($parcelNumber, $amount, $currency = 'HUF', $reference = '', $clientNumber = null){
     $parcelNumber = trim((string)$parcelNumber);
     if ($parcelNumber === ''){
       throw new \Exception('ModifyCOD: hiányzó ParcelNumber.');
     }
+    $clientNumber = $this->require_client_number($clientNumber);
     $payload = $this->auth_payload([
+      'ClientNumber' => $clientNumber,
       'ParcelNumber' => $parcelNumber,
       'CODAmount' => (float)$amount,
       'CurrencyCode' => $currency,
@@ -98,22 +118,20 @@ class Woo_MyGLSD_Rest {
     return $this->post('ModifyCOD', $payload);
   }
 
-  public function GetParcelStatuses(array $parcelNumbers){
+  public function GetParcelStatuses(array $parcelNumbers, $clientNumber = null){
     $list = $this->clean_list($parcelNumbers);
     if (empty($list)){
       throw new \Exception('GetParcelStatuses: üres ParcelNumberList.');
     }
     $payload = $this->auth_payload([
+      'ClientNumber' => $this->require_client_number($clientNumber),
       'ParcelNumberList' => $list,
     ]);
     return $this->post('GetParcelStatuses', $payload);
   }
 
   public function GetParcelList($clientNumber, $dateFrom, $dateTo, $status = null){
-    $clientNumber = (int)$clientNumber;
-    if ($clientNumber <= 0){
-      throw new \Exception('GetParcelList: érvénytelen ClientNumber.');
-    }
+    $clientNumber = $this->require_client_number($clientNumber);
     $payload = $this->auth_payload([
       'ClientNumber' => $clientNumber,
       'DateFrom' => $dateFrom,
@@ -126,10 +144,7 @@ class Woo_MyGLSD_Rest {
   }
 
   public function GetClientReturnAddress($clientNumber, $name, $countryIso, $returnType = null, $linkName = null){
-    $clientNumber = (int)$clientNumber;
-    if ($clientNumber <= 0){
-      throw new \Exception('GetClientReturnAddress: érvénytelen ClientNumber.');
-    }
+    $clientNumber = $this->require_client_number($clientNumber);
 
     $countryIso = strtoupper(trim((string)$countryIso));
     if ($countryIso === ''){
@@ -158,5 +173,11 @@ class Woo_MyGLSD_Rest {
     }
 
     return $this->post('GetClientReturnAddress', $this->auth_payload($payload));
+  }
+
+  public function Ping(){
+    return $this->post('Ping', $this->auth_payload([
+      'ClientNumber' => $this->require_client_number(),
+    ]));
   }
 }
