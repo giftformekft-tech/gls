@@ -125,17 +125,38 @@ class Woo_MyGLSD_Rest {
     return $this->post('GetParcelList', $payload);
   }
 
-  public function GetClientReturnAddress($clientNumber, $name, $countryIso, $returnType){
+  public function GetClientReturnAddress($clientNumber, $name, $countryIso, $returnType = null, $linkName = null){
     $clientNumber = (int)$clientNumber;
     if ($clientNumber <= 0){
       throw new \Exception('GetClientReturnAddress: érvénytelen ClientNumber.');
     }
-    $payload = $this->auth_payload([
+
+    $countryIso = strtoupper(trim((string)$countryIso));
+    if ($countryIso === ''){
+      throw new \Exception('GetClientReturnAddress: hiányzó CountryIsoCode.');
+    }
+
+    $payload = [
       'ClientNumber' => $clientNumber,
-      'Name' => $name,
       'CountryIsoCode' => $countryIso,
-      'ReturnType' => (int)$returnType,
-    ]);
-    return $this->post('GetClientReturnAddress', $payload);
+    ];
+
+    $name = trim((string)$name);
+    if ($name !== ''){
+      $payload['Name'] = $name;
+    }
+
+    if ($linkName !== null){
+      $linkName = trim((string)$linkName);
+      if ($linkName !== ''){
+        $payload['LinkName'] = $linkName;
+      }
+    }
+
+    if ($returnType !== null && $returnType !== ''){
+      $payload['ReturnType'] = is_numeric($returnType) ? (int)$returnType : $returnType;
+    }
+
+    return $this->post('GetClientReturnAddress', $this->auth_payload($payload));
   }
 }

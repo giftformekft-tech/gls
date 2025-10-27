@@ -22,16 +22,22 @@ class Woo_MyGLSD_Settings {
     echo '<p>Ezek nem módosítják az adatbázist (Ping), illetve tesztkörnyezetben javasoltak (Demó PrintLabels).</p>';
     echo '<form style="display:inline-block;margin-right:10px" method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
     echo '<input type="hidden" name="action" value="woo_myglsd_ping" />';
-    echo '<input type="text" name="name" placeholder="Link Name (pl. Forme.hu)" value="Forme.hu" /> ';
+    echo '<input type="text" name="name" placeholder="Vevő neve" value="Forme.hu" /> ';
+    echo '<input type="text" name="link_name" placeholder="LinkName" value="" style="width:140px" /> ';
+    echo '<input type="text" name="country" placeholder="Ország" value="HU" style="width:70px" /> ';
+    echo '<input type="text" name="return_type" placeholder="ReturnType" value="1" style="width:90px" /> ';
+    echo wp_nonce_field('woo_myglsd_ping','woo_myglsd_ping_nonce', true, false);
     echo '<button class="button button-primary">Ping MyGLS</button>';
     echo '</form>';
     echo '<form style="display:inline-block" method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
     echo '<input type="hidden" name="action" value="woo_myglsd_print" />';
+    echo wp_nonce_field('woo_myglsd_print','woo_myglsd_print_nonce', true, false);
     echo '<button class="button">Demó PrintLabels (PDF)</button>';
     echo '</form>';
     echo '<form style="display:inline-block;margin-left:10px" method="post" action="'.esc_url(admin_url('admin-post.php')).'">';
     echo '<input type="hidden" name="action" value="woo_myglsd_tri_ping" />';
     echo '<input type="hidden" name="restore_mode" value="'.esc_attr(self::get('password_mode','base64')).'" />';
+    echo wp_nonce_field('woo_myglsd_tri_ping','woo_myglsd_tri_ping_nonce', true, false);
     echo '<button class="button button-secondary">Tri‑Ping (base64 / hex / byte array)</button>';
     echo '</form>';
 
