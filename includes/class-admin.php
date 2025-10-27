@@ -3,6 +3,7 @@ class Woo_MyGLSD_Admin {
   public static function init(){
     add_action('admin_post_woo_myglsd_ping', [__CLASS__,'handle_ping']);
     add_action('admin_post_woo_myglsd_print', [__CLASS__,'handle_print_demo']);
+    add_action('admin_post_woo_myglsd_tri_ping', [__CLASS__,'handle_tri_ping']);
   }
 
   public static function render_tools(){
@@ -26,10 +27,10 @@ class Woo_MyGLSD_Admin {
     echo '</div>';
   }
 
-  private static function back_msg($arr){
+  private static function back_msg($arr, $page = 'woo-myglsd'){
     $msg = base64_encode(is_string($arr)?$arr:print_r($arr,true));
-    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd-tools')) ); exit;
-    add_action('admin_post_woo_myglsd_tri_ping', [__CLASS__,'handle_tri_ping']);
+    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page='.$page)) );
+    exit;
   }
 
   public static function handle_ping(){
@@ -67,14 +68,14 @@ class Woo_MyGLSD_Admin {
         $pdf = base64_decode($res['Labels']);
         header('Content-Type: application/pdf');
         header('Content-Disposition: inline; filename="mygls-demo.pdf"');
-        echo $pdf; exit;
+        echo $pdf;
+        exit;
       }
       self::back_msg($res);
     } catch (\Throwable $e){
       self::back_msg('ERR: '.$e->getMessage());
     }
   }
-}
 
   public static function handle_tri_ping(){
     if(!current_user_can('manage_woocommerce')) wp_die('Nope');
@@ -97,5 +98,7 @@ class Woo_MyGLSD_Admin {
       update_option(Woo_MyGLSD_Settings::OPT, $s);
     }
     $msg = base64_encode(print_r($results,true));
-    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd')) ); exit;
+    wp_redirect( add_query_arg('msg', $msg, admin_url('admin.php?page=woo-myglsd')) );
+    exit;
   }
+}
