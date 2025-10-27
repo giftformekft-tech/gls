@@ -2,10 +2,12 @@
 class Woo_MyGLSD_Rest {
   private $base;
   private $typeOfPrinter;
+  private $clientNumber;
 
   public function __construct(){
     $this->base = Woo_MyGLSD_Util::api_base();
     $this->typeOfPrinter = Woo_MyGLSD_Settings::get('type_of_printer','Thermo');
+    $this->clientNumber = Woo_MyGLSD_Util::client_number();
   }
 
   private function post($endpoint, $payload){
@@ -29,15 +31,153 @@ class Woo_MyGLSD_Rest {
     ];
 
     $res  = wp_remote_post($url, $args);
-    if (is_wp_error($res)) throw new Exception($res->get_error_message());
+    if (is_wp_error($res)) throw new \Exception($res->get_error_message());
     $code = wp_remote_retrieve_response_code($res);
     $body = wp_remote_retrieve_body($res);
 
-    if ($code >= 300) throw new Exception('MyGLS HTTP '.$code.'; URL='.$url.'; body='.$body);
+    if ($code >= 300) throw new \Exception('MyGLS HTTP '.$code.'; URL='.$url.'; body='.$body);
 
     $json = json_decode($body, true);
     if ($json===null && json_last_error()) {
-      throw new Exception('JSON decode error: '.json_last_error_msg().'; URL='.$url.'; body='.$body);
+      throw new \Exception('JSON decode error: '.json_last_error_msg().'; URL='.$url.'; body='.$body);
     }
     return $json;
   }
+
+  private function auth_payload(array $data = []){
+    return array_merge([
+      'Authentication' => Woo_MyGLSD_Util::auth_block(),
+    ], $data);
+  }
+
+  private function require_client_number($value = null){
+    $number = $value !== null ? (int)$value : (int)$this->clientNumber;
+    if ($number <= 0){
+      throw new \InvalidArgumentException('MyGLS ClientNumber hiányzik vagy érvénytelen.');
+    }
+    return $number;
+  }
+
+  private function clean_list(array $values){
+    $filtered = [];
+    foreach ($values as $value){
+      if ($value === null) continue;
+      $value = is_scalar($value) ? trim((string)$value) : $value;
+      if ($value === '' && $value !== 0 && $value !== '0') continue;
+      $filtered[] = $value;
+    }
+    return $filtered;
+  }
+
+  public function PrintLabels(array $parcels){
+    $parcels = array_values(array_filter($parcels));
+    if (empty($parcels)){
+      throw new \Exception('PrintLabels: üres csomag lista.');
+    }
+    $clientNumber = $this->require_client_number();
+    foreach ($parcels as &$parcel){
+      if (is_array($parcel) && !isset($parcel['ClientNumber'])){
+        $parcel['ClientNumber'] = $clientNumber;
+      }
+    }
+    unset($parcel);
+    $payload = $this->auth_payload([
+      'PrintLabelsInfoList' => $parcels,
+      'TypeOfPrinter' => $this->typeOfPrinter,
+    ]);
+    return $this->post('PrintLabels', $payload);
+  }
+
+  public function DeleteLabels(array $parcelNumbers){
+    $list = $this->clean_list($parcelNumbers);
+    if (empty($list)){
+      throw new \Exception('DeleteLabels: üres ParcelNumberList.');
+    }
+    $payload = $this->auth_payload([
+      'ClientNumber' => $this->require_client_number(),
+      'ParcelNumberList' => $list,
+    ]);
+    return $this->post('DeleteLabels', $payload);
+  }
+
+  public function ModifyCOD($parcelNumber, $amount, $currency = 'HUF', $reference = '', $clientNumber = null){
+    $parcelNumber = trim((string)$parcelNumber);
+    if ($parcelNumber === ''){
+      throw new \Exception('ModifyCOD: hiányzó ParcelNumber.');
+    }
+    $clientNumber = $this->require_client_number($clientNumber);
+    $payload = $this->auth_payload([
+      'ClientNumber' => $clientNumber,
+      'ParcelNumber' => $parcelNumber,
+      'CODAmount' => (float)$amount,
+      'CurrencyCode' => $currency,
+    ]);
+    if ($reference !== ''){
+      $payload['CODReference'] = $reference;
+    }
+    return $this->post('ModifyCOD', $payload);
+  }
+
+  public function GetParcelStatuses(array $parcelNumbers, $clientNumber = null){
+    $list = $this->clean_list($parcelNumbers);
+    if (empty($list)){
+      throw new \Exception('GetParcelStatuses: üres ParcelNumberList.');
+    }
+    $payload = $this->auth_payload([
+      'ClientNumber' => $this->require_client_number($clientNumber),
+      'ParcelNumberList' => $list,
+    ]);
+    return $this->post('GetParcelStatuses', $payload);
+  }
+
+  public function GetParcelList($clientNumber, $dateFrom, $dateTo, $status = null){
+    $clientNumber = $this->require_client_number($clientNumber);
+    $payload = $this->auth_payload([
+      'ClientNumber' => $clientNumber,
+      'DateFrom' => $dateFrom,
+      'DateTo' => $dateTo,
+    ]);
+    if ($status !== null){
+      $payload['Status'] = $status;
+    }
+    return $this->post('GetParcelList', $payload);
+  }
+
+  public function GetClientReturnAddress($clientNumber, $name, $countryIso, $returnType = null, $linkName = null){
+    $clientNumber = $this->require_client_number($clientNumber);
+
+    $countryIso = strtoupper(trim((string)$countryIso));
+    if ($countryIso === ''){
+      throw new \Exception('GetClientReturnAddress: hiányzó CountryIsoCode.');
+    }
+
+    $payload = [
+      'ClientNumber' => $clientNumber,
+      'CountryIsoCode' => $countryIso,
+    ];
+
+    $name = trim((string)$name);
+    if ($name !== ''){
+      $payload['Name'] = $name;
+    }
+
+    if ($linkName !== null){
+      $linkName = trim((string)$linkName);
+      if ($linkName !== ''){
+        $payload['LinkName'] = $linkName;
+      }
+    }
+
+    if ($returnType !== null && $returnType !== ''){
+      $payload['ReturnType'] = is_numeric($returnType) ? (int)$returnType : $returnType;
+    }
+
+    return $this->post('GetClientReturnAddress', $this->auth_payload($payload));
+  }
+
+  public function Ping(){
+    return $this->post('Ping', $this->auth_payload([
+      'ClientNumber' => $this->require_client_number(),
+    ]));
+  }
+}
