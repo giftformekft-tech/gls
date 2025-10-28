@@ -68,10 +68,8 @@ class Selector {
         if (!$show_parcelshop) {
             return;
         }
-        
+
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
-        
-        <?php
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? '');
