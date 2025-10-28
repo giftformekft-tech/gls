@@ -303,7 +303,7 @@ class OrderMetaBox {
                 btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> ' + myglsAdmin.i18n.processing);
                 
                 $.ajax({
-                    url: myglsAdmin.ajaxUrl,
+                    url: myglsAdmin.ajaxurl,
                     type: 'POST',
                     data: {
                         action: 'mygls_generate_label',
@@ -328,7 +328,7 @@ class OrderMetaBox {
             // Download label
             $('.mygls-download-label').on('click', function() {
                 var orderId = $(this).data('order-id');
-                window.location.href = myglsAdmin.ajaxUrl + '?action=mygls_download_label&order_id=' + orderId + '&nonce=' + myglsAdmin.nonce;
+                window.location.href = myglsAdmin.ajaxurl + '?action=mygls_download_label&order_id=' + orderId + '&nonce=' + myglsAdmin.nonce;
             });
             
             // Delete label
@@ -344,7 +344,7 @@ class OrderMetaBox {
                 btn.prop('disabled', true);
                 
                 $.ajax({
-                    url: myglsAdmin.ajaxUrl,
+                    url: myglsAdmin.ajaxurl,
                     type: 'POST',
                     data: {
                         action: 'mygls_delete_label',
@@ -377,7 +377,7 @@ class OrderMetaBox {
             
             function loadParcelStatus(parcelNumber, callback) {
                 $.ajax({
-                    url: myglsAdmin.ajaxUrl,
+                    url: myglsAdmin.ajaxurl,
                     type: 'POST',
                     data: {
                         action: 'mygls_refresh_status',
