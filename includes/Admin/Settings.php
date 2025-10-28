@@ -77,7 +77,12 @@ class Settings {
         $sanitized['auto_generate_labels'] = isset($input['auto_generate_labels']) ? '1' : '0';
         $sanitized['auto_status_sync'] = isset($input['auto_status_sync']) ? '1' : '0';
         $sanitized['status_sync_interval'] = absint($input['status_sync_interval'] ?? 60);
-        
+
+        // Shipping Methods - Parcelshop Selector
+        $sanitized['parcelshop_enabled_methods'] = isset($input['parcelshop_enabled_methods']) && is_array($input['parcelshop_enabled_methods'])
+            ? array_map('sanitize_text_field', $input['parcelshop_enabled_methods'])
+            : [];
+
         return $sanitized;
     }
     
@@ -313,6 +318,61 @@ class Settings {
                             </table>
                         </div>
                     </div>
+
+                    <!-- Shipping Methods - Parcelshop Selector -->
+                    <div class="mygls-card">
+                        <div class="mygls-card-header">
+                            <h2><span class="dashicons dashicons-location"></span> <?php _e('Parcelshop Selector Settings', 'mygls-woocommerce'); ?></h2>
+                        </div>
+                        <div class="mygls-card-body">
+                            <p class="description" style="margin-bottom: 15px;">
+                                <?php _e('Enable parcelshop selector (interactive map) for specific shipping methods. Customers will be able to choose a GLS parcelshop during checkout.', 'mygls-woocommerce'); ?>
+                            </p>
+                            <table class="form-table">
+                                <?php
+                                // Get all available shipping methods
+                                $shipping_zones = \WC_Shipping_Zones::get_zones();
+                                $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+
+                                foreach ($shipping_zones as $zone) {
+                                    $zone_obj = new \WC_Shipping_Zone($zone['id']);
+                                    $shipping_methods = $zone_obj->get_shipping_methods(true);
+
+                                    if (!empty($shipping_methods)) {
+                                        ?>
+                                        <tr>
+                                            <td colspan="2">
+                                                <h4 style="margin-top: 10px; margin-bottom: 5px;"><?php echo esc_html($zone['zone_name']); ?></h4>
+                                            </td>
+                                        </tr>
+                                        <?php
+                                        foreach ($shipping_methods as $method) {
+                                            $method_id = $method->get_rate_id();
+                                            $method_title = $method->get_title();
+                                            ?>
+                                            <tr>
+                                                <th scope="row" style="padding-left: 20px;">
+                                                    <?php echo esc_html($method_title); ?>
+                                                </th>
+                                                <td>
+                                                    <label class="mygls-toggle">
+                                                        <input type="checkbox"
+                                                               name="mygls_settings[parcelshop_enabled_methods][]"
+                                                               value="<?php echo esc_attr($method_id); ?>"
+                                                               <?php checked(in_array($method_id, $enabled_methods), true); ?>>
+                                                        <span class="mygls-toggle-slider"></span>
+                                                    </label>
+                                                    <p class="description"><?php _e('Enable parcelshop selector for this method', 'mygls-woocommerce'); ?></p>
+                                                </td>
+                                            </tr>
+                                            <?php
+                                        }
+                                    }
+                                }
+                                ?>
+                            </table>
+                        </div>
+                    </div>
                     
                     <?php submit_button(__('Save Settings', 'mygls-woocommerce'), 'primary large'); ?>
                 </form>
@@ -373,25 +433,38 @@ class Settings {
             wp_send_json_error(['message' => __('Permission denied', 'mygls-woocommerce')]);
         }
 
-        // Validate that settings are saved first
-        $settings = get_option('mygls_settings', []);
+        // Get test credentials from POST (current form values)
+        $test_settings = [
+            'country' => sanitize_text_field($_POST['country'] ?? ''),
+            'username' => sanitize_email($_POST['username'] ?? ''),
+            'password' => $_POST['password'] ?? '',
+            'client_number' => absint($_POST['client_number'] ?? 0),
+            'test_mode' => ($_POST['test_mode'] ?? '0') === '1'
+        ];
 
-        if (empty($settings['username'])) {
-            wp_send_json_error(['message' => __('Please enter your username (email) and save settings first', 'mygls-woocommerce')]);
+        // Validate required fields
+        if (empty($test_settings['username'])) {
+            wp_send_json_error(['message' => __('Please enter your username (email)', 'mygls-woocommerce')]);
         }
 
-        if (empty($settings['password'])) {
-            wp_send_json_error(['message' => __('Please enter your password and save settings first', 'mygls-woocommerce')]);
+        if (empty($test_settings['password'])) {
+            wp_send_json_error(['message' => __('Please enter your password', 'mygls-woocommerce')]);
         }
 
-        if (empty($settings['client_number'])) {
-            wp_send_json_error(['message' => __('Please enter your client number and save settings first', 'mygls-woocommerce')]);
+        if (empty($test_settings['client_number'])) {
+            wp_send_json_error(['message' => __('Please enter your client number', 'mygls-woocommerce')]);
         }
 
         try {
+            // Temporarily save test settings for API client
+            $original_settings = get_option('mygls_settings', []);
+            update_option('mygls_settings', array_merge($original_settings, $test_settings), false);
+
             $api = mygls_get_api_client();
 
             if (!$api) {
+                // Restore original settings
+                update_option('mygls_settings', $original_settings, false);
                 wp_send_json_error(['message' => __('Failed to initialize API client', 'mygls-woocommerce')]);
             }
 
@@ -400,6 +473,9 @@ class Settings {
                 date('Y-m-d', strtotime('-7 days')),
                 date('Y-m-d')
             );
+
+            // Restore original settings after test
+            update_option('mygls_settings', $original_settings, false);
 
             // Check for explicit errors
             if (isset($result['error'])) {
@@ -436,6 +512,10 @@ class Settings {
 
             wp_send_json_success(['message' => __('Connection successful!', 'mygls-woocommerce')]);
         } catch (\Exception $e) {
+            // Restore original settings in case of exception
+            if (isset($original_settings)) {
+                update_option('mygls_settings', $original_settings, false);
+            }
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
