@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/yourusername/mygls-woocommerce
  * Description: Teljes MyGLS API integráció WooCommerce-hez interaktív térképes csomagpont választóval, automatikus és bulk címkegenerálással, valamint valós idejű státusz követéssel.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Your Name
  * Author URI: https://yourwebsite.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.2');
+define('MYGLS_VERSION', '1.0.3');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));

@@ -34,23 +34,30 @@ class Selector {
      * Add parcelshop selector after shipping rate
      */
     public function add_parcelshop_selector($method, $index) {
-        // Only show for MyGLS shipping methods
-        if (strpos($method->get_id(), 'mygls') === false) {
-            return;
+        // Get plugin settings
+        $settings = get_option('mygls_settings', []);
+        $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+
+        // Check if parcelshop selector is enabled for this shipping method
+        $method_id = $method->get_id();
+        $is_enabled = false;
+
+        // First check if it's explicitly enabled in settings
+        if (in_array($method_id, $enabled_methods)) {
+            $is_enabled = true;
         }
-
-        // Check if this is a parcelshop delivery method
-        if (method_exists($method, 'get_option')) {
-            $shipping_type = $method->get_option('shipping_type', 'home');
-
-            // Only show parcelshop selector for parcelshop delivery type
-            if ($shipping_type !== 'parcelshop') {
-                return;
+        // Also check for MyGLS methods with parcelshop type (backward compatibility)
+        elseif (strpos($method_id, 'mygls') !== false) {
+            if (method_exists($method, 'get_option')) {
+                $shipping_type = $method->get_option('shipping_type', 'home');
+                if ($shipping_type === 'parcelshop') {
+                    $is_enabled = true;
+                }
             }
         }
 
         // Allow filtering for additional control
-        $show_parcelshop = apply_filters('mygls_show_parcelshop_selector', true, $method);
+        $show_parcelshop = apply_filters('mygls_show_parcelshop_selector', $is_enabled, $method);
 
         if (!$show_parcelshop) {
             return;

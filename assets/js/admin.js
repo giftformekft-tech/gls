@@ -16,17 +16,33 @@
         $('#test-connection').on('click', function() {
             const $btn = $(this);
             const $status = $('#connection-status');
-            
+
+            // Get current form values
+            const formData = {
+                action: 'mygls_test_connection',
+                nonce: myglsAdmin.nonce,
+                country: $('#country').val(),
+                username: $('#username').val(),
+                password: $('#password').val(),
+                client_number: $('#client_number').val(),
+                test_mode: $('#test_mode').is(':checked') ? '1' : '0'
+            };
+
+            // Validate required fields
+            if (!formData.username || !formData.password || !formData.client_number) {
+                $status.html('<span class="dashicons dashicons-no"></span> ' + 'Kérlek töltsd ki az összes kötelező mezőt')
+                       .addClass('error')
+                       .removeClass('success');
+                return;
+            }
+
             $btn.prop('disabled', true)
                 .html('<span class="dashicons dashicons-update spin"></span> ' + myglsAdmin.i18n.processing);
-            
+
             $.ajax({
                 url: myglsAdmin.ajaxurl,
                 type: 'POST',
-                data: {
-                    action: 'mygls_test_connection',
-                    nonce: myglsAdmin.nonce
-                },
+                data: formData,
                 success: function(response) {
                     if (response.success) {
                         $status.html('<span class="dashicons dashicons-yes"></span> ' + response.data.message)
