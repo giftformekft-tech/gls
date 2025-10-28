@@ -37,7 +37,7 @@ class Client {
     
     /**
      * Hash password with SHA512
-     * Returns base64-encoded string as required by MyGLS API
+     * Returns array of byte values as required by MyGLS JSON API
      */
     private function hashPassword($password) {
         // Ensure password has no extra whitespace
@@ -46,8 +46,10 @@ class Client {
         // Generate SHA512 hash as binary
         $hash = hash('sha512', $password, true);
 
-        // Convert to base64 string
-        return base64_encode($hash);
+        // Convert to array of byte values (required for JSON endpoint)
+        // unpack returns 1-indexed array, so we use array_values to re-index from 0
+        // This creates an array like [123,45,67,...] instead of base64 string
+        return array_values(unpack('C*', $hash));
     }
     
     /**
