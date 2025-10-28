@@ -76,7 +76,11 @@ class Client {
         // Add authentication
         $data['Username'] = $this->username;
         $data['Password'] = $this->password_hash;
-        $data['WebshopEngine'] = 'WooCommerce';
+
+        // WebshopEngine is not required for GetParcelList endpoint
+        if ($endpoint !== 'GetParcelList') {
+            $data['WebshopEngine'] = 'WooCommerce';
+        }
 
         // Encode with JSON_NUMERIC_CHECK to ensure numbers are not quoted
         $json_body = json_encode($data, JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
@@ -148,6 +152,17 @@ class Client {
             return ['error' => $error_message];
         }
 
+        // Check for GetParcelList specific error structure
+        if (isset($result['GetParcelListErrors']) && is_array($result['GetParcelListErrors'])) {
+            foreach ($result['GetParcelListErrors'] as $error) {
+                if (isset($error['ErrorCode']) && $error['ErrorCode'] !== 0) {
+                    $error_message = $error['ErrorDescription'] ?? 'Unknown API error';
+                    mygls_log("GetParcelList Error: {$error_message} (Code: {$error['ErrorCode']})", 'error');
+                    return ['error' => $error_message];
+                }
+            }
+        }
+
         return $result;
     }
     
@@ -170,8 +185,7 @@ class Client {
      */
     public function prepareLabels($parcels) {
         $data = [
-            'ParcelList' => $parcels,
-            'WebshopEngine' => 'WooCommerce'
+            'ParcelList' => $parcels
         ];
 
         return $this->request('PrepareLabels', $data);
