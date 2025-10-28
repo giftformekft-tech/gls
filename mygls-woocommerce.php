@@ -210,7 +210,7 @@ function mygls_admin_enqueue_scripts($hook) {
     );
 
     wp_localize_script('mygls-admin-js', 'myglsAdmin', array(
-        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('mygls_admin_nonce'),
         'i18n' => array(
             'processing' => __('Processing...', 'mygls-woocommerce'),
