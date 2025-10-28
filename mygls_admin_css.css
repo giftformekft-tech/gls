@@ -1,0 +1,230 @@
+/* MyGLS Admin Styles */
+
+/* Settings Page */
+.mygls-settings-wrap {
+    padding: 20px;
+}
+
+.mygls-settings-wrap h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 28px;
+    margin-bottom: 30px;
+}
+
+.mygls-settings-container {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    max-width: 1400px;
+}
+
+@media (max-width: 1200px) {
+    .mygls-settings-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Card Component */
+.mygls-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.mygls-card-header {
+    background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+    color: #fff;
+    padding: 15px 20px;
+    border-bottom: 1px solid #1d5a8a;
+}
+
+.mygls-card-header h2,
+.mygls-card-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+}
+
+.mygls-card-header .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.mygls-card-body {
+    padding: 20px;
+}
+
+/* Toggle Switch */
+.mygls-toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.mygls-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.mygls-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.mygls-toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.mygls-toggle input:checked + .mygls-toggle-slider {
+    background-color: #2271b1;
+}
+
+.mygls-toggle input:checked + .mygls-toggle-slider:before {
+    transform: translateX(26px);
+}
+
+/* Required Field */
+.required {
+    color: #d63638;
+    font-weight: bold;
+}
+
+/* Service List */
+.mygls-service-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.mygls-service-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mygls-service-list li:last-child {
+    border-bottom: none;
+}
+
+.mygls-service-list .dashicons {
+    color: #00a32a;
+}
+
+/* Connection Status */
+#connection-status {
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+#connection-status.success {
+    color: #00a32a;
+}
+
+#connection-status.error {
+    color: #d63638;
+}
+
+/* Sidebar */
+.mygls-sidebar .mygls-card-body p {
+    margin: 10px 0;
+}
+
+/* Buttons */
+.button .dashicons {
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+/* Animations */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.dashicons.spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Order List Icons */
+.mygls-label-indicator {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    background: #00a32a;
+    color: #fff;
+    font-size: 12px;
+    vertical-align: middle;
+    margin-left: 5px;
+}
+
+.mygls-label-indicator.pending {
+    background: #dba617;
+}
+
+.mygls-label-indicator.error {
+    background: #d63638;
+}
+
+/* Admin Parcelshop Display */
+.mygls-admin-parcelshop {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+    border-left: 4px solid #2271b1;
+}
+
+.mygls-admin-parcelshop h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mygls-admin-parcelshop p {
+    margin: 5px 0;
+    line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+    .mygls-settings-container {
+        padding: 10px;
+    }
+    
+    .mygls-card-body {
+        padding: 15px;
+    }
+}

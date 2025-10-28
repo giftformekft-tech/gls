@@ -1,0 +1,382 @@
+/* MyGLS Frontend Styles */
+
+/* Parcelshop Selector */
+.mygls-parcelshop-selector {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+}
+
+.mygls-parcelshop-trigger {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.mygls-select-parcelshop {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #2271b1;
+    color: #fff !important;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mygls-select-parcelshop:hover {
+    background: #135e96;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mygls-select-parcelshop .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+}
+
+.mygls-selected-parcelshop {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px;
+    background: #fff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.mygls-selected-parcelshop strong {
+    display: block;
+    color: #2271b1;
+    margin-bottom: 5px;
+}
+
+.mygls-selected-parcelshop small {
+    color: #666;
+    font-size: 12px;
+}
+
+/* Modal */
+.mygls-modal {
+    display: none;
+    position: fixed;
+    z-index: 999999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.mygls-modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.mygls-modal-header {
+    padding: 20px 25px;
+    background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mygls-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.mygls-modal-close {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    line-height: 28px;
+    transition: transform 0.2s ease;
+}
+
+.mygls-modal-close:hover {
+    transform: scale(1.2);
+}
+
+.mygls-modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.mygls-modal-footer {
+    padding: 15px 25px;
+    background: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-radius: 0 0 8px 8px;
+}
+
+/* Search */
+.mygls-parcelshop-search {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#mygls-parcelshop-search {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 15px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+#mygls-parcelshop-search:focus {
+    border-color: #2271b1;
+    outline: none;
+}
+
+.mygls-parcelshop-search .button {
+    padding: 12px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+#mygls-search-btn {
+    background: #2271b1;
+    color: #fff;
+    border: none;
+}
+
+#mygls-search-btn:hover {
+    background: #135e96;
+}
+
+#mygls-locate-btn {
+    background: #50575e;
+    color: #fff;
+    border: none;
+}
+
+#mygls-locate-btn:hover {
+    background: #3c434a;
+}
+
+/* Container */
+.mygls-parcelshop-container {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 20px;
+    min-height: 500px;
+}
+
+/* List */
+.mygls-parcelshop-list {
+    overflow-y: auto;
+    max-height: 500px;
+    padding-right: 10px;
+}
+
+.mygls-parcelshop-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.mygls-parcelshop-item:hover {
+    border-color: #2271b1;
+    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+    transform: translateX(5px);
+}
+
+.mygls-parcelshop-item.selected {
+    border-color: #2271b1;
+    background: #f0f6fc;
+    box-shadow: 0 2px 8px rgba(34, 113, 177, 0.2);
+}
+
+.mygls-parcelshop-item h4 {
+    margin: 0 0 8px 0;
+    color: #2271b1;
+    font-size: 16px;
+}
+
+.mygls-parcelshop-item p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 13px;
+}
+
+.mygls-parcelshop-item .dashicons {
+    color: #2271b1;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.mygls-distance {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #f0f6fc;
+    color: #2271b1;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+/* Map */
+.mygls-parcelshop-map {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid #e0e0e0;
+}
+
+#mygls-map {
+    border-radius: 6px;
+}
+
+/* Leaflet custom markers */
+.mygls-marker {
+    background: #2271b1;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.mygls-marker.selected {
+    background: #d63638;
+    width: 36px;
+    height: 36px;
+}
+
+/* Loading & Messages */
+.mygls-loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.mygls-loading:before {
+    content: '';
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #2271b1;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.mygls-no-results {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.mygls-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .mygls-parcelshop-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .mygls-parcelshop-map {
+        order: -1;
+        height: 400px;
+    }
+    
+    .mygls-parcelshop-list {
+        max-height: 400px;
+    }
+}
+
+@media (max-width: 600px) {
+    .mygls-modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .mygls-parcelshop-search {
+        flex-direction: column;
+    }
+    
+    .mygls-parcelshop-search .button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .mygls-modal-footer {
+        flex-direction: column;
+    }
+    
+    .mygls-modal-footer .button {
+        width: 100%;
+    }
+}
