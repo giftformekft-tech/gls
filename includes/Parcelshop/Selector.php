@@ -68,13 +68,13 @@ class Selector {
         if (!$show_parcelshop) {
             return;
         }
-        
+
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
-        
-        <?php
+
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? '');
+
         ?>
         <div class="mygls-parcelshop-selector" data-shipping-method="<?php echo esc_attr($method->get_id()); ?>" style="display: none;">
             <div class="mygls-parcelshop-trigger">
@@ -101,7 +101,7 @@ class Selector {
             <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
             id="mygls-parcelshop-widget">
         </gls-dpm-dialog>
-        
+
         <script>
         jQuery(function($) {
             // Show parcelshop selector when this shipping method is selected
@@ -112,7 +112,7 @@ class Selector {
                     $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]').slideUp();
                 }
             });
-            
+
             // Check if already selected
             if ($('input[name="shipping_method[<?php echo $index; ?>]"]:checked').val() === '<?php echo esc_js($method->get_id()); ?>') {
                 $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]').show();
