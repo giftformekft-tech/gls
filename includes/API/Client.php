@@ -15,20 +15,17 @@ class Client {
     private $password_hash;
     private $client_number;
     private $api_url;
-    private $test_mode;
-    
+
     public function __construct() {
         $settings = get_option('mygls_settings', []);
-        
+
         $this->username = $settings['username'] ?? '';
         $this->client_number = $settings['client_number'] ?? '';
-        $this->test_mode = ($settings['test_mode'] ?? '0') === '1';
-        
-        // API URL based on country and test mode
+
+        // API URL based on country (production only)
         $country = $settings['country'] ?? 'hu';
-        $domain = $this->test_mode ? "api.test.mygls.{$country}" : "api.mygls.{$country}";
-        $this->api_url = "https://{$domain}";
-        
+        $this->api_url = "https://api.mygls.{$country}";
+
         // Hash password
         if (!empty($settings['password'])) {
             $this->password_hash = $this->hashPassword($settings['password']);
@@ -94,7 +91,7 @@ class Client {
             ],
             'body' => $json_body,
             'timeout' => 60,
-            'sslverify' => !$this->test_mode
+            'sslverify' => true
         ];
 
         mygls_log("API Request to {$endpoint}", 'debug');

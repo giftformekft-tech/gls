@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/yourusername/mygls-woocommerce
  * Description: Teljes MyGLS API integráció WooCommerce-hez interaktív térképes csomagpont választóval, automatikus és bulk címkegenerálással, valamint valós idejű státusz követéssel.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Your Name
  * Author URI: https://yourwebsite.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.5');
+define('MYGLS_VERSION', '1.0.6');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -103,8 +103,23 @@ function mygls_init() {
     if (class_exists('MyGLS\\Parcelshop\\Selector')) {
         new MyGLS\Parcelshop\Selector();
     }
+
+    // Register WooCommerce Blocks integration
+    add_action('woocommerce_blocks_checkout_block_registration', 'mygls_register_blocks_integration');
 }
 add_action('plugins_loaded', 'mygls_init');
+
+/**
+ * Register parcelshop selector with WooCommerce Blocks
+ */
+function mygls_register_blocks_integration($integration_registry) {
+    if (!class_exists('MyGLS\\Parcelshop\\BlocksIntegration')) {
+        return;
+    }
+
+    $integration_registry->register(new MyGLS\Parcelshop\BlocksIntegration());
+}
+
 
 /**
  * Register shipping method
@@ -164,7 +179,6 @@ function mygls_activate() {
     if (!get_option('mygls_settings')) {
         update_option('mygls_settings', array(
             'country' => 'HU',
-            'test_mode' => true,
             'auto_generate_labels' => false,
             'auto_status_sync' => false,
             'sync_interval' => 60,
@@ -187,10 +201,21 @@ register_deactivation_hook(__FILE__, 'mygls_deactivate');
  * Enqueue admin styles and scripts
  */
 function mygls_admin_enqueue_scripts($hook) {
-    // Only load on specific admin pages
-    if ($hook !== 'toplevel_page_mygls-settings' &&
-        $hook !== 'post.php' &&
-        $hook !== 'edit.php') {
+    // Load on plugin settings page, order edit pages (both traditional and HPOS)
+    $allowed_hooks = [
+        'toplevel_page_mygls-settings',
+        'post.php',
+        'edit.php',
+        'woocommerce_page_wc-orders', // HPOS order list
+    ];
+
+    // Also check if we're on an order edit page with HPOS
+    $is_order_page = false;
+    if (isset($_GET['page']) && $_GET['page'] === 'wc-orders' && isset($_GET['action']) && $_GET['action'] === 'edit') {
+        $is_order_page = true;
+    }
+
+    if (!in_array($hook, $allowed_hooks) && !$is_order_page) {
         return;
     }
 

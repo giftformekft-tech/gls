@@ -58,7 +58,6 @@ class Settings {
         $sanitized['username'] = sanitize_email($input['username'] ?? '');
         $sanitized['password'] = $input['password'] ?? '';
         $sanitized['client_number'] = absint($input['client_number'] ?? 0);
-        $sanitized['test_mode'] = isset($input['test_mode']) ? '1' : '0';
         
         // Sender Address
         $sanitized['sender_name'] = sanitize_text_field($input['sender_name'] ?? '');
@@ -148,18 +147,6 @@ class Settings {
                                     <td>
                                         <input type="number" name="mygls_settings[client_number]" id="client_number" value="<?php echo esc_attr($settings['client_number'] ?? ''); ?>" class="regular-text" required>
                                         <p class="description"><?php _e('Your unique GLS client number', 'mygls-woocommerce'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="test_mode"><?php _e('Test Mode', 'mygls-woocommerce'); ?></label>
-                                    </th>
-                                    <td>
-                                        <label class="mygls-toggle">
-                                            <input type="checkbox" name="mygls_settings[test_mode]" id="test_mode" value="1" <?php checked($settings['test_mode'] ?? '0', '1'); ?>>
-                                            <span class="mygls-toggle-slider"></span>
-                                        </label>
-                                        <p class="description"><?php _e('Use test API endpoint (api.test.mygls.*)', 'mygls-woocommerce'); ?></p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -438,8 +425,7 @@ class Settings {
             'country' => sanitize_text_field($_POST['country'] ?? ''),
             'username' => sanitize_email($_POST['username'] ?? ''),
             'password' => $_POST['password'] ?? '',
-            'client_number' => absint($_POST['client_number'] ?? 0),
-            'test_mode' => ($_POST['test_mode'] ?? '0') === '1'
+            'client_number' => absint($_POST['client_number'] ?? 0)
         ];
 
         // Validate required fields
