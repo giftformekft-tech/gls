@@ -21,7 +21,7 @@
                 .html('<span class="dashicons dashicons-update spin"></span> ' + myglsAdmin.i18n.processing);
             
             $.ajax({
-                url: myglsAdmin.ajaxUrl,
+                url: myglsAdmin.ajaxurl,
                 type: 'POST',
                 data: {
                     action: 'mygls_test_connection',
