@@ -117,6 +117,23 @@ function mygls_register_shipping_method($methods) {
 add_filter('woocommerce_shipping_methods', 'mygls_register_shipping_method');
 
 /**
+ * Get API Client instance
+ */
+function mygls_get_api_client() {
+    if (!class_exists('MyGLS\\API\\Client')) {
+        return null;
+    }
+    return new MyGLS\API\Client();
+}
+
+/**
+ * Get plugin settings
+ */
+function mygls_get_settings() {
+    return get_option('mygls_settings', []);
+}
+
+/**
  * Plugin activation hook
  */
 function mygls_activate() {
