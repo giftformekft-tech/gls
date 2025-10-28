@@ -623,3 +623,63 @@ gls-dpm-dialog.mygls-widget-inline {
     display: block;
     margin-top: 16px;
 }
+
+/* Inline Map Container */
+.mygls-inline-map-container {
+    margin: 16px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+}
+
+gls-dpm-widget.mygls-inline-widget {
+    display: block;
+    width: 100%;
+    min-height: 400px;
+}
+
+.mygls-selected-parcelshop.mygls-inline {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+    border: 2px solid #22c55e;
+    border-radius: 8px;
+    color: #15803d;
+    font-size: 14px;
+    animation: slideIn 0.4s ease;
+}
+
+.mygls-selected-parcelshop.mygls-inline strong {
+    color: #15803d;
+    font-weight: 600;
+}
+
+/* Gutenberg Block Styles */
+.mygls-parcelshop-block {
+    /* Ensures block displays properly in editor and frontend */
+}
+
+.mygls-block-editor .mygls-block-preview {
+    /* Block preview styles are inline in JS */
+}
+
+/* Block variations based on display mode */
+.mygls-parcelshop-block[data-display-mode="inline"] .mygls-parcelshop-trigger {
+    display: none;
+}
+
+.mygls-parcelshop-block[data-display-mode="button"] .mygls-inline-map-container {
+    display: none;
+}
+
+/* Responsive adjustments for inline map */
+@media (max-width: 768px) {
+    .mygls-inline-map-container {
+        padding: 16px;
+    }
+
+    gls-dpm-widget.mygls-inline-widget {
+        min-height: 350px;
+    }
+}

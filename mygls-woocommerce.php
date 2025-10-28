@@ -103,6 +103,11 @@ function mygls_init() {
     if (class_exists('MyGLS\\Parcelshop\\Selector')) {
         new MyGLS\Parcelshop\Selector();
     }
+
+    // Initialize Parcelshop Gutenberg Block
+    if (class_exists('MyGLS\\Blocks\\ParcelshopBlock')) {
+        new MyGLS\Blocks\ParcelshopBlock();
+    }
 }
 add_action('plugins_loaded', 'mygls_init');
 

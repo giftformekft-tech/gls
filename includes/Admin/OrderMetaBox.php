@@ -455,8 +455,21 @@ class OrderMetaBox {
             }
             
             $label_info = $result['PrintLabelsInfoList'][0];
-            $label_pdf = $result['Labels'];
-            
+
+            // Convert byte array to PDF binary
+            // GLS API returns Labels as byte array in JSON format
+            $label_bytes = $result['Labels'];
+            if (is_array($label_bytes)) {
+                // Convert byte array to binary PDF: array_map('chr', ...) converts each byte to character
+                $label_pdf_binary = implode('', array_map('chr', $label_bytes));
+            } else {
+                // If already a string (shouldn't happen with JSON API), use as-is
+                $label_pdf_binary = $label_bytes;
+            }
+
+            // Encode to base64 for database storage
+            $label_pdf_base64 = base64_encode($label_pdf_binary);
+
             // Save to database
             global $wpdb;
             $wpdb->insert(
@@ -466,7 +479,7 @@ class OrderMetaBox {
                     'parcel_id' => $label_info['ParcelId'],
                     'parcel_number' => $label_info['ParcelNumber'],
                     'tracking_url' => $this->get_tracking_url($label_info['ParcelNumber']),
-                    'label_pdf' => $label_pdf,
+                    'label_pdf' => $label_pdf_base64,
                     'status' => 'pending'
                 ],
                 ['%d', '%d', '%d', '%s', '%s', '%s']
@@ -629,10 +642,19 @@ class OrderMetaBox {
             
             if ($parcel) {
                 $result = $api->printLabels([$parcel], $settings['printer_type'] ?? 'A4_2x2');
-                
+
                 if (!empty($result['PrintLabelsInfoList']) && empty($result['PrintLabelsErrorList'])) {
                     $label_info = $result['PrintLabelsInfoList'][0];
-                    
+
+                    // Convert byte array to PDF binary
+                    $label_bytes = $result['Labels'];
+                    if (is_array($label_bytes)) {
+                        $label_pdf_binary = implode('', array_map('chr', $label_bytes));
+                    } else {
+                        $label_pdf_binary = $label_bytes;
+                    }
+                    $label_pdf_base64 = base64_encode($label_pdf_binary);
+
                     $wpdb->insert(
                         $wpdb->prefix . 'mygls_labels',
                         [
@@ -640,7 +662,7 @@ class OrderMetaBox {
                             'parcel_id' => $label_info['ParcelId'],
                             'parcel_number' => $label_info['ParcelNumber'],
                             'tracking_url' => $this->get_tracking_url($label_info['ParcelNumber']),
-                            'label_pdf' => $result['Labels'],
+                            'label_pdf' => $label_pdf_base64,
                             'status' => 'pending'
                         ],
                         ['%d', '%d', '%d', '%s', '%s', '%s']
