@@ -368,20 +368,39 @@ class Settings {
     
     public function test_connection() {
         check_ajax_referer('mygls_admin_nonce', 'nonce');
-        
+
         if (!current_user_can('manage_woocommerce')) {
             wp_send_json_error(['message' => __('Permission denied', 'mygls-woocommerce')]);
         }
-        
+
+        // Validate that settings are saved first
+        $settings = get_option('mygls_settings', []);
+
+        if (empty($settings['username'])) {
+            wp_send_json_error(['message' => __('Please enter your username (email) and save settings first', 'mygls-woocommerce')]);
+        }
+
+        if (empty($settings['password'])) {
+            wp_send_json_error(['message' => __('Please enter your password and save settings first', 'mygls-woocommerce')]);
+        }
+
+        if (empty($settings['client_number'])) {
+            wp_send_json_error(['message' => __('Please enter your client number and save settings first', 'mygls-woocommerce')]);
+        }
+
         try {
             $api = mygls_get_api_client();
-            
+
+            if (!$api) {
+                wp_send_json_error(['message' => __('Failed to initialize API client', 'mygls-woocommerce')]);
+            }
+
             // Try to get parcel list to test connection
             $result = $api->getParcelList(
                 date('Y-m-d', strtotime('-7 days')),
                 date('Y-m-d')
             );
-            
+
             if (isset($result['error'])) {
                 wp_send_json_error(['message' => $result['error']]);
             } else {

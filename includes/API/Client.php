@@ -47,13 +47,24 @@ class Client {
      * Make API request
      */
     private function request($endpoint, $data, $method = 'POST') {
+        // Validate credentials before making request
+        if (empty($this->username)) {
+            return ['error' => 'Username is not configured'];
+        }
+        if (empty($this->password_hash)) {
+            return ['error' => 'Password is not configured'];
+        }
+        if (empty($this->client_number)) {
+            return ['error' => 'Client number is not configured'];
+        }
+
         $url = "{$this->api_url}/ParcelService.svc/json/{$endpoint}";
-        
+
         // Add authentication
         $data['Username'] = $this->username;
         $data['Password'] = $this->password_hash;
         $data['WebshopEngine'] = 'WooCommerce';
-        
+
         $args = [
             'method' => $method,
             'headers' => [
@@ -63,21 +74,49 @@ class Client {
             'timeout' => 60,
             'sslverify' => !$this->test_mode
         ];
-        
+
         mygls_log("API Request to {$endpoint}: " . json_encode($data), 'debug');
-        
+
         $response = wp_remote_request($url, $args);
-        
+
         if (is_wp_error($response)) {
             mygls_log("API Error: " . $response->get_error_message(), 'error');
             return ['error' => $response->get_error_message()];
         }
-        
+
+        // Check HTTP status code
+        $status_code = wp_remote_retrieve_response_code($response);
+        if ($status_code < 200 || $status_code >= 300) {
+            $error_message = "HTTP {$status_code}: " . wp_remote_retrieve_response_message($response);
+            mygls_log("API HTTP Error: {$error_message}", 'error');
+            return ['error' => $error_message];
+        }
+
         $body = wp_remote_retrieve_body($response);
+
+        // Validate JSON response
+        if (empty($body)) {
+            mygls_log("API Error: Empty response from {$endpoint}", 'error');
+            return ['error' => 'Empty response from API'];
+        }
+
         $result = json_decode($body, true);
-        
+
+        // Check for JSON decode errors
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            mygls_log("API Error: Invalid JSON response - " . json_last_error_msg(), 'error');
+            return ['error' => 'Invalid JSON response from API'];
+        }
+
         mygls_log("API Response from {$endpoint}: " . $body, 'debug');
-        
+
+        // Check for API-level errors in response
+        if (isset($result['ErrorCode']) && $result['ErrorCode'] !== 0) {
+            $error_message = $result['ErrorMessage'] ?? 'Unknown API error';
+            mygls_log("API Error Response: {$error_message} (Code: {$result['ErrorCode']})", 'error');
+            return ['error' => $error_message];
+        }
+
         return $result;
     }
     
