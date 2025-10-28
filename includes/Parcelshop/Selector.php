@@ -17,8 +17,8 @@ class Selector {
         // Add parcelshop field to checkout (classic checkout)
         add_action('woocommerce_after_shipping_rate', [$this, 'add_parcelshop_selector'], 10, 2);
 
-        // Additional hook for block-based checkout compatibility
-        add_action('woocommerce_review_order_after_shipping', [$this, 'add_parcelshop_selector_fallback']);
+        // Block-based checkout compatibility - dynamic hook based on settings
+        add_action('init', [$this, 'register_block_checkout_hooks']);
 
         // Shortcode for manual placement
         add_shortcode('mygls_parcelshop_selector', [$this, 'parcelshop_selector_shortcode']);
@@ -36,6 +36,24 @@ class Selector {
         add_action('wp_ajax_nopriv_mygls_save_parcelshop', [$this, 'ajax_save_parcelshop']);
     }
     
+    /**
+     * Register block checkout hooks based on settings
+     */
+    public function register_block_checkout_hooks() {
+        $settings = get_option('mygls_settings', []);
+        $position = $settings['map_position'] ?? 'after_shipping';
+
+        // Map position setting to WooCommerce hook
+        $hook_map = [
+            'after_shipping' => 'woocommerce_review_order_after_shipping',
+            'before_payment' => 'woocommerce_review_order_before_payment',
+            'after_billing' => 'woocommerce_after_checkout_billing_form'
+        ];
+
+        $hook = $hook_map[$position] ?? 'woocommerce_review_order_after_shipping';
+        add_action($hook, [$this, 'add_parcelshop_selector_fallback']);
+    }
+
     /**
      * Add parcelshop selector after shipping rate
      */
@@ -70,11 +88,10 @@ class Selector {
         }
         
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
-        
-        <?php
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? '');
+
         ?>
         <div class="mygls-parcelshop-selector" data-shipping-method="<?php echo esc_attr($method->get_id()); ?>" style="display: none;">
             <div class="mygls-parcelshop-trigger">
@@ -322,22 +339,58 @@ class Selector {
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? '');
+        $button_style = $settings['map_button_style'] ?? 'primary';
+        $display_mode = $settings['map_display_mode'] ?? 'modal';
+
+        // Button style classes
+        $button_class_map = [
+            'primary' => 'mygls-btn-primary',
+            'secondary' => 'mygls-btn-secondary',
+            'success' => 'mygls-btn-success'
+        ];
+        $button_class = $button_class_map[$button_style] ?? 'mygls-btn-primary';
 
         ?>
-        <div class="mygls-parcelshop-selector-wrapper">
-            <h3><?php _e('GLS Parcelshop Selection', 'mygls-woocommerce'); ?></h3>
+        <div class="mygls-parcelshop-selector-wrapper mygls-modern">
+            <div class="mygls-parcelshop-header">
+                <svg class="mygls-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                <h3><?php _e('GLS Parcelshop Selection', 'mygls-woocommerce'); ?></h3>
+            </div>
+
             <div class="mygls-parcelshop-selector" data-shipping-method="all">
                 <div class="mygls-parcelshop-trigger">
-                    <button type="button" class="button mygls-select-parcelshop">
-                        <span class="dashicons dashicons-location-alt"></span>
+                    <button type="button" class="mygls-select-parcelshop <?php echo esc_attr($button_class); ?>">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
                         <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
                     </button>
 
                     <?php if ($selected_parcelshop): ?>
-                        <div class="mygls-selected-parcelshop">
-                            <strong><?php echo esc_html($selected_parcelshop['name']); ?></strong><br>
-                            <small><?php echo esc_html($selected_parcelshop['address']); ?></small>
+                        <div class="mygls-selected-parcelshop mygls-slide-in">
+                            <div class="mygls-selected-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                            <div class="mygls-selected-info">
+                                <strong><?php echo esc_html($selected_parcelshop['name']); ?></strong>
+                                <small><?php echo esc_html($selected_parcelshop['address']); ?></small>
+                            </div>
                         </div>
+                    <?php else: ?>
+                        <p class="mygls-help-text">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <?php _e('Please select a GLS parcelshop for delivery', 'mygls-woocommerce'); ?>
+                        </p>
                     <?php endif; ?>
                 </div>
 
@@ -349,23 +402,10 @@ class Selector {
             <gls-dpm-dialog
                 country="<?php echo esc_attr($country); ?>"
                 <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
-                id="mygls-parcelshop-widget">
+                id="mygls-parcelshop-widget"
+                class="mygls-widget-<?php echo esc_attr($display_mode); ?>">
             </gls-dpm-dialog>
         </div>
-
-        <style>
-        .mygls-parcelshop-selector-wrapper {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        .mygls-parcelshop-selector-wrapper h3 {
-            margin-top: 0;
-            font-size: 16px;
-        }
-        </style>
         <?php
     }
 }

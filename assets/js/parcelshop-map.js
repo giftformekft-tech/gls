@@ -146,22 +146,42 @@
     function updateSelectedDisplay(parcelshop) {
         const $selector = $('.mygls-parcelshop-selector');
         let $display = $selector.find('.mygls-selected-parcelshop');
+        let $helpText = $selector.find('.mygls-help-text');
 
-        if ($display.length === 0) {
-            $display = $('<div class="mygls-selected-parcelshop"></div>');
-            $selector.find('.mygls-parcelshop-trigger').append($display);
+        // Remove help text if present
+        if ($helpText.length > 0) {
+            $helpText.fadeOut(200, function() {
+                $(this).remove();
+            });
         }
 
-        $display.html(
-            '<strong>' + escapeHtml(parcelshop.name) + '</strong><br>' +
-            '<small>' + escapeHtml(parcelshop.address) + '</small>'
-        );
+        if ($display.length === 0) {
+            const displayHtml =
+                '<div class="mygls-selected-parcelshop mygls-slide-in">' +
+                    '<div class="mygls-selected-icon">' +
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<polyline points="20 6 9 17 4 12"></polyline>' +
+                        '</svg>' +
+                    '</div>' +
+                    '<div class="mygls-selected-info">' +
+                        '<strong>' + escapeHtml(parcelshop.name) + '</strong>' +
+                        '<small>' + escapeHtml(parcelshop.address) + '</small>' +
+                    '</div>' +
+                '</div>';
 
-        // Add visual feedback
-        $display.addClass('mygls-fade-in');
-        setTimeout(function() {
-            $display.removeClass('mygls-fade-in');
-        }, 500);
+            $selector.find('.mygls-parcelshop-trigger').append(displayHtml);
+        } else {
+            // Update existing display with animation
+            $display.fadeOut(150, function() {
+                $display.find('.mygls-selected-info strong').text(parcelshop.name);
+                $display.find('.mygls-selected-info small').text(parcelshop.address);
+                $display.addClass('mygls-slide-in').fadeIn(200);
+
+                setTimeout(function() {
+                    $display.removeClass('mygls-slide-in');
+                }, 400);
+            });
+        }
     }
 
     /**

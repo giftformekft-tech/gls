@@ -78,6 +78,12 @@ class Settings {
         $sanitized['auto_status_sync'] = isset($input['auto_status_sync']) ? '1' : '0';
         $sanitized['status_sync_interval'] = absint($input['status_sync_interval'] ?? 60);
 
+        // Parcelshop Map Settings
+        $sanitized['language'] = sanitize_text_field($input['language'] ?? '');
+        $sanitized['map_display_mode'] = sanitize_text_field($input['map_display_mode'] ?? 'modal');
+        $sanitized['map_button_style'] = sanitize_text_field($input['map_button_style'] ?? 'primary');
+        $sanitized['map_position'] = sanitize_text_field($input['map_position'] ?? 'after_shipping');
+
         // Shipping Methods - Parcelshop Selector
         $sanitized['parcelshop_enabled_methods'] = isset($input['parcelshop_enabled_methods']) && is_array($input['parcelshop_enabled_methods'])
             ? array_map('sanitize_text_field', $input['parcelshop_enabled_methods'])
@@ -328,6 +334,67 @@ class Settings {
                             <p class="description" style="margin-bottom: 15px;">
                                 <?php _e('Enable parcelshop selector (interactive map) for specific shipping methods. Customers will be able to choose a GLS parcelshop during checkout.', 'mygls-woocommerce'); ?>
                             </p>
+                            <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="map_language"><?php _e('Map Language', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="mygls_settings[language]" id="map_language" class="regular-text">
+                                            <option value="" <?php selected($settings['language'] ?? '', ''); ?>><?php _e('Auto (based on country)', 'mygls-woocommerce'); ?></option>
+                                            <option value="hu" <?php selected($settings['language'] ?? '', 'hu'); ?>>Magyar</option>
+                                            <option value="en" <?php selected($settings['language'] ?? '', 'en'); ?>>English</option>
+                                            <option value="hr" <?php selected($settings['language'] ?? '', 'hr'); ?>>Hrvatski</option>
+                                            <option value="cs" <?php selected($settings['language'] ?? '', 'cs'); ?>>Čeština</option>
+                                            <option value="ro" <?php selected($settings['language'] ?? '', 'ro'); ?>>Română</option>
+                                            <option value="sl" <?php selected($settings['language'] ?? '', 'sl'); ?>>Slovenščina</option>
+                                            <option value="sk" <?php selected($settings['language'] ?? '', 'sk'); ?>>Slovenčina</option>
+                                            <option value="sr" <?php selected($settings['language'] ?? '', 'sr'); ?>>Srpski</option>
+                                        </select>
+                                        <p class="description"><?php _e('Language for the parcelshop map widget interface', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="map_display_mode"><?php _e('Display Mode', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="mygls_settings[map_display_mode]" id="map_display_mode" class="regular-text">
+                                            <option value="modal" <?php selected($settings['map_display_mode'] ?? 'modal', 'modal'); ?>><?php _e('Modal (popup overlay)', 'mygls-woocommerce'); ?></option>
+                                            <option value="inline" <?php selected($settings['map_display_mode'] ?? 'modal', 'inline'); ?>><?php _e('Inline (embedded in page)', 'mygls-woocommerce'); ?></option>
+                                        </select>
+                                        <p class="description"><?php _e('How the parcelshop map should be displayed to customers', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="map_button_style"><?php _e('Button Style', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="mygls_settings[map_button_style]" id="map_button_style" class="regular-text">
+                                            <option value="primary" <?php selected($settings['map_button_style'] ?? 'primary', 'primary'); ?>><?php _e('Primary (blue)', 'mygls-woocommerce'); ?></option>
+                                            <option value="secondary" <?php selected($settings['map_button_style'] ?? 'primary', 'secondary'); ?>><?php _e('Secondary (gray)', 'mygls-woocommerce'); ?></option>
+                                            <option value="success" <?php selected($settings['map_button_style'] ?? 'primary', 'success'); ?>><?php _e('Success (green)', 'mygls-woocommerce'); ?></option>
+                                        </select>
+                                        <p class="description"><?php _e('Color scheme for the "Select Parcelshop" button', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="map_position"><?php _e('Map Position (Block Checkout)', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <select name="mygls_settings[map_position]" id="map_position" class="regular-text">
+                                            <option value="after_shipping" <?php selected($settings['map_position'] ?? 'after_shipping', 'after_shipping'); ?>><?php _e('After shipping methods', 'mygls-woocommerce'); ?></option>
+                                            <option value="before_payment" <?php selected($settings['map_position'] ?? 'after_shipping', 'before_payment'); ?>><?php _e('Before payment methods', 'mygls-woocommerce'); ?></option>
+                                            <option value="after_billing" <?php selected($settings['map_position'] ?? 'after_shipping', 'after_billing'); ?>><?php _e('After billing address', 'mygls-woocommerce'); ?></option>
+                                        </select>
+                                        <p class="description"><?php _e('Where to display the parcelshop selector on block-based checkout pages', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                            </table>
+                            <hr style="margin: 20px 0;">
+                            <h3 style="margin-top: 20px; margin-bottom: 10px;"><?php _e('Enable for Shipping Methods', 'mygls-woocommerce'); ?></h3>
                             <table class="form-table">
                                 <?php
                                 // Get all available shipping methods

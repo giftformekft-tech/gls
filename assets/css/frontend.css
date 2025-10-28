@@ -1,12 +1,48 @@
-/* MyGLS Frontend Styles */
+/* MyGLS Frontend Styles - Modern Design */
+
+/* Parcelshop Selector - Modern Wrapper */
+.mygls-parcelshop-selector-wrapper.mygls-modern {
+    margin: 20px 0;
+    padding: 0;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.mygls-parcelshop-selector-wrapper.mygls-modern:hover {
+    border-color: #2271b1;
+    box-shadow: 0 4px 12px rgba(34, 113, 177, 0.15);
+}
+
+.mygls-parcelshop-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.mygls-parcelshop-header .mygls-icon {
+    color: #2271b1;
+    flex-shrink: 0;
+}
+
+.mygls-parcelshop-header h3 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+    color: #1e293b;
+}
 
 /* Parcelshop Selector */
 .mygls-parcelshop-selector {
-    margin: 15px 0;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
+    margin: 0;
+    padding: 20px;
+    background: #ffffff;
 }
 
 .mygls-parcelshop-trigger {
@@ -16,25 +52,87 @@
     flex-wrap: wrap;
 }
 
+/* Modern Button Styles */
 .mygls-select-parcelshop {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    background: #2271b1;
-    color: #fff !important;
+    gap: 10px;
+    padding: 12px 24px;
     border: none;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
 }
 
-.mygls-select-parcelshop:hover {
-    background: #135e96;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.mygls-select-parcelshop::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.mygls-select-parcelshop:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.mygls-select-parcelshop svg,
+.mygls-select-parcelshop span {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Primary Button (Blue) */
+.mygls-select-parcelshop.mygls-btn-primary {
+    background: linear-gradient(135deg, #2271b1 0%, #1d5a8f 100%);
+    color: #ffffff !important;
+}
+
+.mygls-select-parcelshop.mygls-btn-primary:hover {
+    background: linear-gradient(135deg, #1d5a8f 0%, #135e96 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 113, 177, 0.3);
+}
+
+/* Secondary Button (Gray) */
+.mygls-select-parcelshop.mygls-btn-secondary {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    color: #ffffff !important;
+}
+
+.mygls-select-parcelshop.mygls-btn-secondary:hover {
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+}
+
+/* Success Button (Green) */
+.mygls-select-parcelshop.mygls-btn-success {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff !important;
+}
+
+.mygls-select-parcelshop.mygls-btn-success:hover {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.mygls-select-parcelshop:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .mygls-select-parcelshop .dashicons {
@@ -43,24 +141,85 @@
     height: 18px;
 }
 
+/* Selected Parcelshop Display */
 .mygls-selected-parcelshop {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border-radius: 8px;
+    border: 2px solid #0ea5e9;
+    animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mygls-selected-parcelshop.mygls-slide-in {
+    animation: slideIn 0.4s ease;
+}
+
+.mygls-selected-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #0ea5e9;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.mygls-selected-icon svg {
+    color: #ffffff;
+}
+
+.mygls-selected-info {
     flex: 1;
-    min-width: 200px;
-    padding: 10px;
-    background: #fff;
-    border-radius: 4px;
-    border: 1px solid #ddd;
 }
 
 .mygls-selected-parcelshop strong {
     display: block;
-    color: #2271b1;
-    margin-bottom: 5px;
+    color: #0c4a6e;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
 .mygls-selected-parcelshop small {
-    color: #666;
-    font-size: 12px;
+    display: block;
+    color: #075985;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Help Text */
+.mygls-help-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    color: #92400e;
+    font-size: 14px;
+}
+
+.mygls-help-text svg {
+    flex-shrink: 0;
+    color: #f59e0b;
 }
 
 /* Modal */
@@ -346,14 +505,47 @@
     .mygls-parcelshop-container {
         grid-template-columns: 1fr;
     }
-    
+
     .mygls-parcelshop-map {
         order: -1;
         height: 400px;
     }
-    
+
     .mygls-parcelshop-list {
         max-height: 400px;
+    }
+}
+
+@media (max-width: 768px) {
+    .mygls-parcelshop-selector-wrapper.mygls-modern {
+        border-radius: 8px;
+    }
+
+    .mygls-parcelshop-header {
+        padding: 14px 16px;
+    }
+
+    .mygls-parcelshop-header h3 {
+        font-size: 16px;
+    }
+
+    .mygls-parcelshop-selector {
+        padding: 16px;
+    }
+
+    .mygls-parcelshop-trigger {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mygls-select-parcelshop {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .mygls-selected-parcelshop {
+        margin-top: 12px;
+        width: 100%;
     }
 }
 
@@ -362,21 +554,72 @@
         width: 95%;
         margin: 5% auto;
     }
-    
+
     .mygls-parcelshop-search {
         flex-direction: column;
     }
-    
+
     .mygls-parcelshop-search .button {
         width: 100%;
         justify-content: center;
     }
-    
+
     .mygls-modal-footer {
         flex-direction: column;
     }
-    
+
     .mygls-modal-footer .button {
         width: 100%;
     }
+
+    .mygls-select-parcelshop {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .mygls-parcelshop-header .mygls-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+    .mygls-selected-parcelshop {
+        padding: 12px;
+    }
+
+    .mygls-selected-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .mygls-selected-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Animation for fade-in effect */
+@keyframes mygls-fade-in {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.mygls-fade-in {
+    animation: mygls-fade-in 0.3s ease;
+}
+
+/* GLS Widget Modal styling */
+gls-dpm-dialog.mygls-widget-modal {
+    /* Use default modal behavior */
+}
+
+gls-dpm-dialog.mygls-widget-inline {
+    position: relative;
+    display: block;
+    margin-top: 16px;
 }
