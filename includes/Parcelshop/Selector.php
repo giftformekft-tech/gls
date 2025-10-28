@@ -71,6 +71,10 @@ class Selector {
         
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
         
+        <?php
+        $settings = get_option('mygls_settings', []);
+        $country = strtolower($settings['country'] ?? 'hu');
+        $language = strtolower($settings['language'] ?? '');
         ?>
         <div class="mygls-parcelshop-selector" data-shipping-method="<?php echo esc_attr($method->get_id()); ?>" style="display: none;">
             <div class="mygls-parcelshop-trigger">
@@ -78,7 +82,7 @@ class Selector {
                     <span class="dashicons dashicons-location-alt"></span>
                     <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
                 </button>
-                
+
                 <?php if ($selected_parcelshop): ?>
                     <div class="mygls-selected-parcelshop">
                         <strong><?php echo esc_html($selected_parcelshop['name']); ?></strong><br>
@@ -86,55 +90,17 @@ class Selector {
                     </div>
                 <?php endif; ?>
             </div>
-            
+
             <input type="hidden" name="mygls_parcelshop_id" id="mygls_parcelshop_id" value="<?php echo esc_attr($selected_parcelshop['id'] ?? ''); ?>">
             <input type="hidden" name="mygls_parcelshop_data" id="mygls_parcelshop_data" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
         </div>
-        
-        <!-- Parcelshop Modal -->
-        <div id="mygls-parcelshop-modal" class="mygls-modal" style="display: none;">
-            <div class="mygls-modal-content">
-                <div class="mygls-modal-header">
-                    <h2><?php _e('Select Parcelshop', 'mygls-woocommerce'); ?></h2>
-                    <button type="button" class="mygls-modal-close">&times;</button>
-                </div>
-                
-                <div class="mygls-modal-body">
-                    <div class="mygls-parcelshop-search">
-                        <input type="text" id="mygls-parcelshop-search" placeholder="<?php esc_attr_e('Enter city or ZIP code...', 'mygls-woocommerce'); ?>" class="input-text">
-                        <button type="button" id="mygls-search-btn" class="button">
-                            <span class="dashicons dashicons-search"></span>
-                            <?php _e('Search', 'mygls-woocommerce'); ?>
-                        </button>
-                        <button type="button" id="mygls-locate-btn" class="button">
-                            <span class="dashicons dashicons-location"></span>
-                            <?php _e('Use My Location', 'mygls-woocommerce'); ?>
-                        </button>
-                    </div>
-                    
-                    <div class="mygls-parcelshop-container">
-                        <div class="mygls-parcelshop-list">
-                            <div id="mygls-parcelshop-results">
-                                <p class="mygls-no-results"><?php _e('Enter a location to find nearby parcelshops', 'mygls-woocommerce'); ?></p>
-                            </div>
-                        </div>
-                        
-                        <div class="mygls-parcelshop-map">
-                            <div id="mygls-map" style="width: 100%; height: 500px;"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mygls-modal-footer">
-                    <button type="button" class="button button-primary" id="mygls-confirm-parcelshop" disabled>
-                        <?php _e('Confirm Selection', 'mygls-woocommerce'); ?>
-                    </button>
-                    <button type="button" class="button mygls-modal-close">
-                        <?php _e('Cancel', 'mygls-woocommerce'); ?>
-                    </button>
-                </div>
-            </div>
-        </div>
+
+        <!-- GLS Official Map Widget Dialog -->
+        <gls-dpm-dialog
+            country="<?php echo esc_attr($country); ?>"
+            <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
+            id="mygls-parcelshop-widget">
+        </gls-dpm-dialog>
         
         <script>
         jQuery(function($) {
@@ -353,6 +319,9 @@ class Selector {
      */
     private function render_parcelshop_selector_html() {
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
+        $settings = get_option('mygls_settings', []);
+        $country = strtolower($settings['country'] ?? 'hu');
+        $language = strtolower($settings['language'] ?? '');
 
         ?>
         <div class="mygls-parcelshop-selector-wrapper">
@@ -376,50 +345,12 @@ class Selector {
                 <input type="hidden" name="mygls_parcelshop_data" id="mygls_parcelshop_data" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
             </div>
 
-            <!-- Parcelshop Modal -->
-            <div id="mygls-parcelshop-modal" class="mygls-modal" style="display: none;">
-                <div class="mygls-modal-content">
-                    <div class="mygls-modal-header">
-                        <h2><?php _e('Select Parcelshop', 'mygls-woocommerce'); ?></h2>
-                        <button type="button" class="mygls-modal-close">&times;</button>
-                    </div>
-
-                    <div class="mygls-modal-body">
-                        <div class="mygls-parcelshop-search">
-                            <input type="text" id="mygls-parcelshop-search" placeholder="<?php esc_attr_e('Enter city or ZIP code...', 'mygls-woocommerce'); ?>" class="input-text">
-                            <button type="button" id="mygls-search-btn" class="button">
-                                <span class="dashicons dashicons-search"></span>
-                                <?php _e('Search', 'mygls-woocommerce'); ?>
-                            </button>
-                            <button type="button" id="mygls-locate-btn" class="button">
-                                <span class="dashicons dashicons-location"></span>
-                                <?php _e('Use My Location', 'mygls-woocommerce'); ?>
-                            </button>
-                        </div>
-
-                        <div class="mygls-parcelshop-container">
-                            <div class="mygls-parcelshop-list">
-                                <div id="mygls-parcelshop-results">
-                                    <p class="mygls-no-results"><?php _e('Enter a location to find nearby parcelshops', 'mygls-woocommerce'); ?></p>
-                                </div>
-                            </div>
-
-                            <div class="mygls-parcelshop-map">
-                                <div id="mygls-map" style="width: 100%; height: 500px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mygls-modal-footer">
-                        <button type="button" class="button button-primary" id="mygls-confirm-parcelshop" disabled>
-                            <?php _e('Confirm Selection', 'mygls-woocommerce'); ?>
-                        </button>
-                        <button type="button" class="button mygls-modal-close">
-                            <?php _e('Cancel', 'mygls-woocommerce'); ?>
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <!-- GLS Official Map Widget Dialog -->
+            <gls-dpm-dialog
+                country="<?php echo esc_attr($country); ?>"
+                <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
+                id="mygls-parcelshop-widget">
+            </gls-dpm-dialog>
         </div>
 
         <style>

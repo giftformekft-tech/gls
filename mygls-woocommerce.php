@@ -2,8 +2,8 @@
 /**
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/giftformekft-tech/gls
- * Description: MyGLS API integráció WooCommerce szállítási címkékhez és csomagpont választóval
- * Version: 1.0.7
+ * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
+ * Version: 1.0.8
  * Author: GiftForMe Kft
  * Author URI: https://giftforme.hu
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.7');
+define('MYGLS_VERSION', '1.0.8');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -243,38 +243,41 @@ function mygls_frontend_enqueue_scripts() {
         MYGLS_VERSION
     );
 
-    // Leaflet CSS for map
-    wp_enqueue_style(
-        'leaflet-css',
-        'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-        array(),
-        '1.9.4'
-    );
-
-    // Leaflet JS for map
+    // Official GLS Map Widget script (module type)
     wp_enqueue_script(
-        'leaflet-js',
-        'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+        'gls-dpm-widget',
+        'https://map.gls-hungary.com/widget/gls-dpm.js',
         array(),
-        '1.9.4',
+        null,
         true
     );
+
+    // Add type="module" attribute to the GLS script
+    add_filter('script_loader_tag', function($tag, $handle) {
+        if ('gls-dpm-widget' === $handle) {
+            $tag = str_replace(' src', ' type="module" src', $tag);
+        }
+        return $tag;
+    }, 10, 2);
 
     wp_enqueue_script(
         'mygls-parcelshop-map',
         MYGLS_PLUGIN_URL . 'assets/js/parcelshop-map.js',
-        array('jquery', 'leaflet-js'),
+        array('jquery'),
         MYGLS_VERSION,
         true
     );
 
+    $settings = mygls_get_settings();
     wp_localize_script('mygls-parcelshop-map', 'myglsCheckout', array(
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('mygls_checkout_nonce'),
+        'country' => strtolower($settings['country'] ?? 'hu'),
         'i18n' => array(
             'searching' => __('Searching...', 'mygls-woocommerce'),
             'noResults' => __('No parcelshops found', 'mygls-woocommerce'),
-            'error' => __('Error loading parcelshops', 'mygls-woocommerce')
+            'error' => __('Error loading parcelshops', 'mygls-woocommerce'),
+            'selectParcelshop' => __('Please select a parcelshop', 'mygls-woocommerce')
         )
     ));
 }

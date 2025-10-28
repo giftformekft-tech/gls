@@ -500,28 +500,35 @@ class OrderMetaBox {
      */
     public function ajax_download_label() {
         check_ajax_referer('mygls_admin_nonce', 'nonce');
-        
+
         if (!current_user_can('edit_shop_orders')) {
             wp_die(__('Permission denied', 'mygls-woocommerce'));
         }
-        
+
         $order_id = absint($_GET['order_id'] ?? 0);
-        
+
         global $wpdb;
         $label = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM {$wpdb->prefix}mygls_labels WHERE order_id = %d ORDER BY created_at DESC LIMIT 1",
             $order_id
         ));
-        
+
         if (!$label || empty($label->label_pdf)) {
             wp_die(__('Label not found', 'mygls-woocommerce'));
         }
-        
+
+        // Decode base64 PDF data from API
+        $pdf_data = base64_decode($label->label_pdf);
+
+        if ($pdf_data === false) {
+            wp_die(__('Invalid label data', 'mygls-woocommerce'));
+        }
+
+        // Send headers and PDF data
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="gls-label-' . $label->parcel_number . '.pdf"');
-        header('Content-Length: ' . strlen($label->label_pdf));
-        
-        echo $label->label_pdf;
+
+        echo $pdf_data;
         exit;
     }
     
