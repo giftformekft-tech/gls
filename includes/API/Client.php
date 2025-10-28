@@ -37,10 +37,23 @@ class Client {
     
     /**
      * Hash password with SHA512
+     * Returns array of unsigned bytes (0-255) as required by MyGLS API
      */
     private function hashPassword($password) {
+        // Ensure password has no extra whitespace
+        $password = trim($password);
+
+        // Generate SHA512 hash as binary
         $hash = hash('sha512', $password, true);
-        return array_values(unpack('C*', $hash));
+
+        // Unpack to unsigned char array (C* = unsigned char)
+        $bytes = unpack('C*', $hash);
+
+        // Ensure all values are integers (0-255)
+        // array_values removes string keys and re-indexes
+        $result = array_map('intval', array_values($bytes));
+
+        return $result;
     }
     
     /**
@@ -65,17 +78,21 @@ class Client {
         $data['Password'] = $this->password_hash;
         $data['WebshopEngine'] = 'WooCommerce';
 
+        // Encode with JSON_NUMERIC_CHECK to ensure numbers are not quoted
+        $json_body = json_encode($data, JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
+
         $args = [
             'method' => $method,
             'headers' => [
-                'Content-Type' => 'application/json',
+                'Content-Type' => 'application/json; charset=utf-8',
             ],
-            'body' => json_encode($data),
+            'body' => $json_body,
             'timeout' => 60,
             'sslverify' => !$this->test_mode
         ];
 
-        mygls_log("API Request to {$endpoint}: " . json_encode($data), 'debug');
+        mygls_log("API Request to {$endpoint}", 'debug');
+        mygls_log("Request body: " . $json_body, 'debug');
 
         $response = wp_remote_request($url, $args);
 
