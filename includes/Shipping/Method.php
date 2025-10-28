@@ -53,10 +53,12 @@ class Method extends \WC_Shipping_Method {
             'shipping_type' => [
                 'title' => __('Shipping Type', 'mygls-woocommerce'),
                 'type' => 'select',
+                'description' => __('Choose "ParcelShop Delivery" to enable the interactive map selector at checkout.', 'mygls-woocommerce'),
                 'default' => 'home',
+                'desc_tip' => true,
                 'options' => [
                     'home' => __('Home Delivery', 'mygls-woocommerce'),
-                    'parcelshop' => __('ParcelShop Delivery', 'mygls-woocommerce')
+                    'parcelshop' => __('ParcelShop Delivery (with map selector)', 'mygls-woocommerce')
                 ]
             ],
             'cost' => [
