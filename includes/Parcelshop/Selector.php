@@ -34,14 +34,24 @@ class Selector {
      * Add parcelshop selector after shipping rate
      */
     public function add_parcelshop_selector($method, $index) {
-        // Only show for MyGLS shipping methods with parcelshop support
+        // Only show for MyGLS shipping methods
         if (strpos($method->get_id(), 'mygls') === false) {
             return;
         }
-        
-        // Check if this rate should show parcelshop selector
+
+        // Check if this is a parcelshop delivery method
+        if (method_exists($method, 'get_option')) {
+            $shipping_type = $method->get_option('shipping_type', 'home');
+
+            // Only show parcelshop selector for parcelshop delivery type
+            if ($shipping_type !== 'parcelshop') {
+                return;
+            }
+        }
+
+        // Allow filtering for additional control
         $show_parcelshop = apply_filters('mygls_show_parcelshop_selector', true, $method);
-        
+
         if (!$show_parcelshop) {
             return;
         }
