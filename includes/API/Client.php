@@ -84,17 +84,18 @@ class Client {
         }
 
         // Encode with JSON_NUMERIC_CHECK to ensure numbers are not quoted
-        $json_body = json_encode($request_data, JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
+        // Use wp_json_encode for WordPress compatibility (same as original plugin)
+        $json_body = wp_json_encode($request_data);
 
         $args = [
             'method' => $method,
             'headers' => [
-                'Content-Type' => 'application/json',
-                'Content-Length' => strlen($json_body),
+                'Content-Type' => 'application/json'
             ],
             'body' => $json_body,
             'timeout' => 60,
-            'sslverify' => !$this->test_mode
+            'sslverify' => !$this->test_mode,
+            'data_format' => 'body'
         ];
 
         mygls_log("API Request to {$endpoint}", 'debug');
