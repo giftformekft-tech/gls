@@ -69,17 +69,22 @@ class Client {
 
         $url = "{$this->api_url}/ParcelService.svc/json/{$endpoint}";
 
-        // Add authentication
-        $data['Username'] = $this->username;
-        $data['Password'] = $this->password_hash;
+        // Build request data with authentication fields first (matching GLS reference implementation)
+        $request_data = [
+            'Username' => $this->username,
+            'Password' => $this->password_hash
+        ];
+
+        // Merge with endpoint-specific data
+        $request_data = array_merge($request_data, $data);
 
         // WebshopEngine is not required for GetParcelList endpoint
         if ($endpoint !== 'GetParcelList') {
-            $data['WebshopEngine'] = 'WooCommerce';
+            $request_data['WebshopEngine'] = 'WooCommerce';
         }
 
         // Encode with JSON_NUMERIC_CHECK to ensure numbers are not quoted
-        $json_body = json_encode($data, JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
+        $json_body = json_encode($request_data, JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
 
         $args = [
             'method' => $method,
@@ -92,6 +97,7 @@ class Client {
         ];
 
         mygls_log("API Request to {$endpoint}", 'debug');
+        mygls_log("Request URL: {$url}", 'debug');
         mygls_log("Request body: " . $json_body, 'debug');
 
         $response = wp_remote_request($url, $args);
@@ -229,21 +235,15 @@ class Client {
      * Get Parcel List by date range
      */
     public function getParcelList($pickup_from = null, $pickup_to = null, $print_from = null, $print_to = null) {
-        $data = [];
-        
-        if ($pickup_from) {
-            $data['PickupDateFrom'] = $this->formatDate($pickup_from);
-        }
-        if ($pickup_to) {
-            $data['PickupDateTo'] = $this->formatDate($pickup_to);
-        }
-        if ($print_from) {
-            $data['PrintDateFrom'] = $this->formatDate($print_from);
-        }
-        if ($print_to) {
-            $data['PrintDateTo'] = $this->formatDate($print_to);
-        }
-        
+        // Always include all date fields to match GLS API requirements
+        // If not provided, they should be null (not omitted)
+        $data = [
+            'PickupDateFrom' => $pickup_from ? $this->formatDate($pickup_from) : null,
+            'PickupDateTo' => $pickup_to ? $this->formatDate($pickup_to) : null,
+            'PrintDateFrom' => $print_from ? $this->formatDate($print_from) : null,
+            'PrintDateTo' => $print_to ? $this->formatDate($print_to) : null
+        ];
+
         return $this->request('GetParcelList', $data);
     }
     
