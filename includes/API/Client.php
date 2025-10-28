@@ -89,7 +89,8 @@ class Client {
         $args = [
             'method' => $method,
             'headers' => [
-                'Content-Type' => 'application/json; charset=utf-8',
+                'Content-Type' => 'application/json',
+                'Content-Length' => strlen($json_body),
             ],
             'body' => $json_body,
             'timeout' => 60,
