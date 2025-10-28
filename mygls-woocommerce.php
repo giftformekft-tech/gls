@@ -244,9 +244,14 @@ function mygls_frontend_enqueue_scripts() {
         true
     );
 
-    wp_localize_script('mygls-parcelshop-map', 'myglsFrontend', array(
-        'ajaxurl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('mygls_frontend_nonce')
+    wp_localize_script('mygls-parcelshop-map', 'myglsCheckout', array(
+        'ajaxUrl' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('mygls_checkout_nonce'),
+        'i18n' => array(
+            'searching' => __('Searching...', 'mygls-woocommerce'),
+            'noResults' => __('No parcelshops found', 'mygls-woocommerce'),
+            'error' => __('Error loading parcelshops', 'mygls-woocommerce')
+        )
     ));
 }
 add_action('wp_enqueue_scripts', 'mygls_frontend_enqueue_scripts');
