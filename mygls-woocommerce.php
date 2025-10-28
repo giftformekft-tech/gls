@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: MyGLS WooCommerce Integration
- * Plugin URI: https://github.com/yourusername/mygls-woocommerce
- * Description: Teljes MyGLS API integráció WooCommerce-hez interaktív térképes csomagpont választóval, automatikus és bulk címkegenerálással, valamint valós idejű státusz követéssel.
- * Version: 1.0.6
- * Author: Your Name
- * Author URI: https://yourwebsite.com
+ * Plugin URI: https://github.com/giftformekft-tech/gls
+ * Description: MyGLS API integráció WooCommerce szállítási címkékhez és csomagpont választóval
+ * Version: 1.0.7
+ * Author: GiftForMe Kft
+ * Author URI: https://giftforme.hu
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: mygls-woocommerce
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.6');
+define('MYGLS_VERSION', '1.0.7');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
