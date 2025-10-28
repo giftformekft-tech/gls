@@ -26,6 +26,8 @@ class Selector {
         // AJAX endpoints
         add_action('wp_ajax_mygls_get_parcelshops', [$this, 'ajax_get_parcelshops']);
         add_action('wp_ajax_nopriv_mygls_get_parcelshops', [$this, 'ajax_get_parcelshops']);
+        add_action('wp_ajax_mygls_save_parcelshop', [$this, 'ajax_save_parcelshop']);
+        add_action('wp_ajax_nopriv_mygls_save_parcelshop', [$this, 'ajax_save_parcelshop']);
     }
     
     /**
@@ -179,26 +181,42 @@ class Selector {
      */
     public function ajax_get_parcelshops() {
         check_ajax_referer('mygls_checkout_nonce', 'nonce');
-        
-        $zip = sanitize_text_field($_POST['zip'] ?? '');
-        $city = sanitize_text_field($_POST['city'] ?? '');
+
+        $search = sanitize_text_field($_POST['search'] ?? '');
         $lat = floatval($_POST['lat'] ?? 0);
         $lng = floatval($_POST['lng'] ?? 0);
-        
+
         // In a real implementation, this would call GLS ParcelShop API
         // For now, return mock data
-        $parcelshops = $this->get_mock_parcelshops($zip, $city, $lat, $lng);
-        
+        $parcelshops = $this->get_mock_parcelshops($search, $lat, $lng);
+
         wp_send_json_success(['parcelshops' => $parcelshops]);
+    }
+
+    /**
+     * AJAX: Save selected parcelshop to session
+     */
+    public function ajax_save_parcelshop() {
+        check_ajax_referer('mygls_checkout_nonce', 'nonce');
+
+        $parcelshop = isset($_POST['parcelshop']) ? json_decode(stripslashes($_POST['parcelshop']), true) : [];
+
+        if (!empty($parcelshop)) {
+            WC()->session->set('mygls_selected_parcelshop', $parcelshop);
+            wp_send_json_success();
+        } else {
+            wp_send_json_error(['message' => __('Invalid parcelshop data', 'mygls-woocommerce')]);
+        }
     }
     
     /**
      * Get mock parcelshops for demonstration
      * In production, integrate with GLS ParcelShop API
      */
-    private function get_mock_parcelshops($zip, $city, $lat, $lng) {
+    private function get_mock_parcelshops($search, $lat, $lng) {
         // Mock data - replace with actual GLS API call
-        return [
+        // If coordinates provided, use them; otherwise use Budapest default
+        $results = [
             [
                 'id' => '2351-CSOMAGPONT',
                 'name' => 'Szerencse Sziget Lottózó',
@@ -208,7 +226,8 @@ class Selector {
                 'lat' => 47.3234,
                 'lng' => 19.1567,
                 'phone' => '+36301234567',
-                'hours' => 'H-P: 8:00-18:00, Szo: 8:00-13:00'
+                'hours' => 'H-P: 8:00-18:00, Szo: 8:00-13:00',
+                'distance' => '5.2'
             ],
             [
                 'id' => '1111-TESTPOINT',
@@ -219,8 +238,35 @@ class Selector {
                 'lat' => 47.5000,
                 'lng' => 19.0500,
                 'phone' => '+36301234568',
-                'hours' => 'H-P: 9:00-17:00'
+                'hours' => 'H-P: 9:00-17:00',
+                'distance' => '8.3'
+            ],
+            [
+                'id' => '1234-CENTRUM',
+                'name' => 'GLS ParcelShop Centrum',
+                'address' => 'Kossuth utca 10, 1053 Budapest',
+                'city' => 'Budapest',
+                'zip' => '1053',
+                'lat' => 47.4960,
+                'lng' => 19.0535,
+                'phone' => '+36301234569',
+                'hours' => 'H-P: 8:00-20:00, Szo: 9:00-15:00',
+                'distance' => '2.1'
             ]
         ];
+
+        // Filter results based on search term if provided
+        if (!empty($search)) {
+            $results = array_filter($results, function($parcelshop) use ($search) {
+                return stripos($parcelshop['city'], $search) !== false ||
+                       stripos($parcelshop['zip'], $search) !== false ||
+                       stripos($parcelshop['address'], $search) !== false;
+            });
+
+            // Reset array keys
+            $results = array_values($results);
+        }
+
+        return $results;
     }
 }
