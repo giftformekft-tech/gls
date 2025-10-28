@@ -171,7 +171,7 @@ register_deactivation_hook(__FILE__, 'mygls_deactivate');
  */
 function mygls_admin_enqueue_scripts($hook) {
     // Only load on specific admin pages
-    if ($hook !== 'woocommerce_page_mygls-settings' &&
+    if ($hook !== 'toplevel_page_mygls-settings' &&
         $hook !== 'post.php' &&
         $hook !== 'edit.php') {
         return;
