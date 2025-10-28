@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/yourusername/mygls-woocommerce
  * Description: Teljes MyGLS API integráció WooCommerce-hez interaktív térképes csomagpont választóval, automatikus és bulk címkegenerálással, valamint valós idejű státusz követéssel.
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Your Name
  * Author URI: https://yourwebsite.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.5');
+define('MYGLS_VERSION', '1.0.6');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -164,7 +164,7 @@ function mygls_activate() {
     if (!get_option('mygls_settings')) {
         update_option('mygls_settings', array(
             'country' => 'HU',
-            'test_mode' => true,
+            'test_mode' => false,
             'auto_generate_labels' => false,
             'auto_status_sync' => false,
             'sync_interval' => 60,
@@ -187,10 +187,15 @@ register_deactivation_hook(__FILE__, 'mygls_deactivate');
  * Enqueue admin styles and scripts
  */
 function mygls_admin_enqueue_scripts($hook) {
-    // Only load on specific admin pages
-    if ($hook !== 'toplevel_page_mygls-settings' &&
-        $hook !== 'post.php' &&
-        $hook !== 'edit.php') {
+    // Get current screen
+    $screen = get_current_screen();
+
+    // Check if we're on relevant admin pages
+    $is_settings_page = $hook === 'toplevel_page_mygls-settings';
+    $is_orders_page = $hook === 'post.php' || $hook === 'edit.php';
+    $is_hpos_order_page = $screen && in_array($screen->id, ['woocommerce_page_wc-orders', 'shop_order']);
+
+    if (!$is_settings_page && !$is_orders_page && !$is_hpos_order_page) {
         return;
     }
 
