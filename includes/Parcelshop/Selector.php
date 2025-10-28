@@ -14,15 +14,21 @@ class Selector {
     private $parcelshops_cache = [];
     
     public function __construct() {
-        // Add parcelshop field to checkout
+        // Add parcelshop field to checkout (classic checkout)
         add_action('woocommerce_after_shipping_rate', [$this, 'add_parcelshop_selector'], 10, 2);
-        
+
+        // Additional hook for block-based checkout compatibility
+        add_action('woocommerce_review_order_after_shipping', [$this, 'add_parcelshop_selector_fallback']);
+
+        // Shortcode for manual placement
+        add_shortcode('mygls_parcelshop_selector', [$this, 'parcelshop_selector_shortcode']);
+
         // Save parcelshop selection
         add_action('woocommerce_checkout_update_order_meta', [$this, 'save_parcelshop_selection']);
-        
+
         // Display in admin
         add_action('woocommerce_admin_order_data_after_shipping_address', [$this, 'display_parcelshop_in_admin']);
-        
+
         // AJAX endpoints
         add_action('wp_ajax_mygls_get_parcelshops', [$this, 'ajax_get_parcelshops']);
         add_action('wp_ajax_nopriv_mygls_get_parcelshops', [$this, 'ajax_get_parcelshops']);
@@ -285,5 +291,150 @@ class Selector {
         }
 
         return $results;
+    }
+
+    /**
+     * Fallback parcelshop selector for block-based checkout
+     * Displays after shipping in order review
+     */
+    public function add_parcelshop_selector_fallback() {
+        // Check if we should show the selector
+        $settings = get_option('mygls_settings', []);
+        $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+
+        if (empty($enabled_methods)) {
+            return;
+        }
+
+        // Get chosen shipping methods
+        $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
+
+        if (empty($chosen_methods)) {
+            return;
+        }
+
+        // Check if any chosen method requires parcelshop selection
+        $show_selector = false;
+        foreach ($chosen_methods as $chosen_method) {
+            if (in_array($chosen_method, $enabled_methods)) {
+                $show_selector = true;
+                break;
+            }
+            // Also check for partial matches (e.g., "mygls_shipping:1" matches "mygls_shipping")
+            foreach ($enabled_methods as $enabled_method) {
+                if (strpos($chosen_method, $enabled_method) === 0) {
+                    $show_selector = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$show_selector) {
+            return;
+        }
+
+        // Render the selector
+        $this->render_parcelshop_selector_html();
+    }
+
+    /**
+     * Shortcode for parcelshop selector
+     * Usage: [mygls_parcelshop_selector]
+     */
+    public function parcelshop_selector_shortcode($atts) {
+        ob_start();
+        $this->render_parcelshop_selector_html();
+        return ob_get_clean();
+    }
+
+    /**
+     * Render the parcelshop selector HTML
+     * Common method for all display locations
+     */
+    private function render_parcelshop_selector_html() {
+        $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
+
+        ?>
+        <div class="mygls-parcelshop-selector-wrapper">
+            <h3><?php _e('GLS Parcelshop Selection', 'mygls-woocommerce'); ?></h3>
+            <div class="mygls-parcelshop-selector" data-shipping-method="all">
+                <div class="mygls-parcelshop-trigger">
+                    <button type="button" class="button mygls-select-parcelshop">
+                        <span class="dashicons dashicons-location-alt"></span>
+                        <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
+                    </button>
+
+                    <?php if ($selected_parcelshop): ?>
+                        <div class="mygls-selected-parcelshop">
+                            <strong><?php echo esc_html($selected_parcelshop['name']); ?></strong><br>
+                            <small><?php echo esc_html($selected_parcelshop['address']); ?></small>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <input type="hidden" name="mygls_parcelshop_id" id="mygls_parcelshop_id" value="<?php echo esc_attr($selected_parcelshop['id'] ?? ''); ?>">
+                <input type="hidden" name="mygls_parcelshop_data" id="mygls_parcelshop_data" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
+            </div>
+
+            <!-- Parcelshop Modal -->
+            <div id="mygls-parcelshop-modal" class="mygls-modal" style="display: none;">
+                <div class="mygls-modal-content">
+                    <div class="mygls-modal-header">
+                        <h2><?php _e('Select Parcelshop', 'mygls-woocommerce'); ?></h2>
+                        <button type="button" class="mygls-modal-close">&times;</button>
+                    </div>
+
+                    <div class="mygls-modal-body">
+                        <div class="mygls-parcelshop-search">
+                            <input type="text" id="mygls-parcelshop-search" placeholder="<?php esc_attr_e('Enter city or ZIP code...', 'mygls-woocommerce'); ?>" class="input-text">
+                            <button type="button" id="mygls-search-btn" class="button">
+                                <span class="dashicons dashicons-search"></span>
+                                <?php _e('Search', 'mygls-woocommerce'); ?>
+                            </button>
+                            <button type="button" id="mygls-locate-btn" class="button">
+                                <span class="dashicons dashicons-location"></span>
+                                <?php _e('Use My Location', 'mygls-woocommerce'); ?>
+                            </button>
+                        </div>
+
+                        <div class="mygls-parcelshop-container">
+                            <div class="mygls-parcelshop-list">
+                                <div id="mygls-parcelshop-results">
+                                    <p class="mygls-no-results"><?php _e('Enter a location to find nearby parcelshops', 'mygls-woocommerce'); ?></p>
+                                </div>
+                            </div>
+
+                            <div class="mygls-parcelshop-map">
+                                <div id="mygls-map" style="width: 100%; height: 500px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mygls-modal-footer">
+                        <button type="button" class="button button-primary" id="mygls-confirm-parcelshop" disabled>
+                            <?php _e('Confirm Selection', 'mygls-woocommerce'); ?>
+                        </button>
+                        <button type="button" class="button mygls-modal-close">
+                            <?php _e('Cancel', 'mygls-woocommerce'); ?>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .mygls-parcelshop-selector-wrapper {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .mygls-parcelshop-selector-wrapper h3 {
+            margin-top: 0;
+            font-size: 16px;
+        }
+        </style>
+        <?php
     }
 }
