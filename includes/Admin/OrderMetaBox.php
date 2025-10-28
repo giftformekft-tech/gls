@@ -23,6 +23,7 @@ class OrderMetaBox {
     }
     
     public function add_meta_box() {
+        // Traditional post-based orders
         add_meta_box(
             'mygls_shipping_label',
             __('GLS Shipping Label', 'mygls-woocommerce'),
@@ -31,10 +32,24 @@ class OrderMetaBox {
             'side',
             'high'
         );
+
+        // HPOS (High-Performance Order Storage) - modern WooCommerce
+        add_meta_box(
+            'mygls_shipping_label',
+            __('GLS Shipping Label', 'mygls-woocommerce'),
+            [$this, 'render_meta_box'],
+            'woocommerce_page_wc-orders',
+            'side',
+            'high'
+        );
     }
     
-    public function render_meta_box($post) {
-        $order = wc_get_order($post->ID);
+    public function render_meta_box($post_or_order_object) {
+        // Handle both traditional post and HPOS order object
+        $order = ($post_or_order_object instanceof \WC_Order)
+            ? $post_or_order_object
+            : wc_get_order($post_or_order_object->ID);
+
         if (!$order) {
             return;
         }
