@@ -469,54 +469,99 @@ class Settings {
             }
 
             // Try to get parcel list to test connection
+            // Use a smaller date range for faster testing
             $result = $api->getParcelList(
-                date('Y-m-d', strtotime('-7 days')),
+                date('Y-m-d', strtotime('-1 days')),
                 date('Y-m-d')
             );
 
             // Restore original settings after test
             update_option('mygls_settings', $original_settings, false);
 
-            // Check for explicit errors
+            // Check for explicit errors from API client
             if (isset($result['error'])) {
-                wp_send_json_error(['message' => $result['error']]);
+                $error_message = $result['error'];
+
+                // Check if it's an HTTP error (like 401 Unauthorized)
+                if (strpos($error_message, 'HTTP 401') !== false || strpos($error_message, 'Unauthorized') !== false) {
+                    wp_send_json_error(['message' => __('Authentication failed - Invalid username or password', 'mygls-woocommerce')]);
+                } elseif (strpos($error_message, 'HTTP 403') !== false || strpos($error_message, 'Forbidden') !== false) {
+                    wp_send_json_error(['message' => __('Access denied - Please check your client number', 'mygls-woocommerce')]);
+                } elseif (strpos($error_message, 'HTTP 404') !== false) {
+                    wp_send_json_error(['message' => __('API endpoint not found - Please check your country selection', 'mygls-woocommerce')]);
+                } elseif (strpos($error_message, 'HTTP 500') !== false || strpos($error_message, 'HTTP 502') !== false || strpos($error_message, 'HTTP 503') !== false) {
+                    wp_send_json_error(['message' => __('GLS API server error - Please try again later', 'mygls-woocommerce')]);
+                } else {
+                    wp_send_json_error(['message' => $error_message]);
+                }
                 return;
             }
 
-            // Verify the response structure is valid
-            // GLS API should return a structure with either 'd' wrapper or direct 'ParcelInfoList'
-            $has_valid_structure = false;
+            // Check for GetParcelListErrors in the response
+            // According to GLS API documentation, errors are returned in this array
+            if (isset($result['GetParcelListErrors']) && is_array($result['GetParcelListErrors']) && !empty($result['GetParcelListErrors'])) {
+                $first_error = $result['GetParcelListErrors'][0];
+                $error_msg = $first_error['ErrorDescription'] ?? __('Unknown API error', 'mygls-woocommerce');
+                $error_code = $first_error['ErrorCode'] ?? 'N/A';
 
+                wp_send_json_error(['message' => sprintf(__('API Error (Code %s): %s', 'mygls-woocommerce'), $error_code, $error_msg)]);
+                return;
+            }
+
+            // Check for 'd' wrapper with errors (WCF services format)
             if (isset($result['d'])) {
-                // Response with 'd' wrapper (common in WCF services)
-                $has_valid_structure = true;
-                // Check if there's an error in the wrapped response
-                if (isset($result['d']['ErrorCode']) && $result['d']['ErrorCode'] !== 0) {
-                    $error_msg = $result['d']['ErrorMessage'] ?? __('Authentication failed', 'mygls-woocommerce');
+                if (isset($result['d']['GetParcelListErrors']) && is_array($result['d']['GetParcelListErrors']) && !empty($result['d']['GetParcelListErrors'])) {
+                    $first_error = $result['d']['GetParcelListErrors'][0];
+                    $error_msg = $first_error['ErrorDescription'] ?? __('Unknown API error', 'mygls-woocommerce');
                     wp_send_json_error(['message' => $error_msg]);
                     return;
                 }
-            } elseif (isset($result['ParcelInfoList']) || isset($result['__type'])) {
-                // Direct response structure
-                $has_valid_structure = true;
-            } elseif (is_array($result) && !empty($result)) {
-                // Non-empty array might be valid
-                $has_valid_structure = true;
             }
 
-            // If response doesn't have expected structure, it's likely an auth failure
-            if (!$has_valid_structure || (is_array($result) && empty($result))) {
-                wp_send_json_error(['message' => __('Authentication failed - please verify your credentials', 'mygls-woocommerce')]);
+            // Verify the response has the expected structure for GetParcelList
+            // According to the GLS API documentation, a successful response should have:
+            // - PrintDataInfoList (array, can be empty if no parcels in date range)
+            // - GetParcelListErrors (array, should be empty if successful)
+            $has_expected_structure = false;
+
+            // Check for PrintDataInfoList key (with or without 'd' wrapper)
+            if (isset($result['PrintDataInfoList']) || (isset($result['d']) && isset($result['d']['PrintDataInfoList']))) {
+                $has_expected_structure = true;
+            }
+
+            // Also accept __type which indicates a valid WCF service response
+            if (isset($result['__type']) && strpos($result['__type'], 'GetParcelListResponse') !== false) {
+                $has_expected_structure = true;
+            }
+
+            // If response doesn't have expected structure, it's likely invalid or auth failed
+            if (!$has_expected_structure) {
+                // Empty array or unexpected structure = authentication likely failed
+                if (empty($result) || !is_array($result)) {
+                    wp_send_json_error(['message' => __('Authentication failed - Please verify your credentials', 'mygls-woocommerce')]);
+                } else {
+                    wp_send_json_error(['message' => __('Unexpected API response format - Please check your API configuration', 'mygls-woocommerce')]);
+                }
                 return;
             }
 
-            wp_send_json_success(['message' => __('Connection successful!', 'mygls-woocommerce')]);
+            // If we got here, connection is successful
+            wp_send_json_success(['message' => __('Connection successful! API credentials verified.', 'mygls-woocommerce')]);
+
         } catch (\Exception $e) {
             // Restore original settings in case of exception
             if (isset($original_settings)) {
                 update_option('mygls_settings', $original_settings, false);
             }
-            wp_send_json_error(['message' => $e->getMessage()]);
+
+            $error_msg = $e->getMessage();
+
+            // Try to provide more helpful error messages
+            if (strpos($error_msg, 'cURL error') !== false) {
+                wp_send_json_error(['message' => __('Connection error - Please check your internet connection and firewall settings', 'mygls-woocommerce')]);
+            } else {
+                wp_send_json_error(['message' => sprintf(__('Error: %s', 'mygls-woocommerce'), $error_msg)]);
+            }
         }
     }
 }
