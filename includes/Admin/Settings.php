@@ -401,11 +401,40 @@ class Settings {
                 date('Y-m-d')
             );
 
+            // Check for explicit errors
             if (isset($result['error'])) {
                 wp_send_json_error(['message' => $result['error']]);
-            } else {
-                wp_send_json_success(['message' => __('Connection successful!', 'mygls-woocommerce')]);
+                return;
             }
+
+            // Verify the response structure is valid
+            // GLS API should return a structure with either 'd' wrapper or direct 'ParcelInfoList'
+            $has_valid_structure = false;
+
+            if (isset($result['d'])) {
+                // Response with 'd' wrapper (common in WCF services)
+                $has_valid_structure = true;
+                // Check if there's an error in the wrapped response
+                if (isset($result['d']['ErrorCode']) && $result['d']['ErrorCode'] !== 0) {
+                    $error_msg = $result['d']['ErrorMessage'] ?? __('Authentication failed', 'mygls-woocommerce');
+                    wp_send_json_error(['message' => $error_msg]);
+                    return;
+                }
+            } elseif (isset($result['ParcelInfoList']) || isset($result['__type'])) {
+                // Direct response structure
+                $has_valid_structure = true;
+            } elseif (is_array($result) && !empty($result)) {
+                // Non-empty array might be valid
+                $has_valid_structure = true;
+            }
+
+            // If response doesn't have expected structure, it's likely an auth failure
+            if (!$has_valid_structure || (is_array($result) && empty($result))) {
+                wp_send_json_error(['message' => __('Authentication failed - please verify your credentials', 'mygls-woocommerce')]);
+                return;
+            }
+
+            wp_send_json_success(['message' => __('Connection successful!', 'mygls-woocommerce')]);
         } catch (\Exception $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
         }

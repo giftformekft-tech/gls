@@ -117,6 +117,20 @@ class Client {
             return ['error' => $error_message];
         }
 
+        // Check if result indicates authentication failure
+        // GLS API may return empty arrays or specific error structures for auth failures
+        if (is_array($result) && empty($result)) {
+            mygls_log("API Error: Empty result array, likely authentication failure", 'error');
+            return ['error' => 'Authentication failed - please check your credentials'];
+        }
+
+        // Additional check for d/results wrapper that GLS API uses
+        if (isset($result['d']) && isset($result['d']['ErrorCode']) && $result['d']['ErrorCode'] !== 0) {
+            $error_message = $result['d']['ErrorMessage'] ?? 'Unknown API error';
+            mygls_log("API Error Response in 'd' wrapper: {$error_message} (Code: {$result['d']['ErrorCode']})", 'error');
+            return ['error' => $error_message];
+        }
+
         return $result;
     }
     
