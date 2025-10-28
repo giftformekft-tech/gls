@@ -194,7 +194,11 @@ function mygls_admin_enqueue_scripts($hook) {
 
     wp_localize_script('mygls-admin-js', 'myglsAdmin', array(
         'ajaxurl' => admin_url('admin-ajax.php'),
-        'nonce' => wp_create_nonce('mygls_admin_nonce')
+        'nonce' => wp_create_nonce('mygls_admin_nonce'),
+        'i18n' => array(
+            'processing' => __('Processing...', 'mygls-woocommerce'),
+            'error' => __('Connection failed', 'mygls-woocommerce')
+        )
     ));
 }
 add_action('admin_enqueue_scripts', 'mygls_admin_enqueue_scripts');
