@@ -153,9 +153,10 @@ class Client {
      */
     public function prepareLabels($parcels) {
         $data = [
-            'ParcelList' => $parcels
+            'ParcelList' => $parcels,
+            'WebshopEngine' => 'WooCommerce'
         ];
-        
+
         return $this->request('PrepareLabels', $data);
     }
     
@@ -246,8 +247,10 @@ class Client {
         
         // Build services
         $services = [];
-        
+
         if ($use_parcelshop) {
+            // PSD service requires ContactName, ContactPhone, ContactEmail to be mandatory
+            // We ensure these are not empty for the delivery address
             $services[] = [
                 'Code' => 'PSD',
                 'PSDParameter' => [
@@ -298,24 +301,45 @@ class Client {
         ];
         
         // Delivery address
+        $shipping_address_1 = $order->get_shipping_address_1();
+
+        // For PSD service, ContactName, ContactPhone, ContactEmail are MANDATORY
+        // Ensure these fields are never empty
+        $contact_name = $order->get_formatted_billing_full_name();
+        $contact_phone = $this->formatPhoneNumber($order->get_billing_phone());
+        $contact_email = $order->get_billing_email();
+
+        // Fallback values if empty (required for PSD service)
+        if (empty($contact_name)) {
+            $contact_name = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
+        }
+        if (empty($contact_phone)) {
+            $contact_phone = '+36301234567'; // Fallback phone (should be configured in settings)
+        }
+        if (empty($contact_email)) {
+            $contact_email = get_option('admin_email'); // Fallback to admin email
+        }
+
         $delivery_address = [
             'Name' => $order->get_formatted_billing_full_name(),
-            'Street' => $order->get_shipping_address_1(),
-            'HouseNumber' => $this->extractHouseNumber($order->get_shipping_address_1()),
+            'Street' => $this->extractStreetName($shipping_address_1),
+            'HouseNumber' => $this->extractHouseNumber($shipping_address_1),
             'City' => $order->get_shipping_city(),
             'ZipCode' => $order->get_shipping_postcode(),
             'CountryIsoCode' => $order->get_shipping_country(),
-            'ContactName' => $order->get_formatted_billing_full_name(),
-            'ContactPhone' => $this->formatPhoneNumber($order->get_billing_phone()),
-            'ContactEmail' => $order->get_billing_email()
+            'ContactName' => $contact_name,
+            'ContactPhone' => $contact_phone,
+            'ContactEmail' => $contact_email
         ];
         
         // Build parcel
+        $is_cod = $order->get_payment_method() === 'cod';
         $parcel = [
             'ClientNumber' => (int)$this->client_number,
             'ClientReference' => 'WC-' . $order->get_order_number(),
-            'CODAmount' => $order->get_payment_method() === 'cod' ? (float)$order->get_total() : 0,
-            'CODReference' => $order->get_order_number(),
+            'CODAmount' => $is_cod ? (float)$order->get_total() : 0,
+            'CODReference' => $is_cod ? $order->get_order_number() : null,
+            'CODCurrency' => $is_cod ? $this->getCODCurrency() : null,
             'Content' => $this->getOrderContent($order),
             'Count' => 1,
             'PickupDate' => $this->formatDate(current_time('timestamp')),
@@ -329,11 +353,52 @@ class Client {
     
     /**
      * Extract house number from address string
+     * GLS API requires ONLY the number (no letters)
      */
     private function extractHouseNumber($address) {
-        // Try to extract number from address
+        // Try to extract number from address (only digits)
         preg_match('/\d+/', $address, $matches);
-        return $matches[0] ?? '1';
+        $house_number = $matches[0] ?? '1';
+
+        // GLS API validation: house number cannot be 0
+        if ($house_number === '0') {
+            $house_number = '1';
+        }
+
+        return $house_number;
+    }
+
+    /**
+     * Extract street name from address (without house number)
+     */
+    private function extractStreetName($address) {
+        // Remove house number and extra info from address
+        $street = preg_replace('/\d+.*$/', '', $address);
+        $street = trim($street, ', ');
+
+        // If empty after removal, return original
+        return !empty($street) ? $street : $address;
+    }
+
+    /**
+     * Get currency code for COD
+     */
+    private function getCODCurrency() {
+        $settings = get_option('mygls_settings', []);
+        $country = $settings['country'] ?? 'hu';
+
+        // Map country codes to currencies
+        $currency_map = [
+            'hu' => 'HUF',
+            'hr' => 'HRK',
+            'cz' => 'CZK',
+            'ro' => 'RON',
+            'si' => 'EUR',
+            'sk' => 'EUR',
+            'rs' => 'RSD'
+        ];
+
+        return $currency_map[strtolower($country)] ?? 'EUR';
     }
     
     /**
