@@ -99,6 +99,15 @@ class Settings {
             }
         }
 
+        // Shipping Method Logo Size
+        $sanitized['shipping_logo_size'] = absint($input['shipping_logo_size'] ?? 40);
+        if ($sanitized['shipping_logo_size'] < 20) {
+            $sanitized['shipping_logo_size'] = 20;
+        }
+        if ($sanitized['shipping_logo_size'] > 100) {
+            $sanitized['shipping_logo_size'] = 100;
+        }
+
         // Custom Checkout Settings
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
         if (isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])) {
@@ -473,6 +482,23 @@ class Settings {
                                             <option value="success" <?php selected($settings['map_button_style'] ?? 'primary', 'success'); ?>><?php _e('Success (green)', 'mygls-woocommerce'); ?></option>
                                         </select>
                                         <p class="description"><?php _e('Color scheme for the "Select Parcelshop" button', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="shipping_logo_size"><?php _e('Shipping Method Logo Size', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="number"
+                                               name="mygls_settings[shipping_logo_size]"
+                                               id="shipping_logo_size"
+                                               value="<?php echo esc_attr($settings['shipping_logo_size'] ?? 40); ?>"
+                                               class="small-text"
+                                               min="20"
+                                               max="100"
+                                               step="5">
+                                        <span>px</span>
+                                        <p class="description"><?php _e('Size of shipping method logos in checkout (20-100px, default: 40px)', 'mygls-woocommerce'); ?></p>
                                     </td>
                                 </tr>
                             </table>
