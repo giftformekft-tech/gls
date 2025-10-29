@@ -361,9 +361,10 @@ class Settings {
 
                                 <div id="mygls-field-order-sortable" class="mygls-sortable-list">
                                     <?php
-                                    $field_order = $settings['checkout_field_order'] ?? ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+                                    $field_order = $settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
                                     $field_labels = [
                                         'billing' => __('Billing Details', 'mygls-woocommerce'),
+                                        'shipping_method' => __('Shipping Method', 'mygls-woocommerce'),
                                         'shipping' => __('Shipping Details', 'mygls-woocommerce'),
                                         'parcelshop' => __('Parcelshop Selection', 'mygls-woocommerce'),
                                         'order_notes' => __('Order Notes', 'mygls-woocommerce'),
@@ -463,19 +464,6 @@ class Settings {
                                             <option value="success" <?php selected($settings['map_button_style'] ?? 'primary', 'success'); ?>><?php _e('Success (green)', 'mygls-woocommerce'); ?></option>
                                         </select>
                                         <p class="description"><?php _e('Color scheme for the "Select Parcelshop" button', 'mygls-woocommerce'); ?></p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th scope="row">
-                                        <label for="map_position"><?php _e('Map Position (Block Checkout)', 'mygls-woocommerce'); ?></label>
-                                    </th>
-                                    <td>
-                                        <select name="mygls_settings[map_position]" id="map_position" class="regular-text">
-                                            <option value="after_shipping" <?php selected($settings['map_position'] ?? 'after_shipping', 'after_shipping'); ?>><?php _e('After shipping methods', 'mygls-woocommerce'); ?></option>
-                                            <option value="before_payment" <?php selected($settings['map_position'] ?? 'after_shipping', 'before_payment'); ?>><?php _e('Before payment methods', 'mygls-woocommerce'); ?></option>
-                                            <option value="after_billing" <?php selected($settings['map_position'] ?? 'after_shipping', 'after_billing'); ?>><?php _e('After billing address', 'mygls-woocommerce'); ?></option>
-                                        </select>
-                                        <p class="description"><?php _e('Where to display the parcelshop selector on block-based checkout pages', 'mygls-woocommerce'); ?></p>
                                     </td>
                                 </tr>
                             </table>

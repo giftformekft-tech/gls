@@ -17,8 +17,8 @@ class Selector {
         // Add parcelshop field to checkout (classic checkout)
         add_action('woocommerce_after_shipping_rate', [$this, 'add_parcelshop_selector'], 10, 2);
 
-        // Block-based checkout compatibility - dynamic hook based on settings
-        add_action('init', [$this, 'register_block_checkout_hooks']);
+        // Block-based checkout compatibility - REMOVED: now handled by Parcelshop Selection tile in checkout
+        // add_action('init', [$this, 'register_block_checkout_hooks']);
 
         // Shortcode for manual placement
         add_shortcode('mygls_parcelshop_selector', [$this, 'parcelshop_selector_shortcode']);
@@ -38,7 +38,10 @@ class Selector {
     
     /**
      * Register block checkout hooks based on settings
+     * REMOVED: Parcelshop selection is now handled by the dedicated Parcelshop Selection tile in checkout
+     * This prevented duplication in the order review sidebar
      */
+    /*
     public function register_block_checkout_hooks() {
         $settings = get_option('mygls_settings', []);
         $position = $settings['map_position'] ?? 'after_shipping';
@@ -53,6 +56,7 @@ class Selector {
         $hook = $hook_map[$position] ?? 'woocommerce_review_order_after_shipping';
         add_action($hook, [$this, 'add_parcelshop_selector_fallback']);
     }
+    */
 
     /**
      * Add parcelshop selector after shipping rate
