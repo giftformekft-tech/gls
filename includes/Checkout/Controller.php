@@ -30,6 +30,7 @@ class Controller {
     private function __construct() {
         $this->settings = get_option('mygls_settings', []);
         $this->enabled = ($this->settings['enable_custom_checkout'] ?? '0') === '1';
+        $this->parcelshop_methods = array_filter((array) ($this->settings['parcelshop_enabled_methods'] ?? []));
 
         if (!$this->enabled) {
             return;
@@ -439,6 +440,11 @@ class Controller {
                 transition: all 0.3s ease;
             }
 
+            .mygls-section-hidden,
+            .mygls-section-disabled {
+                display: none;
+            }
+
             .mygls-checkout-section:hover {
                 box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             }
@@ -771,6 +777,205 @@ class Controller {
         }
 
         $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
+        if (empty($enabled_methods)) {
+            return false;
+        }
+
+        $chosen_methods = (array) WC()->session->get('chosen_shipping_methods', []);
+
+        foreach ($chosen_methods as $chosen_method) {
+            if ($this->is_parcelshop_method($chosen_method, $enabled_methods)) {
+                return true;
+            }
+        }
+
+        $packages = $shipping->get_packages();
+        foreach ($packages as $package) {
+            $available_methods = $package['rates'] ?? [];
+            if (count($available_methods) !== 1) {
+                continue;
+            }
+
+            $method = reset($available_methods);
+            if (is_object($method) && method_exists($method, 'get_id')) {
+                if ($this->is_parcelshop_method($method->get_id(), $enabled_methods)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function is_parcelshop_method(string $method_id, array $enabled_methods): bool {
+        foreach ($enabled_methods as $enabled_method) {
+            if ($method_id === $enabled_method || strpos($method_id, $enabled_method) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function get_shipping_section_markup($checkout = null): string {
+        if (!function_exists('WC')) {
+            return '';
+        }
+
+        if ($checkout === null) {
+            $checkout = WC()->checkout();
+        }
+
+        $can_render = $this->can_show_shipping_details();
+        $should_show = $can_render && !$this->is_parcelshop_delivery_selected();
+
+        $classes = ['mygls-checkout-section', 'mygls-section-shipping'];
+
+        if (!$should_show) {
+            $classes[] = 'mygls-section-hidden';
+        }
+
+        if (!$can_render) {
+            $classes[] = 'mygls-section-disabled';
+        }
+
+        ob_start();
+
+        printf(
+            '<div id="mygls-shipping-section" class="%1$s" data-visible="%2$s" data-available="%3$s">',
+            esc_attr(implode(' ', $classes)),
+            esc_attr($should_show ? '1' : '0'),
+            esc_attr($can_render ? '1' : '0')
+        );
+
+        echo '<h3 class="mygls-section-title">';
+        echo '<span class="dashicons dashicons-location"></span>';
+        echo esc_html__('Szállítási adatok', 'mygls-woocommerce');
+        echo '</h3>';
+        echo '<div class="mygls-section-content">';
+
+        if ($should_show && $checkout) {
+            foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
+                woocommerce_form_field($key, $field, $checkout->get_value($key));
+            }
+        }
+
+        echo '</div>';
+        echo '</div>';
+
+        return ob_get_clean();
+    }
+
+    private function get_parcelshop_section_markup(): string {
+        $has_enabled_methods = !empty($this->parcelshop_methods);
+        $can_render = $has_enabled_methods && $this->can_show_parcelshop_selector();
+        $should_show = $can_render && $this->is_parcelshop_delivery_selected();
+
+        $classes = ['mygls-checkout-section', 'mygls-section-parcelshop'];
+
+        if (!$should_show) {
+            $classes[] = 'mygls-section-hidden';
+        }
+
+        if (!$can_render) {
+            $classes[] = 'mygls-section-disabled';
+        }
+
+        ob_start();
+
+        printf(
+            '<div id="mygls-parcelshop-section" class="%1$s" data-visible="%2$s" data-available="%3$s">',
+            esc_attr(implode(' ', $classes)),
+            esc_attr($should_show ? '1' : '0'),
+            esc_attr($can_render ? '1' : '0')
+        );
+
+        echo '<h3 class="mygls-section-title">';
+        echo '<span class="dashicons dashicons-location-alt"></span>';
+        echo esc_html__('Csomagpont kiválasztása', 'mygls-woocommerce');
+        echo '</h3>';
+        echo '<div class="mygls-section-content">';
+
+        if ($can_render) {
+            echo do_shortcode('[mygls_parcelshop_selector]');
+        }
+
+        echo '</div>';
+        echo '</div>';
+
+        return ob_get_clean();
+    }
+
+    private function can_show_shipping_details(): bool {
+        if (!function_exists('WC') || !WC()->cart) {
+            return false;
+        }
+
+        if (!WC()->cart->needs_shipping()) {
+            return false;
+        }
+
+        if (!WC()->cart->show_shipping()) {
+            return false;
+        }
+
+        if (function_exists('wc_ship_to_billing_address_only') && wc_ship_to_billing_address_only()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function can_show_parcelshop_selector(): bool {
+        if (!function_exists('WC') || !WC()->cart || !WC()->session) {
+            return false;
+        }
+
+        if (empty($this->parcelshop_methods)) {
+            return false;
+        }
+
+        if (!WC()->cart->needs_shipping()) {
+            return false;
+        }
+
+        return WC()->cart->show_shipping();
+    }
+
+    private function get_configured_field_order(): array {
+        $configured = $this->settings['checkout_field_order'] ?? $this->default_field_order;
+
+        if (!is_array($configured)) {
+            $configured = $this->default_field_order;
+        }
+
+        $allowed_sections = $this->default_field_order;
+        $normalised_order = array_values(array_intersect($configured, $allowed_sections));
+
+        foreach ($allowed_sections as $section) {
+            if (!in_array($section, $normalised_order, true)) {
+                $normalised_order[] = $section;
+            }
+        }
+
+        return $normalised_order;
+    }
+
+    private function is_parcelshop_delivery_selected(): bool {
+        if (!function_exists('WC') || !WC()->session) {
+            return false;
+        }
+
+        if (!WC()->cart || !WC()->cart->needs_shipping()) {
+            return false;
+        }
+
+        $shipping = WC()->shipping();
+        if (!$shipping) {
+            return false;
+        }
+
+        $enabled_methods = $this->parcelshop_methods;
         if (empty($enabled_methods)) {
             return false;
         }
