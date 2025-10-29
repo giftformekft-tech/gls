@@ -17,6 +17,9 @@
         billing_email: 'shipping_email'
     };
 
+    var shippingFieldSnapshot = null;
+    var checkoutRefreshTimeout = null;
+
     function highlightSelectedShippingMethod() {
         var $lists = $('.mygls-section-shipping-method .woocommerce-shipping-methods');
 
@@ -55,6 +58,24 @@
         }
     }
 
+    function isShippingSectionVisible() {
+        var $wrapper = $('#mygls-section-wrapper-shipping');
+        return $wrapper.length && $wrapper.attr('aria-hidden') !== 'true';
+    }
+
+    function updateShipToDifferentAddressFlag(shipsToDifferent) {
+        var $hiddenField = $('#ship_to_different_address');
+
+        if ($hiddenField.length) {
+            $hiddenField.val(shipsToDifferent ? '1' : '0');
+        }
+
+        var $defaultCheckbox = $('#ship-to-different-address-checkbox');
+        if ($defaultCheckbox.length) {
+            $defaultCheckbox.prop('checked', shipsToDifferent);
+        }
+    }
+
     function setSectionVisibility() {
         var $selected = $('.mygls-section-shipping-method input[type="radio"]:checked');
         var isParcelshop = false;
@@ -66,37 +87,169 @@
 
         toggleWrapper($('#mygls-section-wrapper-shipping'), isParcelshop);
         toggleWrapper($('#mygls-section-wrapper-parcelshop'), !isParcelshop);
+
+        if (isParcelshop) {
+            shippingFieldSnapshot = null;
+        }
+
+        updateShipToDifferentAddressFlag(!isParcelshop && !$('#mygls_same_as_billing').is(':checked'));
     }
 
     function requestCheckoutRefresh() {
         $('body').trigger('update_checkout');
     }
 
+    function cancelScheduledCheckoutRefresh() {
+        if (checkoutRefreshTimeout) {
+            window.clearTimeout(checkoutRefreshTimeout);
+            checkoutRefreshTimeout = null;
+        }
+    }
+
+    function scheduleCheckoutRefresh() {
+        cancelScheduledCheckoutRefresh();
+
+        checkoutRefreshTimeout = window.setTimeout(function() {
+            requestCheckoutRefresh();
+            checkoutRefreshTimeout = null;
+        }, 180);
+    }
+
+    function setFieldValue($field, value) {
+        if (!$field.length) {
+            return false;
+        }
+
+        if ($field.val() === value) {
+            return false;
+        }
+
+        $field.val(value);
+
+        if ($field.hasClass('select2-hidden-accessible')) {
+            $field.trigger('change.select2');
+        }
+
+        return true;
+    }
+
+    function saveCurrentShippingValues() {
+        if (shippingFieldSnapshot) {
+            return;
+        }
+
+        var snapshot = {};
+        var hasValues = false;
+
+        $.each(sameAsBillingFieldMap, function(_, shippingField) {
+            var $shippingInput = $('#' + shippingField);
+            if ($shippingInput.length) {
+                snapshot[shippingField] = $shippingInput.val();
+                hasValues = true;
+            }
+        });
+
+        var $shippingCountry = $('#shipping_country');
+        if ($shippingCountry.length) {
+            snapshot.shipping_country = $shippingCountry.val();
+            hasValues = true;
+        }
+
+        var $shippingState = $('#shipping_state');
+        if ($shippingState.length) {
+            snapshot.shipping_state = $shippingState.val();
+            hasValues = true;
+        }
+
+        shippingFieldSnapshot = hasValues ? snapshot : null;
+    }
+
+    function restoreShippingValues() {
+        if (!shippingFieldSnapshot) {
+            return;
+        }
+
+        var restored = false;
+
+        $.each(shippingFieldSnapshot, function(fieldId, value) {
+            var $field;
+
+            if (fieldId === 'shipping_country') {
+                $field = $('#shipping_country');
+            } else if (fieldId === 'shipping_state') {
+                $field = $('#shipping_state');
+            } else {
+                $field = $('#' + fieldId);
+            }
+
+            if ($field.length && $field.val() !== value) {
+                $field.val(value);
+
+                if ($field.hasClass('select2-hidden-accessible')) {
+                    $field.trigger('change.select2');
+                }
+
+                restored = true;
+            }
+        });
+
+        shippingFieldSnapshot = null;
+
+        if (restored) {
+            scheduleCheckoutRefresh();
+        }
+    }
+
     function syncShippingFieldsWithBilling() {
+        var pendingRefresh = false;
+
         $.each(sameAsBillingFieldMap, function(billingField, shippingField) {
             var $billingInput = $('#' + billingField);
             var $shippingInput = $('#' + shippingField);
 
             if ($billingInput.length && $shippingInput.length) {
-                $shippingInput.val($billingInput.val()).trigger('change');
+                if (setFieldValue($shippingInput, $billingInput.val())) {
+                    pendingRefresh = true;
+                }
             }
         });
 
         var $billingCountry = $('#billing_country');
         var $shippingCountry = $('#shipping_country');
+        var countryChanged = false;
 
         if ($billingCountry.length && $shippingCountry.length) {
-            $shippingCountry.val($billingCountry.val()).trigger('change');
+            countryChanged = setFieldValue($shippingCountry, $billingCountry.val());
+            if (countryChanged) {
+                pendingRefresh = true;
+            }
         }
 
-        setTimeout(function() {
-            var $billingState = $('#billing_state');
-            var $shippingState = $('#shipping_state');
+        var $billingState = $('#billing_state');
+        var $shippingState = $('#shipping_state');
 
-            if ($billingState.length && $shippingState.length) {
-                $shippingState.val($billingState.val()).trigger('change');
+        if ($billingState.length && $shippingState.length) {
+            var billingStateValue = $billingState.val();
+            var immediateStateChange = setFieldValue($shippingState, billingStateValue);
+
+            if (immediateStateChange) {
+                pendingRefresh = true;
             }
-        }, 100);
+
+            window.setTimeout(function() {
+                var deferredStateChange = setFieldValue($shippingState, billingStateValue);
+
+                if (deferredStateChange || immediateStateChange || countryChanged || pendingRefresh) {
+                    scheduleCheckoutRefresh();
+                }
+            }, countryChanged ? 200 : 120);
+
+            return;
+        }
+
+        if (pendingRefresh) {
+            scheduleCheckoutRefresh();
+        }
     }
 
     function toggleShippingFieldsDisabled(disable) {
@@ -105,6 +258,8 @@
         if (!$shippingWrap.length) {
             return;
         }
+
+        $shippingWrap.attr('aria-disabled', disable ? 'true' : 'false');
 
         var $textInputs = $shippingWrap.find('input, textarea').not(':button, :submit, :reset, [type=hidden]');
         $textInputs.each(function() {
@@ -158,12 +313,25 @@
             return;
         }
 
-        if ($checkbox.is(':checked')) {
+        var isChecked = $checkbox.is(':checked');
+        var shippingVisible = isShippingSectionVisible();
+
+        if (isChecked && shippingVisible) {
+            saveCurrentShippingValues();
             syncShippingFieldsWithBilling();
-            toggleShippingFieldsDisabled(true);
-        } else {
-            toggleShippingFieldsDisabled(false);
         }
+
+        toggleShippingFieldsDisabled(isChecked && shippingVisible);
+
+        if (!isChecked && shippingVisible) {
+            restoreShippingValues();
+        }
+
+        if (!shippingVisible) {
+            shippingFieldSnapshot = null;
+        }
+
+        updateShipToDifferentAddressFlag(shippingVisible && !isChecked);
     }
 
     function movePrivacyCheckboxBeforeOrderButton() {
@@ -176,7 +344,7 @@
     }
 
     function maybeSyncBillingFields() {
-        if ($('#mygls_same_as_billing').is(':checked')) {
+        if ($('#mygls_same_as_billing').is(':checked') && isShippingSectionVisible()) {
             syncShippingFieldsWithBilling();
         }
     }
@@ -190,6 +358,8 @@
         $(document.body).on('change', 'input[name^="shipping_method"]', function() {
             highlightSelectedShippingMethod();
             setSectionVisibility();
+            handleSameAsBillingCheckbox();
+            cancelScheduledCheckoutRefresh();
             requestCheckoutRefresh();
         });
 

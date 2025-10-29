@@ -201,6 +201,9 @@ class Controller {
                 echo '</label>';
                 echo '</p>';
 
+                // Keep WooCommerce aware whether the customer ships to a different address.
+                echo '<input type="hidden" name="ship_to_different_address" id="ship_to_different_address" value="1" />';
+
                 echo '<div class="mygls-shipping-fields-wrap">';
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
@@ -445,7 +448,7 @@ class Controller {
                 align-items: flex-start;
                 gap: 30px;
                 margin: 20px 0;
-                align-items: start;
+                flex-wrap: nowrap;
             }
 
             .mygls-checkout-sections {
@@ -457,6 +460,12 @@ class Controller {
             .mygls-checkout-main {
                 flex: 1 1 0;
                 min-width: 0;
+            }
+
+            @media (min-width: 1025px) {
+                .mygls-checkout-main {
+                    max-width: calc(100% - 370px);
+                }
             }
 
             .mygls-section-wrapper {
@@ -695,9 +704,9 @@ class Controller {
                 position: sticky;
                 top: 20px;
                 height: fit-content;
-                flex: 0 0 clamp(300px, 30vw, 400px);
-                width: 100%;
-                max-width: clamp(300px, 30vw, 400px);
+                flex: 0 0 340px;
+                width: 340px;
+                max-width: 340px;
                 margin-left: auto;
             }
 
@@ -955,9 +964,12 @@ class Controller {
                 .mygls-custom-checkout-container {
                     flex-direction: column;
                 }
+            }
 
                 .mygls-order-review-sidebar {
                     position: static;
+                    flex: 1 1 100%;
+                    width: 100%;
                     max-width: 100%;
                     margin-left: 0;
                 }
