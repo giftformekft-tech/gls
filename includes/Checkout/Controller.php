@@ -193,7 +193,7 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
 
-                // Add "Copy from billing" button
+                // Add copy from billing button
                 echo '<div class="mygls-copy-billing-wrapper">';
                 echo '<button type="button" class="button mygls-copy-billing-button">';
                 echo '<span class="dashicons dashicons-admin-page"></span> ';
@@ -534,7 +534,6 @@ class Controller {
                 margin-bottom: 0 !important;
             }
 
-            /* Logo size: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px */
             .mygls-shipping-method-logo {
                 display: inline-block !important;
                 max-width: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
@@ -548,9 +547,8 @@ class Controller {
                 object-fit: contain !important;
             }
 
-            /* Additional specificity for logo size */
-            .mygls-section-shipping-method .woocommerce-shipping-methods li label .mygls-shipping-method-logo,
-            label .mygls-shipping-method-logo,
+            /* Extra specificity for logo size */
+            .mygls-section-shipping-method label .mygls-shipping-method-logo,
             img.mygls-shipping-method-logo {
                 max-width: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
                 max-height: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
@@ -937,7 +935,6 @@ class Controller {
             $(document).on('click', '.mygls-copy-billing-button', function(e) {
                 e.preventDefault();
 
-                // Mapping of billing to shipping fields
                 var fieldMappings = {
                     'billing_first_name': 'shipping_first_name',
                     'billing_last_name': 'shipping_last_name',
@@ -950,7 +947,6 @@ class Controller {
                     'billing_country': 'shipping_country'
                 };
 
-                // Copy each field value
                 $.each(fieldMappings, function(billingField, shippingField) {
                     var $billingInput = $('#' + billingField);
                     var $shippingInput = $('#' + shippingField);
@@ -961,10 +957,9 @@ class Controller {
                     }
                 });
 
-                // Show success message
                 var $button = $(this);
                 var originalText = $button.html();
-                $button.html('<span class="dashicons dashicons-yes"></span> Átmásolva!');
+                $button.html('<span class=\"dashicons dashicons-yes\"></span> Átmásolva!');
                 $button.css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
 
                 setTimeout(function() {
