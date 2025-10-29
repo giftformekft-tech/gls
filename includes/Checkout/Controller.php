@@ -705,16 +705,19 @@ class Controller {
                 padding: 10px !important;
             }
 
-            /* Hide place order button from payment section on desktop (keep it in sidebar) */
+            /* Place order button visibility */
+            /* Desktop: show in order review sidebar */
+            .mygls-order-review-sidebar #place_order,
+            .mygls-order-review-sidebar .place-order,
+            .mygls-order-review-sidebar .woocommerce-checkout-payment #place_order {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            /* Desktop: hide in payment section */
             .mygls-section-payment #place_order,
             .mygls-section-payment .place-order {
                 display: none !important;
-            }
-
-            /* Ensure place order button is visible in order review on desktop */
-            .mygls-order-review-sidebar #place_order,
-            .mygls-order-review-sidebar .place-order {
-                display: block !important;
             }
 
             /* Hide back to cart link in payment section */
@@ -735,63 +738,27 @@ class Controller {
                     order: 1;
                 }
 
-                /* Order summary goes to bottom on mobile */
+                /* Hide order summary completely on mobile */
                 .mygls-order-review-sidebar {
-                    position: relative;
-                    top: 0;
-                    order: 2;
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                }
-
-                /* Show place order button in payment section on mobile */
-                .mygls-section-payment #place_order {
-                    display: block !important;
-                }
-
-                /* Hide place order button in order review sidebar on mobile */
-                .mygls-order-review-sidebar #place_order,
-                .mygls-order-review-sidebar .place-order {
                     display: none !important;
                 }
 
-                .mygls-order-review-content {
+                /* Show place order button in payment section on mobile */
+                .mygls-section-payment #place_order,
+                .mygls-section-payment .place-order {
                     display: block !important;
-                    visibility: visible !important;
-                    opacity: 1 !important;
+                    width: 100% !important;
+                    margin-top: 20px !important;
                 }
 
-                .woocommerce-checkout-review-order-table {
-                    display: table !important;
-                    width: 100%;
-                    table-layout: auto !important;
+                /* Ensure button is at the bottom of payment section */
+                .mygls-section-payment .woocommerce-checkout-payment {
+                    display: flex !important;
+                    flex-direction: column !important;
                 }
 
-                .woocommerce-checkout-review-order-table thead,
-                .woocommerce-checkout-review-order-table tbody,
-                .woocommerce-checkout-review-order-table tfoot,
-                .woocommerce-checkout-review-order-table tr,
-                .woocommerce-checkout-review-order-table th,
-                .woocommerce-checkout-review-order-table td {
-                    display: table-cell !important;
-                    visibility: visible !important;
-                    opacity: 1 !important;
-                }
-
-                .woocommerce-checkout-review-order-table thead {
-                    display: table-header-group !important;
-                }
-
-                .woocommerce-checkout-review-order-table tbody {
-                    display: table-row-group !important;
-                }
-
-                .woocommerce-checkout-review-order-table tfoot {
-                    display: table-footer-group !important;
-                }
-
-                .woocommerce-checkout-review-order-table tr {
-                    display: table-row !important;
+                .mygls-section-payment #place_order {
+                    order: 999 !important;
                 }
             }
 
@@ -919,25 +886,21 @@ class Controller {
             $(document.body).on('updated_checkout', function() {
                 highlightSelectedShippingMethod();
                 setSectionVisibility();
-                ensureOrderReviewVisible();
+                movePrivacyCheckboxBeforeOrderButton();
             });
 
-            function ensureOrderReviewVisible() {
-                // Ensure order review is visible on mobile
-                if ($(window).width() <= 992) {
-                    $('.mygls-order-review-content').css({
-                        'display': 'block',
-                        'visibility': 'visible',
-                        'opacity': '1'
-                    });
-                    $('.woocommerce-checkout-review-order-table').css('display', 'table');
-                }
-            }
-
             function movePrivacyCheckboxBeforeOrderButton() {
-                // Move privacy checkbox before the place order button in payment section
+                // Move privacy checkbox before the place order button
                 var $privacyCheckbox = $('.mygls-privacy-checkbox-wrapper');
-                var $placeOrderButton = $('.mygls-section-payment #place_order');
+                var $placeOrderButton;
+
+                // On mobile: place order button is in payment section
+                // On desktop: place order button is in order review sidebar
+                if ($(window).width() <= 992) {
+                    $placeOrderButton = $('.mygls-section-payment #place_order');
+                } else {
+                    $placeOrderButton = $('.mygls-order-review-sidebar #place_order');
+                }
 
                 if ($privacyCheckbox.length && $placeOrderButton.length) {
                     // Only move if not already in position
@@ -949,12 +912,11 @@ class Controller {
 
             highlightSelectedShippingMethod();
             setSectionVisibility();
-            ensureOrderReviewVisible();
             movePrivacyCheckboxBeforeOrderButton();
 
             // Re-check on window resize
             $(window).on('resize', function() {
-                ensureOrderReviewVisible();
+                movePrivacyCheckboxBeforeOrderButton();
             });
 
             // Move checkbox on checkout update
