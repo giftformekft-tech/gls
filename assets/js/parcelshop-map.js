@@ -7,25 +7,63 @@
 
     let widgetElement = null;
     let selectedParcelshop = null;
+    let widgetInitialized = false;
+    let widgetInitAttempts = 0;
+    const MAX_INIT_ATTEMPTS = 10;
 
     $(document).ready(function() {
         initGLSWidget();
         initShippingAddressToggle();
+
+        // Re-initialize widget on checkout update (WooCommerce AJAX)
+        $(document.body).on('updated_checkout', function() {
+            if (!widgetInitialized) {
+                console.log('Checkout updated, re-initializing GLS widget...');
+                widgetInitAttempts = 0;
+                initGLSWidget();
+            }
+        });
     });
 
     /**
-     * Initialize GLS Map Widget
+     * Initialize GLS Map Widget with retry logic
      */
     function initGLSWidget() {
+        console.log('Initializing GLS widget...');
+
         // Wait for the GLS widget custom element to be defined
-        if (typeof customElements !== 'undefined') {
+        if (typeof customElements !== 'undefined' && customElements.whenDefined) {
             customElements.whenDefined('gls-dpm-dialog').then(function() {
+                console.log('GLS custom element defined');
                 setupWidget();
+            }).catch(function(error) {
+                console.error('Error waiting for GLS custom element:', error);
+                // Fallback to retry with timeout
+                retrySetupWidget();
             });
         } else {
-            // Fallback: wait a bit and try to setup
-            setTimeout(setupWidget, 1000);
+            // Fallback: wait and retry
+            retrySetupWidget();
         }
+    }
+
+    /**
+     * Retry widget setup with exponential backoff
+     */
+    function retrySetupWidget() {
+        widgetInitAttempts++;
+
+        if (widgetInitAttempts > MAX_INIT_ATTEMPTS) {
+            console.error('Failed to initialize GLS widget after', MAX_INIT_ATTEMPTS, 'attempts');
+            return;
+        }
+
+        const delay = Math.min(1000 * Math.pow(1.5, widgetInitAttempts - 1), 5000);
+        console.log('Retrying widget setup in', delay, 'ms (attempt', widgetInitAttempts, ')');
+
+        setTimeout(function() {
+            setupWidget();
+        }, delay);
     }
 
     /**
@@ -39,23 +77,39 @@
             const element = document.getElementById(id);
             if (element) {
                 widgetElement = element;
+                console.log('Found GLS widget element:', id);
                 break;
             }
         }
 
         if (!widgetElement) {
-            console.error('GLS widget element not found');
+            console.warn('GLS widget element not found yet, will retry...');
+            retrySetupWidget();
             return;
         }
 
+        // Check if the widget element has the required showModal method
+        if (typeof widgetElement.showModal !== 'function') {
+            console.warn('Widget element found but showModal method not available yet, will retry...');
+            retrySetupWidget();
+            return;
+        }
+
+        // Widget is ready!
+        widgetInitialized = true;
+        console.log('GLS widget initialized successfully');
+
         // Listen for parcelshop selection change event
         widgetElement.addEventListener('change', function(event) {
+            console.log('Parcelshop selected:', event.detail);
             handleParcelshopSelection(event.detail);
         });
 
-        // Open widget modal when button is clicked
-        $(document).on('click', '.mygls-select-parcelshop', function(e) {
+        // Open widget modal when button is clicked (using event delegation)
+        $(document).off('click.mygls-parcelshop').on('click.mygls-parcelshop', '.mygls-select-parcelshop', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('Open parcelshop button clicked');
             openWidget();
         });
     }
@@ -65,15 +119,36 @@
      */
     function openWidget() {
         if (!widgetElement) {
-            console.error('Widget not initialized');
+            console.error('Widget not initialized - attempting to re-initialize...');
+            widgetInitialized = false;
+            widgetInitAttempts = 0;
+            initGLSWidget();
+
+            // Try again after a short delay
+            setTimeout(function() {
+                if (widgetElement && typeof widgetElement.showModal === 'function') {
+                    widgetElement.showModal();
+                } else {
+                    alert('GLS map widget is still loading. Please try again in a moment.');
+                }
+            }, 1000);
+            return;
+        }
+
+        // Verify showModal method exists
+        if (typeof widgetElement.showModal !== 'function') {
+            console.error('showModal method not available on widget element');
+            alert('GLS map widget is not fully loaded yet. Please refresh the page and try again.');
             return;
         }
 
         try {
+            console.log('Opening GLS widget modal...');
             // Call the showModal() method as per GLS documentation
             widgetElement.showModal();
         } catch (error) {
             console.error('Error opening GLS widget:', error);
+            alert('Error opening parcelshop map. Please refresh the page and try again.');
         }
     }
 

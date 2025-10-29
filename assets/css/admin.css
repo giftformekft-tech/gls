@@ -218,13 +218,92 @@
     line-height: 1.6;
 }
 
+/* Sortable Field Order List */
+.mygls-sortable-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+    padding: 10px;
+    max-width: 600px;
+}
+
+.mygls-sortable-item {
+    background: #fff;
+    border: 1px solid #d0d5dd;
+    border-radius: 4px;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    cursor: move;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+}
+
+.mygls-sortable-item:last-child {
+    margin-bottom: 0;
+}
+
+.mygls-sortable-item:hover {
+    border-color: #2271b1;
+    box-shadow: 0 2px 4px rgba(34,113,177,0.1);
+}
+
+.mygls-sortable-item .dashicons-menu {
+    color: #999;
+    cursor: grab;
+    font-size: 20px;
+}
+
+.mygls-sortable-item .dashicons-menu:active {
+    cursor: grabbing;
+}
+
+.mygls-sortable-label {
+    flex: 1;
+    font-weight: 500;
+    color: #333;
+}
+
+.mygls-sortable-order {
+    background: #2271b1;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    min-width: 35px;
+    text-align: center;
+}
+
+.mygls-sortable-placeholder {
+    background: #e8f4f8;
+    border: 2px dashed #2271b1;
+    border-radius: 4px;
+    height: 50px;
+    margin-bottom: 8px;
+}
+
+.ui-sortable-helper {
+    opacity: 0.8;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 /* Responsive */
 @media (max-width: 782px) {
     .mygls-settings-container {
         padding: 10px;
     }
-    
+
     .mygls-card-body {
         padding: 15px;
+    }
+
+    .mygls-sortable-list {
+        max-width: 100%;
+    }
+
+    .mygls-sortable-item {
+        padding: 10px 12px;
     }
 }
