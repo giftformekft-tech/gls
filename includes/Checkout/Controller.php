@@ -13,8 +13,8 @@ if (!defined('ABSPATH')) {
 class Controller {
     private $settings;
     private $enabled;
-    private array $field_priorities = [];
-    private array $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+    private $field_priorities = [];
+    private $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
     private static $instance = null;
 
     /**
@@ -30,6 +30,7 @@ class Controller {
     private function __construct() {
         $this->settings = get_option('mygls_settings', []);
         $this->enabled = ($this->settings['enable_custom_checkout'] ?? '0') === '1';
+        $this->parcelshop_methods = array_filter((array) ($this->settings['parcelshop_enabled_methods'] ?? []));
 
         if (!$this->enabled) {
             return;
@@ -106,36 +107,43 @@ class Controller {
     public function render_checkout_sections() {
         $field_order = $this->get_configured_field_order();
 
-        // Ensure the shipping method selector is always shown when shipping is required.
-        if (function_exists('WC') && WC()->cart && WC()->cart->needs_shipping()) {
-            if (!in_array('shipping_method', $field_order, true)) {
-                $shipping_position = array_search('shipping', $field_order, true);
-
-                if ($shipping_position === false) {
-                    $field_order[] = 'shipping_method';
-                } else {
-                    array_splice($field_order, $shipping_position, 0, 'shipping_method');
-                }
-            }
-        }
-
         foreach ($field_order as $section) {
-            $this->render_section($section);
+            echo $this->get_section_wrapper_markup($section);
         }
     }
 
     /**
-     * Render individual checkout section
+     * Build wrapper markup for a checkout section so it can be replaced via fragments
      */
-    private function render_section($section) {
+    private function get_section_wrapper_markup(string $section): string {
+        $content = $this->get_section_markup($section);
+
+        $classes = ['mygls-section-wrapper'];
+        if ($content === '') {
+            $classes[] = 'mygls-section-wrapper--empty';
+        }
+
+        return sprintf(
+            '<div id="mygls-section-wrapper-%1$s" class="%2$s">%3$s</div>',
+            esc_attr($section),
+            esc_attr(implode(' ', $classes)),
+            $content
+        );
+    }
+
+    /**
+     * Generate markup for an individual checkout section
+     */
+    private function get_section_markup(string $section): string {
         if (!function_exists('WC')) {
-            return;
+            return '';
         }
 
         $checkout = WC()->checkout();
 
         switch ($section) {
             case 'billing':
+                ob_start();
                 echo '<div class="mygls-checkout-section mygls-section-billing">';
                 echo '<h3 class="mygls-section-title">';
                 echo '<span class="dashicons dashicons-id"></span>';
@@ -147,86 +155,82 @@ class Controller {
                 }
                 echo '</div>';
                 echo '</div>';
-                break;
+                return ob_get_clean();
 
             case 'shipping_method':
-                // Safety check: Ensure WooCommerce is available
-                if (!WC()->cart) {
-                    return;
+                if (!WC()->cart || !WC()->cart->needs_shipping() || !WC()->cart->show_shipping()) {
+                    return '';
                 }
 
-                // Only show if cart needs shipping
-                if (WC()->cart->needs_shipping() && WC()->cart->show_shipping()) {
-                    echo '<div class="mygls-checkout-section mygls-section-shipping-method">';
-                    echo '<h3 class="mygls-section-title">';
-                    echo '<span class="dashicons dashicons-car"></span>';
-                    echo esc_html__('Szállítási mód', 'mygls-woocommerce');
-                    echo '</h3>';
-                    echo '<div class="mygls-section-content">';
-                    $this->render_shipping_methods();
-                    echo '</div>';
-                    echo '</div>';
-                }
-                break;
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-shipping-method">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-car"></span>';
+                echo esc_html__('Szállítási mód', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                echo $this->get_shipping_methods_markup();
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
 
             case 'shipping':
-                // Safety check: Ensure WooCommerce session is available
-                if (!WC()->session) {
-                    return;
+                if (!WC()->session || $this->is_parcelshop_delivery_selected() || !WC()->cart || !WC()->cart->needs_shipping() || wc_ship_to_billing_address_only()) {
+                    return '';
                 }
 
-                // Only show shipping address if NOT parcelshop AND shipping is needed
-                if (!$this->is_parcelshop_delivery_selected() && WC()->cart->needs_shipping() && !wc_ship_to_billing_address_only()) {
-                    echo '<div class="mygls-checkout-section mygls-section-shipping">';
-                    echo '<h3 class="mygls-section-title">';
-                    echo '<span class="dashicons dashicons-location"></span>';
-                    echo esc_html__('Szállítási adatok', 'mygls-woocommerce');
-                    echo '</h3>';
-                    echo '<div class="mygls-section-content">';
-                    foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
-                        woocommerce_form_field($key, $field, $checkout->get_value($key));
-                    }
-                    echo '</div>';
-                    echo '</div>';
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-shipping">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-location"></span>';
+                echo esc_html__('Szállítási adatok', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
+                    woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
-                break;
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
 
             case 'parcelshop':
-                // Safety check: Ensure WooCommerce session is available
-                if (!WC()->session) {
-                    return;
+                if (!WC()->session || !$this->is_parcelshop_delivery_selected()) {
+                    return '';
                 }
 
-                if ($this->is_parcelshop_delivery_selected()) {
-                    echo '<div class="mygls-checkout-section mygls-section-parcelshop">';
-                    echo '<h3 class="mygls-section-title">';
-                    echo '<span class="dashicons dashicons-location-alt"></span>';
-                    echo esc_html__('Csomagpont kiválasztása', 'mygls-woocommerce');
-                    echo '</h3>';
-                    echo '<div class="mygls-section-content">';
-                    echo do_shortcode('[mygls_parcelshop_selector]');
-                    echo '</div>';
-                    echo '</div>';
-                }
-                break;
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-parcelshop">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-location-alt"></span>';
+                echo esc_html__('Csomagpont kiválasztása', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                echo do_shortcode('[mygls_parcelshop_selector]');
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
 
             case 'order_notes':
-                if (apply_filters('woocommerce_enable_order_notes_field', 'yes' === get_option('woocommerce_enable_order_comments', 'yes'))) {
-                    echo '<div class="mygls-checkout-section mygls-section-notes">';
-                    echo '<h3 class="mygls-section-title">';
-                    echo '<span class="dashicons dashicons-edit"></span>';
-                    echo esc_html__('Megjegyzések a rendeléshez', 'mygls-woocommerce');
-                    echo '</h3>';
-                    echo '<div class="mygls-section-content">';
-                    foreach ($checkout->get_checkout_fields('order') as $key => $field) {
-                        woocommerce_form_field($key, $field, $checkout->get_value($key));
-                    }
-                    echo '</div>';
-                    echo '</div>';
+                if (!apply_filters('woocommerce_enable_order_notes_field', 'yes' === get_option('woocommerce_enable_order_comments', 'yes'))) {
+                    return '';
                 }
-                break;
+
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-notes">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-edit"></span>';
+                echo esc_html__('Megjegyzések a rendeléshez', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                foreach ($checkout->get_checkout_fields('order') as $key => $field) {
+                    woocommerce_form_field($key, $field, $checkout->get_value($key));
+                }
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
 
             case 'payment':
+                ob_start();
                 echo '<div class="mygls-checkout-section mygls-section-payment">';
                 echo '<h3 class="mygls-section-title">';
                 echo '<span class="dashicons dashicons-money-alt"></span>';
@@ -236,8 +240,10 @@ class Controller {
                 woocommerce_checkout_payment();
                 echo '</div>';
                 echo '</div>';
-                break;
+                return ob_get_clean();
         }
+
+        return '';
     }
 
     /**
@@ -254,6 +260,7 @@ class Controller {
 
         $needs_shipping = WC()->cart->needs_shipping();
         $show_shipping = WC()->cart->show_shipping();
+        $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
 
         ob_start();
 
@@ -305,18 +312,25 @@ class Controller {
                 $sanitized_id = sanitize_title($method_id);
                 $input_id = sprintf('shipping_method_%d_%s', $package_index, $sanitized_id);
                 $is_checked = checked($method_id, $chosen_for_package, false);
+                $is_parcelshop_rate = $this->is_parcelshop_method($method_id, $enabled_methods);
 
                 if ('' === $chosen_for_package && $available_count === 1) {
                     $is_checked = 'checked="checked"';
                 }
 
-                echo '<li>';
+                $li_classes = [];
+                if ($is_parcelshop_rate) {
+                    $li_classes[] = 'mygls-shipping-method--parcelshop';
+                }
+
+                echo '<li' . (!empty($li_classes) ? ' class="' . esc_attr(implode(' ', $li_classes)) . '"' : '') . '>';
                 printf(
-                    '<input type="radio" name="shipping_method[%1$s]" data-index="%1$s" id="%2$s" value="%3$s" class="shipping_method" %4$s />',
+                    '<input type="radio" name="shipping_method[%1$s]" data-index="%1$s" id="%2$s" value="%3$s" class="shipping_method" data-parcelshop="%5$s" %4$s />',
                     esc_attr((string) $package_index),
                     esc_attr($input_id),
                     esc_attr($method_id),
-                    $is_checked
+                    $is_checked,
+                    esc_attr($is_parcelshop_rate ? '1' : '0')
                 );
 
                 $label = function_exists('wc_cart_totals_shipping_method_label')
@@ -350,6 +364,8 @@ class Controller {
 
     public function register_checkout_fragments($fragments) {
         $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
+        $fragments['#mygls-section-wrapper-shipping'] = $this->get_section_wrapper_markup('shipping');
+        $fragments['#mygls-section-wrapper-parcelshop'] = $this->get_section_wrapper_markup('parcelshop');
 
         return $fragments;
     }
@@ -386,6 +402,34 @@ class Controller {
                 gap: 20px;
             }
 
+            .mygls-section-wrapper {
+                display: block;
+            }
+
+            .mygls-section-wrapper--empty,
+            .mygls-section-wrapper--hidden {
+                display: none;
+            }
+
+            .mygls-section-loading {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 120px;
+                background: #f9f9f9;
+            }
+
+            .mygls-section-loading .mygls-section-content {
+                width: 100%;
+                text-align: center;
+            }
+
+            .mygls-loading-message {
+                margin: 0;
+                font-size: 14px;
+                color: #4a5568;
+            }
+
             .mygls-checkout-section {
                 background: #fff;
                 border: 1px solid #e0e0e0;
@@ -394,6 +438,11 @@ class Controller {
                 overflow: hidden;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 transition: all 0.3s ease;
+            }
+
+            .mygls-section-hidden,
+            .mygls-section-disabled {
+                display: none;
             }
 
             .mygls-checkout-section:hover {
@@ -458,6 +507,19 @@ class Controller {
                 background: #f0f4ff;
                 border-color: #667eea;
                 box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li.mygls-shipping-method--parcelshop label:after {
+                content: 'Csomagpont';
+                display: inline-block;
+                margin-left: 8px;
+                padding: 2px 6px;
+                font-size: 11px;
+                text-transform: uppercase;
+                background-color: rgba(118, 75, 162, 0.15);
+                color: #764ba2;
+                border-radius: 3px;
+                letter-spacing: 0.5px;
             }
 
             .mygls-section-shipping-method .shipping-package-title {
@@ -609,38 +671,76 @@ class Controller {
         }
 
         // Add inline script to handle dynamic shipping/parcelshop toggle
+        $loading_message = esc_js(__('Betöltés...', 'mygls-woocommerce'));
+        $placeholder_markup = wp_json_encode('<div class="mygls-checkout-section mygls-section-loading"><div class="mygls-section-content"><p class="mygls-loading-message"></p></div></div>');
         $inline_js = "
         jQuery(function($) {
-            // Function to highlight selected shipping method
+            var loadingMessage = '{$loading_message}';
+            var placeholderMarkup = {$placeholder_markup};
+
             function highlightSelectedShippingMethod() {
-                $('.mygls-section-shipping-method .woocommerce-shipping-methods li').removeClass('woocommerce-shipping-method-selected');
-                $('.mygls-section-shipping-method .woocommerce-shipping-methods input[type=\"radio\"]:checked').closest('li').addClass('woocommerce-shipping-method-selected');
+                var $lists = $('.mygls-section-shipping-method .woocommerce-shipping-methods');
+                $lists.find('li').removeClass('woocommerce-shipping-method-selected');
+                $lists.find('input[type=\"radio\"]:checked').closest('li').addClass('woocommerce-shipping-method-selected');
             }
 
-            // Function to toggle shipping/parcelshop sections
-            function toggleShippingSections() {
-                // Trigger checkout update to re-render sections
+            function toggleWrapper($wrapper, shouldHide) {
+                if (!$wrapper.length) {
+                    return;
+                }
+
+                if (!shouldHide) {
+                    $wrapper.removeClass('mygls-section-wrapper--empty');
+
+                    if (!$wrapper.children().length) {
+                        $wrapper.html(placeholderMarkup);
+                        $wrapper.find('.mygls-loading-message').text(loadingMessage);
+                        $wrapper.addClass('mygls-section-wrapper--loading');
+                    }
+                } else {
+                    $wrapper.removeClass('mygls-section-wrapper--loading');
+                }
+
+                $wrapper.toggleClass('mygls-section-wrapper--hidden', shouldHide);
+            }
+
+            function setSectionVisibility() {
+                var $selected = $('.mygls-section-shipping-method input[type=\"radio\"]:checked');
+                var isParcelshop = false;
+
+                if ($selected.length) {
+                    var dataValue = $selected.data('parcelshop');
+                    isParcelshop = dataValue === 1 || dataValue === '1';
+                }
+
+                var $shippingWrapper = $('#mygls-section-wrapper-shipping');
+                var $parcelshopWrapper = $('#mygls-section-wrapper-parcelshop');
+
+                toggleWrapper($shippingWrapper, isParcelshop);
+                toggleWrapper($parcelshopWrapper, !isParcelshop);
+            }
+
+            function requestCheckoutRefresh() {
                 $('body').trigger('update_checkout');
             }
 
-            // Listen for shipping method changes
             $(document.body).on('change', 'input[name^=\"shipping_method\"]', function() {
                 highlightSelectedShippingMethod();
-                toggleShippingSections();
+                setSectionVisibility();
+                requestCheckoutRefresh();
             });
 
-            // Initial check on page load
             $(document.body).on('updated_checkout', function() {
                 highlightSelectedShippingMethod();
-                console.log('Checkout updated - sections refreshed');
+                setSectionVisibility();
             });
 
-            // Initial highlight
             highlightSelectedShippingMethod();
+            setSectionVisibility();
         });
         ";
 
-        wp_add_inline_script('mygls-parcelshop-map', $inline_js);
+        wp_add_inline_script('wc-checkout', $inline_js);
     }
 
     private function get_configured_field_order(): array {
