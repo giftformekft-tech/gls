@@ -109,7 +109,8 @@ function mygls_init() {
         MyGLS\Checkout\Controller::get_instance();
     }
 }
-add_action('plugins_loaded', 'mygls_init');
+// Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
+add_action('woocommerce_loaded', 'mygls_init');
 
 /**
  * Register shipping method
