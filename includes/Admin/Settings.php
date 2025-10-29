@@ -93,7 +93,7 @@ class Settings {
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
         $sanitized['checkout_field_order'] = isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])
             ? array_map('sanitize_text_field', $input['checkout_field_order'])
-            : ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+            : ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
 
         return $sanitized;
     }

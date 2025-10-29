@@ -14,6 +14,7 @@ class Controller {
     private $settings;
     private $enabled;
     private array $field_priorities = [];
+    private array $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
     private static $instance = null;
 
     /**
@@ -56,13 +57,16 @@ class Controller {
 
         // Enqueue custom checkout scripts
         add_action('wp_enqueue_scripts', [$this, 'enqueue_custom_scripts']);
+
+        // Prevent parcelshop selector from rendering inside shipping method list when custom checkout is active
+        add_filter('mygls_show_parcelshop_selector', [$this, 'maybe_hide_inline_parcelshop_selector'], 10, 2);
     }
 
     /**
      * Reorder checkout fields based on admin settings
      */
     public function reorder_checkout_fields($fields) {
-        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+        $field_order = $this->get_configured_field_order();
 
         // Set custom priorities for field groups
         $priorities = [];
@@ -100,7 +104,7 @@ class Controller {
      * Render checkout sections in custom order
      */
     public function render_checkout_sections() {
-        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+        $field_order = $this->get_configured_field_order();
 
         // Ensure the shipping method selector is always shown when shipping is required.
         if (function_exists('WC') && WC()->cart && WC()->cart->needs_shipping()) {
@@ -171,27 +175,8 @@ class Controller {
                     return;
                 }
 
-                // Check if parcelshop is selected
-                $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
-                $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
-
-                $is_parcelshop = false;
-                foreach ($chosen_methods as $chosen_method) {
-                    if (in_array($chosen_method, $enabled_methods, true)) {
-                        $is_parcelshop = true;
-                        break;
-                    }
-                    // Check partial matches
-                    foreach ($enabled_methods as $enabled_method) {
-                        if (strpos($chosen_method, $enabled_method) === 0) {
-                            $is_parcelshop = true;
-                            break 2;
-                        }
-                    }
-                }
-
                 // Only show shipping address if NOT parcelshop AND shipping is needed
-                if (!$is_parcelshop && WC()->cart->needs_shipping() && !wc_ship_to_billing_address_only()) {
+                if (!$this->is_parcelshop_delivery_selected() && WC()->cart->needs_shipping() && !wc_ship_to_billing_address_only()) {
                     echo '<div class="mygls-checkout-section mygls-section-shipping">';
                     echo '<h3 class="mygls-section-title">';
                     echo '<span class="dashicons dashicons-location"></span>';
@@ -212,26 +197,7 @@ class Controller {
                     return;
                 }
 
-                // Check if parcelshop is enabled for current shipping method
-                $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
-                $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
-
-                $show_parcelshop = false;
-                foreach ($chosen_methods as $chosen_method) {
-                    if (in_array($chosen_method, $enabled_methods, true)) {
-                        $show_parcelshop = true;
-                        break;
-                    }
-                    // Check partial matches
-                    foreach ($enabled_methods as $enabled_method) {
-                        if (strpos($chosen_method, $enabled_method) === 0) {
-                            $show_parcelshop = true;
-                            break 2;
-                        }
-                    }
-                }
-
-                if ($show_parcelshop) {
+                if ($this->is_parcelshop_delivery_selected()) {
                     echo '<div class="mygls-checkout-section mygls-section-parcelshop">';
                     echo '<h3 class="mygls-section-title">';
                     echo '<span class="dashicons dashicons-location-alt"></span>';
@@ -386,6 +352,14 @@ class Controller {
         $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
 
         return $fragments;
+    }
+
+    public function maybe_hide_inline_parcelshop_selector($show, $method) {
+        if (!$this->enabled) {
+            return $show;
+        }
+
+        return false;
     }
 
     /**
@@ -667,5 +641,79 @@ class Controller {
         ";
 
         wp_add_inline_script('mygls-parcelshop-map', $inline_js);
+    }
+
+    private function get_configured_field_order(): array {
+        $configured = $this->settings['checkout_field_order'] ?? $this->default_field_order;
+
+        if (!is_array($configured)) {
+            $configured = $this->default_field_order;
+        }
+
+        $allowed_sections = $this->default_field_order;
+        $normalised_order = array_values(array_intersect($configured, $allowed_sections));
+
+        foreach ($allowed_sections as $section) {
+            if (!in_array($section, $normalised_order, true)) {
+                $normalised_order[] = $section;
+            }
+        }
+
+        return $normalised_order;
+    }
+
+    private function is_parcelshop_delivery_selected(): bool {
+        if (!function_exists('WC') || !WC()->session) {
+            return false;
+        }
+
+        if (!WC()->cart || !WC()->cart->needs_shipping()) {
+            return false;
+        }
+
+        $shipping = WC()->shipping();
+        if (!$shipping) {
+            return false;
+        }
+
+        $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
+        if (empty($enabled_methods)) {
+            return false;
+        }
+
+        $chosen_methods = (array) WC()->session->get('chosen_shipping_methods', []);
+
+        foreach ($chosen_methods as $chosen_method) {
+            if ($this->is_parcelshop_method($chosen_method, $enabled_methods)) {
+                return true;
+            }
+        }
+
+        $packages = $shipping->get_packages();
+        foreach ($packages as $package) {
+            $available_methods = $package['rates'] ?? [];
+            if (count($available_methods) !== 1) {
+                continue;
+            }
+
+            $method = reset($available_methods);
+            if (is_object($method) && method_exists($method, 'get_id')) {
+                if ($this->is_parcelshop_method($method->get_id(), $enabled_methods)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function is_parcelshop_method(string $method_id, array $enabled_methods): bool {
+        foreach ($enabled_methods as $enabled_method) {
+            if ($method_id === $enabled_method || strpos($method_id, $enabled_method) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
