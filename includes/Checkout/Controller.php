@@ -48,6 +48,9 @@ class Controller {
         // Completely replace default checkout layout
         add_filter('woocommerce_locate_template', [$this, 'custom_checkout_template'], 10, 3);
 
+        // Ensure custom sections stay in sync with checkout fragments
+        add_filter('woocommerce_update_order_review_fragments', [$this, 'register_checkout_fragments']);
+
         // Enqueue custom checkout styles
         add_action('wp_enqueue_scripts', [$this, 'enqueue_custom_styles']);
 
@@ -262,52 +265,114 @@ class Controller {
      * Render shipping methods selection
      */
     private function render_shipping_methods() {
-        $packages = WC()->shipping()->get_packages();
+        echo $this->get_shipping_methods_markup();
+    }
 
-        if (empty($packages)) {
-            return;
+    private function get_shipping_methods_markup(): string {
+        if (!function_exists('WC') || !WC()->cart) {
+            return '<div id="mygls-shipping-methods"></div>';
         }
 
-        foreach ($packages as $i => $package) {
-            $available_methods = $package['rates'];
-            $chosen_method = WC()->session->chosen_shipping_methods[$i] ?? '';
+        $needs_shipping = WC()->cart->needs_shipping();
+        $show_shipping = WC()->cart->show_shipping();
+
+        ob_start();
+
+        echo '<div id="mygls-shipping-methods">';
+
+        if (!$needs_shipping || !$show_shipping) {
+            echo '<p class="mygls-no-shipping">' . esc_html__('Ehhez a rendeléshez nincs szükség szállításra.', 'mygls-woocommerce') . '</p>';
+            echo '</div>';
+            return ob_get_clean();
+        }
+
+        $packages = WC()->shipping()->get_packages();
+        $chosen_methods = [];
+
+        if (WC()->session) {
+            $chosen_methods = (array) WC()->session->get('chosen_shipping_methods', []);
+        }
+
+        if (empty($packages)) {
+            echo '<p class="mygls-no-shipping">' . esc_html__('Jelenleg nincsenek elérhető szállítási módok.', 'mygls-woocommerce') . '</p>';
+            echo '</div>';
+            return ob_get_clean();
+        }
+
+        $multiple_packages = count($packages) > 1;
+
+        foreach ($packages as $package_index => $package) {
+            $available_methods = $package['rates'] ?? [];
 
             if (empty($available_methods)) {
-                echo '<p>' . esc_html__('Jelenleg nincsenek elérhető szállítási módok.', 'mygls-woocommerce') . '</p>';
+                echo '<p class="mygls-no-shipping">' . esc_html__('Jelenleg nincsenek elérhető szállítási módok.', 'mygls-woocommerce') . '</p>';
                 continue;
             }
 
-            echo '<ul class="woocommerce-shipping-methods" id="shipping_method">';
+            $available_count = count($available_methods);
+            $chosen_for_package = $chosen_methods[$package_index] ?? '';
 
-            foreach ($available_methods as $method) {
-                $index = esc_attr($i);
-                $input_id = esc_attr(sprintf('shipping_method_%d_%s', $i, sanitize_title($method->id)));
-                $value = esc_attr($method->id);
-                $checked_attribute = checked($method->id, $chosen_method, false);
-                $label = wp_kses_post($method->get_label());
-                $cost_html = $method->cost > 0
-                    ? '<span class="amount">' . wc_price($method->cost) . '</span>'
-                    : '<span class="amount">' . esc_html__('Ingyenes', 'mygls-woocommerce') . '</span>';
+            if ($multiple_packages) {
+                $package_name = apply_filters('woocommerce_shipping_package_name', sprintf(__('Csomag %d', 'mygls-woocommerce'), $package_index + 1), $package_index, $package);
+                echo '<p class="shipping-package-title">' . esc_html($package_name) . '</p>';
+            }
+
+            $list_id = $package_index === 0 ? 'shipping_method' : sprintf('shipping_method_%d', $package_index);
+
+            echo '<ul class="woocommerce-shipping-methods" id="' . esc_attr($list_id) . '" data-package-index="' . esc_attr((string) $package_index) . '">';
+
+            foreach ($available_methods as $rate_id => $method) {
+                $method_id = method_exists($method, 'get_id') ? $method->get_id() : $rate_id;
+                $sanitized_id = sanitize_title($method_id);
+                $input_id = sprintf('shipping_method_%d_%s', $package_index, $sanitized_id);
+                $is_checked = checked($method_id, $chosen_for_package, false);
+
+                if ('' === $chosen_for_package && $available_count === 1) {
+                    $is_checked = 'checked="checked"';
+                }
 
                 echo '<li>';
                 printf(
                     '<input type="radio" name="shipping_method[%1$s]" data-index="%1$s" id="%2$s" value="%3$s" class="shipping_method" %4$s />',
-                    $index,
-                    $input_id,
-                    $value,
-                    $checked_attribute
+                    esc_attr((string) $package_index),
+                    esc_attr($input_id),
+                    esc_attr($method_id),
+                    $is_checked
                 );
+
+                $label = function_exists('wc_cart_totals_shipping_method_label')
+                    ? wc_cart_totals_shipping_method_label($method)
+                    : $method->get_label();
+
                 printf(
-                    '<label for="%1$s">%2$s %3$s</label>',
-                    $input_id,
-                    $label,
-                    $cost_html
+                    '<label for="%1$s">%2$s</label>',
+                    esc_attr($input_id),
+                    wp_kses_post($label)
                 );
+
+                if (method_exists($method, 'get_method_description')) {
+                    $description = $method->get_method_description();
+                    if (!empty($description)) {
+                        echo '<p class="shipping-method-description">' . wp_kses_post($description) . '</p>';
+                    }
+                }
+
+                do_action('woocommerce_after_shipping_rate', $method, $package_index);
                 echo '</li>';
             }
 
             echo '</ul>';
         }
+
+        echo '</div>';
+
+        return ob_get_clean();
+    }
+
+    public function register_checkout_fragments($fragments) {
+        $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
+
+        return $fragments;
     }
 
     /**
@@ -408,10 +473,23 @@ class Controller {
                 box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
             }
 
+            .mygls-section-shipping-method .shipping-package-title {
+                margin: 0 0 8px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: #2d3748;
+            }
+
             .mygls-section-shipping-method .woocommerce-shipping-methods label {
                 cursor: pointer;
                 display: inline-block;
                 width: calc(100% - 30px);
+            }
+
+            .mygls-section-shipping-method .shipping-method-description {
+                margin: 6px 0 0 32px;
+                font-size: 13px;
+                color: #4a5568;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods .amount {
