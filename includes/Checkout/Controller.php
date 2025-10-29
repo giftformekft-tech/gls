@@ -61,6 +61,12 @@ class Controller {
 
         // Prevent parcelshop selector from rendering inside shipping method list when custom checkout is active
         add_filter('mygls_show_parcelshop_selector', [$this, 'maybe_hide_inline_parcelshop_selector'], 10, 2);
+
+        // Privacy policy checkbox validation
+        add_action('woocommerce_checkout_process', [$this, 'validate_privacy_checkbox']);
+
+        // Save privacy policy checkbox value
+        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_privacy_checkbox']);
     }
 
     /**
@@ -238,6 +244,20 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
                 woocommerce_checkout_payment();
+
+                // Add privacy policy checkbox
+                echo '<div class="mygls-privacy-checkbox-wrapper">';
+                woocommerce_form_field('mygls_privacy_policy', [
+                    'type' => 'checkbox',
+                    'class' => ['form-row-wide', 'mygls-privacy-policy-checkbox'],
+                    'label' => sprintf(
+                        __('Elolvastam és elfogadom az %s', 'mygls-woocommerce'),
+                        '<a href="' . esc_url(get_privacy_policy_url()) . '" target="_blank">' . __('adatkezelési tájékoztatót', 'mygls-woocommerce') . '</a>'
+                    ),
+                    'required' => true,
+                ], $checkout->get_value('mygls_privacy_policy'));
+                echo '</div>';
+
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
@@ -337,9 +357,22 @@ class Controller {
                     ? wc_cart_totals_shipping_method_label($method)
                     : $method->get_label();
 
+                // Get method logo if available
+                $logo_html = '';
+                if (method_exists($method, 'get_instance_option')) {
+                    $logo_url = $method->get_instance_option('method_logo', '');
+                    if (!empty($logo_url)) {
+                        $logo_html = sprintf(
+                            '<img src="%s" alt="" class="mygls-shipping-method-logo" />',
+                            esc_url($logo_url)
+                        );
+                    }
+                }
+
                 printf(
-                    '<label for="%1$s">%2$s</label>',
+                    '<label for="%1$s">%2$s%3$s</label>',
                     esc_attr($input_id),
+                    $logo_html,
                     wp_kses_post($label)
                 );
 
@@ -480,13 +513,24 @@ class Controller {
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li {
-                padding: 12px 15px;
-                margin-bottom: 10px;
+                padding: 15px 18px;
+                margin-bottom: 15px;
                 background: #f9f9f9;
                 border: 2px solid #e0e0e0;
                 border-radius: 6px;
                 transition: all 0.2s ease;
                 cursor: pointer;
+            }
+
+            .mygls-shipping-method-logo {
+                display: inline-block;
+                max-width: 40px;
+                max-height: 40px;
+                width: auto;
+                height: auto;
+                margin-right: 10px;
+                vertical-align: middle;
+                object-fit: contain;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li:hover {
@@ -532,6 +576,30 @@ class Controller {
             .mygls-section-shipping-method .woocommerce-shipping-methods .amount {
                 font-weight: 600;
                 color: #2c3e50;
+            }
+
+            /* Privacy policy checkbox in payment section */
+            .mygls-privacy-checkbox-wrapper {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f0f4ff;
+                border: 1px solid #667eea;
+                border-radius: 6px;
+            }
+
+            .mygls-privacy-policy-checkbox label {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .mygls-privacy-policy-checkbox a {
+                color: #667eea;
+                text-decoration: underline;
+                font-weight: 600;
+            }
+
+            .mygls-privacy-policy-checkbox a:hover {
+                color: #764ba2;
             }
 
             /* Order Review Sidebar */
@@ -590,8 +658,20 @@ class Controller {
             /* Hide shipping and payment methods from order review sidebar */
             .mygls-custom-checkout-active .mygls-order-review-sidebar #shipping_method,
             .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-shipping-methods,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods {
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-checkout-payment,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-privacy-policy-text,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-terms-and-conditions-wrapper {
                 display: none !important;
+            }
+
+            /* Ensure order review table is always visible */
+            .mygls-order-review-sidebar .shop_table,
+            .mygls-order-review-sidebar .woocommerce-checkout-review-order-table {
+                display: table !important;
+                width: 100% !important;
+                visibility: visible !important;
+                opacity: 1 !important;
             }
 
             /* Hide place order button from payment section on desktop (keep it in sidebar) */
@@ -896,5 +976,24 @@ class Controller {
         }
 
         return false;
+    }
+
+    /**
+     * Validate privacy policy checkbox
+     */
+    public function validate_privacy_checkbox() {
+        if (empty($_POST['mygls_privacy_policy'])) {
+            wc_add_notice(__('Kérjük, fogadja el az adatkezelési tájékoztatót a folytatáshoz.', 'mygls-woocommerce'), 'error');
+        }
+    }
+
+    /**
+     * Save privacy policy checkbox value to order meta
+     */
+    public function save_privacy_checkbox($order_id) {
+        if (!empty($_POST['mygls_privacy_policy'])) {
+            update_post_meta($order_id, '_mygls_privacy_policy_accepted', '1');
+            update_post_meta($order_id, '_mygls_privacy_policy_accepted_date', current_time('mysql'));
+        }
     }
 }

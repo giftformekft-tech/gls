@@ -83,6 +83,14 @@ class Method extends \WC_Shipping_Method {
                     'taxable' => __('Taxable', 'mygls-woocommerce'),
                     'none' => __('None', 'mygls-woocommerce')
                 ]
+            ],
+            'method_logo' => [
+                'title' => __('Method Logo (PNG)', 'mygls-woocommerce'),
+                'type' => 'text',
+                'description' => __('URL to a small logo image (PNG recommended, max 40x40px). Will be displayed next to the shipping method title.', 'mygls-woocommerce'),
+                'default' => '',
+                'desc_tip' => true,
+                'placeholder' => 'https://example.com/logo.png'
             ]
         ];
     }
