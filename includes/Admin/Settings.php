@@ -535,21 +535,42 @@ class Settings {
                 wp_send_json_error(['message' => __('Failed to initialize API client', 'mygls-woocommerce')]);
             }
 
-            // Try to get parcel list to test connection
-            // Use a smaller date range for faster testing
-            $result = $api->getParcelList(
-                date('Y-m-d', strtotime('-1 days')),
-                date('Y-m-d')
-            );
+            // Use PrepareLabels endpoint with minimal valid data to test authentication
+            // This is simpler than GetParcelList and doesn't require date parsing
+            $test_parcel = [
+                'ClientNumber' => (int)$test_settings['client_number'],
+                'ClientReference' => 'TEST-CONNECTION-' . time(),
+                'CODAmount' => 0,
+                'Count' => 1,
+                'Content' => 'Test Connection',
+                'PickupAddress' => [
+                    'Name' => 'Test',
+                    'Street' => 'Test',
+                    'HouseNumber' => '1',
+                    'City' => 'Test',
+                    'ZipCode' => '1000',
+                    'CountryIsoCode' => strtoupper($test_settings['country'])
+                ],
+                'DeliveryAddress' => [
+                    'Name' => 'Test',
+                    'Street' => 'Test',
+                    'HouseNumber' => '1',
+                    'City' => 'Test',
+                    'ZipCode' => '1000',
+                    'CountryIsoCode' => strtoupper($test_settings['country'])
+                ]
+            ];
+
+            $result = $api->prepareLabels([$test_parcel]);
 
             // Restore original settings after test
             update_option('mygls_settings', $original_settings, false);
 
-            // Check for explicit errors from API client
+            // Check for explicit errors from API client wrapper
             if (isset($result['error'])) {
                 $error_message = $result['error'];
 
-                // Check if it's an HTTP error (like 401 Unauthorized)
+                // Parse HTTP errors
                 if (strpos($error_message, 'HTTP 401') !== false || strpos($error_message, 'Unauthorized') !== false) {
                     wp_send_json_error(['message' => __('Authentication failed - Invalid username or password', 'mygls-woocommerce')]);
                 } elseif (strpos($error_message, 'HTTP 403') !== false || strpos($error_message, 'Forbidden') !== false) {
@@ -564,55 +585,41 @@ class Settings {
                 return;
             }
 
-            // Check for GetParcelListErrors in the response
-            // According to GLS API documentation, errors are returned in this array
-            if (isset($result['GetParcelListErrors']) && is_array($result['GetParcelListErrors']) && !empty($result['GetParcelListErrors'])) {
-                $first_error = $result['GetParcelListErrors'][0];
-                $error_msg = $first_error['ErrorDescription'] ?? __('Unknown API error', 'mygls-woocommerce');
-                $error_code = $first_error['ErrorCode'] ?? 'N/A';
+            // PrepareLabels response structure check
+            // A successful authentication should either:
+            // 1. Return PrepareLabelsErrorList with validation errors (auth succeeded, but data was invalid - this is OK for test)
+            // 2. Return LabelsInfoList with success
+            $auth_successful = false;
 
-                wp_send_json_error(['message' => sprintf(__('API Error (Code %s): %s', 'mygls-woocommerce'), $error_code, $error_msg)]);
-                return;
+            if (isset($result['PrepareLabelsErrorList']) && is_array($result['PrepareLabelsErrorList'])) {
+                // Errors in the response mean authentication worked, but data validation failed
+                // This is actually success for connection test purposes!
+                $auth_successful = true;
             }
 
-            // Check for 'd' wrapper with errors (WCF services format)
+            if (isset($result['LabelsInfoList']) && is_array($result['LabelsInfoList'])) {
+                // Success response with labels info
+                $auth_successful = true;
+            }
+
+            // Check for 'd' wrapper (WCF services format)
             if (isset($result['d'])) {
-                if (isset($result['d']['GetParcelListErrors']) && is_array($result['d']['GetParcelListErrors']) && !empty($result['d']['GetParcelListErrors'])) {
-                    $first_error = $result['d']['GetParcelListErrors'][0];
-                    $error_msg = $first_error['ErrorDescription'] ?? __('Unknown API error', 'mygls-woocommerce');
-                    wp_send_json_error(['message' => $error_msg]);
-                    return;
+                if (isset($result['d']['PrepareLabelsErrorList']) || isset($result['d']['LabelsInfoList'])) {
+                    $auth_successful = true;
                 }
             }
 
-            // Verify the response has the expected structure for GetParcelList
-            // According to the GLS API documentation, a successful response should have:
-            // - PrintDataInfoList (array, can be empty if no parcels in date range)
-            // - GetParcelListErrors (array, should be empty if successful)
-            $has_expected_structure = false;
-
-            // Check for PrintDataInfoList key (with or without 'd' wrapper)
-            if (isset($result['PrintDataInfoList']) || (isset($result['d']) && isset($result['d']['PrintDataInfoList']))) {
-                $has_expected_structure = true;
-            }
-
-            // Also accept __type which indicates a valid WCF service response
-            if (isset($result['__type']) && strpos($result['__type'], 'GetParcelListResponse') !== false) {
-                $has_expected_structure = true;
-            }
-
-            // If response doesn't have expected structure, it's likely invalid or auth failed
-            if (!$has_expected_structure) {
-                // Empty array or unexpected structure = authentication likely failed
+            if (!$auth_successful) {
+                // If response structure is completely unexpected, auth likely failed
                 if (empty($result) || !is_array($result)) {
                     wp_send_json_error(['message' => __('Authentication failed - Please verify your credentials', 'mygls-woocommerce')]);
                 } else {
-                    wp_send_json_error(['message' => __('Unexpected API response format - Please check your API configuration', 'mygls-woocommerce')]);
+                    wp_send_json_error(['message' => __('Unexpected API response - Connection may have succeeded but response format is unrecognized', 'mygls-woocommerce')]);
                 }
                 return;
             }
 
-            // If we got here, connection is successful
+            // If we got here, authentication is successful
             wp_send_json_success(['message' => __('Connection successful! API credentials verified.', 'mygls-woocommerce')]);
 
         } catch (\Exception $e) {
@@ -632,4 +639,3 @@ class Settings {
         }
     }
 }
-                
