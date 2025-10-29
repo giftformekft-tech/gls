@@ -29,9 +29,8 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
             <div class="mygls-checkout-main">
                 <div class="mygls-checkout-sections">
                     <?php
-                    // Get controller instance and render sections
-                    $settings = get_option('mygls_settings', []);
-                    $controller = new MyGLS\Checkout\Controller();
+                    // Get singleton controller instance and render sections
+                    $controller = MyGLS\Checkout\Controller::get_instance();
 
                     // Render custom sections
                     $controller->render_checkout_sections();

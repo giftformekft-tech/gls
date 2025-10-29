@@ -13,8 +13,19 @@ if (!defined('ABSPATH')) {
 class Controller {
     private $settings;
     private $enabled;
+    private static $instance = null;
 
-    public function __construct() {
+    /**
+     * Get singleton instance
+     */
+    public static function get_instance() {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    private function __construct() {
         $this->settings = get_option('mygls_settings', []);
         $this->enabled = ($this->settings['enable_custom_checkout'] ?? '0') === '1';
 
