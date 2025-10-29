@@ -91,6 +91,14 @@ class Settings {
             ? array_map('sanitize_text_field', $input['parcelshop_enabled_methods'])
             : [];
 
+        // Shipping Method Logos
+        $sanitized['shipping_method_logos'] = [];
+        if (isset($input['shipping_method_logos']) && is_array($input['shipping_method_logos'])) {
+            foreach ($input['shipping_method_logos'] as $method_id => $logo_url) {
+                $sanitized['shipping_method_logos'][sanitize_text_field($method_id)] = esc_url_raw($logo_url);
+            }
+        }
+
         // Custom Checkout Settings
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
         if (isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])) {
@@ -475,6 +483,7 @@ class Settings {
                                 // Get all available shipping methods
                                 $shipping_zones = \WC_Shipping_Zones::get_zones();
                                 $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+                                $method_logos = $settings['shipping_method_logos'] ?? [];
 
                                 foreach ($shipping_zones as $zone) {
                                     $zone_obj = new \WC_Shipping_Zone($zone['id']);
@@ -483,7 +492,7 @@ class Settings {
                                     if (!empty($shipping_methods)) {
                                         ?>
                                         <tr>
-                                            <td colspan="2">
+                                            <td colspan="3">
                                                 <h4 style="margin-top: 10px; margin-bottom: 5px;"><?php echo esc_html($zone['zone_name']); ?></h4>
                                             </td>
                                         </tr>
@@ -491,12 +500,13 @@ class Settings {
                                         foreach ($shipping_methods as $method) {
                                             $method_id = $method->get_rate_id();
                                             $method_title = $method->get_title();
+                                            $logo_url = $method_logos[$method_id] ?? '';
                                             ?>
                                             <tr>
-                                                <th scope="row" style="padding-left: 20px;">
+                                                <th scope="row" style="padding-left: 20px; width: 25%;">
                                                     <?php echo esc_html($method_title); ?>
                                                 </th>
-                                                <td>
+                                                <td style="width: 15%;">
                                                     <label class="mygls-toggle">
                                                         <input type="checkbox"
                                                                name="mygls_settings[parcelshop_enabled_methods][]"
@@ -504,7 +514,18 @@ class Settings {
                                                                <?php checked(in_array($method_id, $enabled_methods), true); ?>>
                                                         <span class="mygls-toggle-slider"></span>
                                                     </label>
-                                                    <p class="description"><?php _e('Enable parcelshop selector for this method', 'mygls-woocommerce'); ?></p>
+                                                    <p class="description"><?php _e('Enable parcelshop selector', 'mygls-woocommerce'); ?></p>
+                                                </td>
+                                                <td style="width: 60%;">
+                                                    <input type="url"
+                                                           name="mygls_settings[shipping_method_logos][<?php echo esc_attr($method_id); ?>]"
+                                                           value="<?php echo esc_attr($logo_url); ?>"
+                                                           class="regular-text"
+                                                           placeholder="https://example.com/logo.png">
+                                                    <p class="description"><?php _e('Logo URL (PNG, max 40x40px recommended)', 'mygls-woocommerce'); ?></p>
+                                                    <?php if (!empty($logo_url)): ?>
+                                                        <img src="<?php echo esc_url($logo_url); ?>" alt="Logo" style="max-width: 40px; max-height: 40px; margin-top: 5px; border: 1px solid #ddd; padding: 2px;">
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                             <?php
