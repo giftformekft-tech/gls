@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/giftformekft-tech/gls
  * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
- * Version: 1.0.8
+ * Version: 1.0.9
  * Author: GiftForMe Kft
  * Author URI: https://giftforme.hu
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.0.8');
+define('MYGLS_VERSION', '1.0.9');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -107,6 +107,15 @@ function mygls_init() {
     // Initialize Parcelshop Gutenberg Block
     if (class_exists('MyGLS\\Blocks\\ParcelshopBlock')) {
         new MyGLS\Blocks\ParcelshopBlock();
+    }
+
+    // Initialize Checkout Block Integration (WooCommerce Blocks)
+    if (class_exists('MyGLS\\Blocks\\CheckoutIntegration')) {
+        add_action('woocommerce_blocks_loaded', function() {
+            if (class_exists('Automattic\WooCommerce\Blocks\Integrations\IntegrationInterface')) {
+                new MyGLS\Blocks\CheckoutIntegration();
+            }
+        });
     }
 }
 add_action('plugins_loaded', 'mygls_init');
@@ -278,6 +287,7 @@ function mygls_frontend_enqueue_scripts() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('mygls_checkout_nonce'),
         'country' => strtolower($settings['country'] ?? 'hu'),
+        'enabledMethods' => $settings['parcelshop_enabled_methods'] ?? [],
         'i18n' => array(
             'searching' => __('Searching...', 'mygls-woocommerce'),
             'noResults' => __('No parcelshops found', 'mygls-woocommerce'),

@@ -10,6 +10,7 @@
 
     $(document).ready(function() {
         initGLSWidget();
+        initShippingAddressToggle();
     });
 
     /**
@@ -31,7 +32,16 @@
      * Setup widget event listeners
      */
     function setupWidget() {
-        widgetElement = document.getElementById('mygls-parcelshop-widget');
+        // Try multiple widget IDs (for classic checkout, blocks, etc.)
+        const widgetIds = ['mygls-parcelshop-widget-classic', 'mygls-parcelshop-widget', 'mygls-checkout-widget'];
+
+        for (const id of widgetIds) {
+            const element = document.getElementById(id);
+            if (element) {
+                widgetElement = element;
+                break;
+            }
+        }
 
         if (!widgetElement) {
             console.error('GLS widget element not found');
@@ -103,9 +113,9 @@
             contactEmail: detail.contact.email || ''
         };
 
-        // Update hidden fields
-        $('#mygls_parcelshop_id').val(selectedParcelshop.id);
-        $('#mygls_parcelshop_data').val(JSON.stringify(selectedParcelshop));
+        // Update hidden fields (both specific ID and class-based for multiple instances)
+        $('#mygls_parcelshop_id, .mygls-parcelshop-id-field').val(selectedParcelshop.id);
+        $('#mygls_parcelshop_data, .mygls-parcelshop-data-field').val(JSON.stringify(selectedParcelshop));
 
         // Update display
         updateSelectedDisplay(selectedParcelshop);
@@ -228,6 +238,80 @@
         return String(text).replace(/[&<>"']/g, function(m) {
             return map[m];
         });
+    }
+
+    /**
+     * Initialize shipping address toggle
+     * Hides shipping address fields when parcelshop delivery is selected
+     */
+    function initShippingAddressToggle() {
+        // For classic checkout
+        $(document.body).on('change', 'input[name^="shipping_method"]', function() {
+            toggleShippingAddress();
+        });
+
+        // Also check on page load
+        $(document.body).on('updated_checkout', function() {
+            toggleShippingAddress();
+        });
+
+        // Initial check
+        toggleShippingAddress();
+    }
+
+    /**
+     * Toggle shipping address visibility based on selected shipping method
+     */
+    function toggleShippingAddress() {
+        // Get enabled parcelshop methods from localized data
+        const enabledMethods = myglsCheckout.enabledMethods || [];
+
+        if (!enabledMethods || enabledMethods.length === 0) {
+            return;
+        }
+
+        // Check if a parcelshop-enabled method is selected
+        let isParcelshopSelected = false;
+        $('input[name^="shipping_method"]:checked').each(function() {
+            const selectedMethod = $(this).val();
+
+            enabledMethods.forEach(function(method) {
+                if (selectedMethod.indexOf(method) !== -1) {
+                    isParcelshopSelected = true;
+                }
+            });
+        });
+
+        // Hide/show shipping address fields
+        const $shippingAddressFields = $('.woocommerce-shipping-fields, .shipping_address, #ship-to-different-address-checkbox');
+
+        if (isParcelshopSelected) {
+            // Hide shipping address fields for parcelshop delivery
+            $shippingAddressFields.slideUp(300);
+
+            // Uncheck "ship to different address" if applicable
+            $('#ship-to-different-address-checkbox input').prop('checked', false).trigger('change');
+
+            // Add a notice explaining why fields are hidden
+            if ($('.mygls-shipping-notice').length === 0) {
+                $('.woocommerce-shipping-fields').before(
+                    '<div class="mygls-shipping-notice woocommerce-info">' +
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;">' +
+                    '<circle cx="12" cy="12" r="10"></circle>' +
+                    '<line x1="12" y1="16" x2="12" y2="12"></line>' +
+                    '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+                    '</svg>' +
+                    'Your order will be delivered to the selected GLS parcelshop. Shipping address is not required.' +
+                    '</div>'
+                );
+            }
+        } else {
+            // Show shipping address fields for normal delivery
+            $shippingAddressFields.slideDown(300);
+
+            // Remove notice
+            $('.mygls-shipping-notice').remove();
+        }
     }
 
 })(jQuery);

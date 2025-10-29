@@ -86,16 +86,18 @@ class Selector {
         if (!$show_parcelshop) {
             return;
         }
-        
+
+        // Only render widget once (check if already rendered)
+        static $widget_rendered = false;
+
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
-        $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? '');
 
         ?>
         <div class="mygls-parcelshop-selector" data-shipping-method="<?php echo esc_attr($method->get_id()); ?>" style="display: none;">
             <div class="mygls-parcelshop-trigger">
-                <button type="button" class="button mygls-select-parcelshop">
+                <button type="button" class="button mygls-select-parcelshop" data-method-id="<?php echo esc_attr($method->get_id()); ?>">
                     <span class="dashicons dashicons-location-alt"></span>
                     <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
                 </button>
@@ -108,29 +110,42 @@ class Selector {
                 <?php endif; ?>
             </div>
 
-            <input type="hidden" name="mygls_parcelshop_id" id="mygls_parcelshop_id" value="<?php echo esc_attr($selected_parcelshop['id'] ?? ''); ?>">
-            <input type="hidden" name="mygls_parcelshop_data" id="mygls_parcelshop_data" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
+            <input type="hidden" name="mygls_parcelshop_id" class="mygls-parcelshop-id-field" value="<?php echo esc_attr($selected_parcelshop['id'] ?? ''); ?>">
+            <input type="hidden" name="mygls_parcelshop_data" class="mygls-parcelshop-data-field" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
         </div>
 
-        <!-- GLS Official Map Widget Dialog -->
+        <?php
+        // Only render the GLS widget dialog once per page
+        if (!$widget_rendered):
+            $widget_rendered = true;
+        ?>
+        <!-- GLS Official Map Widget Dialog (rendered once) -->
         <gls-dpm-dialog
             country="<?php echo esc_attr($country); ?>"
             <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
-            id="mygls-parcelshop-widget">
+            id="mygls-parcelshop-widget-classic"
+            style="display: none;">
         </gls-dpm-dialog>
-        
+        <?php endif; ?>
+
         <script>
         jQuery(function($) {
             // Show parcelshop selector when this shipping method is selected
             $('input[name="shipping_method[<?php echo $index; ?>]"]').on('change', function() {
-                if ($(this).val() === '<?php echo esc_js($method->get_id()); ?>') {
-                    $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]').slideDown();
+                const selectedValue = $(this).val();
+                const targetSelector = $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]');
+
+                if (selectedValue === '<?php echo esc_js($method->get_id()); ?>') {
+                    // Hide all other parcelshop selectors first
+                    $('.mygls-parcelshop-selector').not(targetSelector).slideUp();
+                    // Show this one
+                    targetSelector.slideDown();
                 } else {
-                    $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]').slideUp();
+                    targetSelector.slideUp();
                 }
             });
-            
-            // Check if already selected
+
+            // Check if already selected on page load
             if ($('input[name="shipping_method[<?php echo $index; ?>]"]:checked').val() === '<?php echo esc_js($method->get_id()); ?>') {
                 $('.mygls-parcelshop-selector[data-shipping-method="<?php echo esc_js($method->get_id()); ?>"]').show();
             }

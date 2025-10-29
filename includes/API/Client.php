@@ -294,9 +294,11 @@ class Client {
                 'Code' => 'COD'
             ];
         }
-        
+
         // FDS - Flexible Delivery Service
-        if (!empty($order->get_billing_email())) {
+        // IMPORTANT: FDS and PSD are mutually exclusive services
+        // FDS is for home delivery, PSD is for parcel shop delivery
+        if (!$use_parcelshop && !empty($order->get_billing_email())) {
             $services[] = [
                 'Code' => 'FDS',
                 'FDSParameter' => [
@@ -304,7 +306,7 @@ class Client {
                 ]
             ];
         }
-        
+
         // SMS service if phone provided
         if (!empty($order->get_billing_phone())) {
             $services[] = [
