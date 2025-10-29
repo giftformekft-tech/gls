@@ -31,6 +31,7 @@ class Controller {
     private function __construct() {
         $this->settings = get_option('mygls_settings', []);
         $this->enabled = ($this->settings['enable_custom_checkout'] ?? '0') === '1';
+        $this->parcelshop_methods = array_filter((array) ($this->settings['parcelshop_enabled_methods'] ?? []));
 
         if (!$this->enabled) {
             return;
@@ -110,6 +111,13 @@ class Controller {
         foreach ($field_order as $section) {
             echo $this->get_section_wrapper_markup($section);
         }
+
+        return sprintf(
+            '<div id="mygls-section-wrapper-%1$s" class="%2$s">%3$s</div>',
+            esc_attr($section),
+            esc_attr(implode(' ', $classes)),
+            $content
+        );
     }
 
     /**
@@ -564,6 +572,11 @@ class Controller {
                 overflow: hidden;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 transition: all 0.3s ease;
+            }
+
+            .mygls-section-hidden,
+            .mygls-section-disabled {
+                display: none;
             }
 
             .mygls-checkout-section:hover {
