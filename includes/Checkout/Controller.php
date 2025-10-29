@@ -102,6 +102,19 @@ class Controller {
     public function render_checkout_sections() {
         $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
 
+        // Ensure the shipping method selector is always shown when shipping is required.
+        if (function_exists('WC') && WC()->cart && WC()->cart->needs_shipping()) {
+            if (!in_array('shipping_method', $field_order, true)) {
+                $shipping_position = array_search('shipping', $field_order, true);
+
+                if ($shipping_position === false) {
+                    $field_order[] = 'shipping_method';
+                } else {
+                    array_splice($field_order, $shipping_position, 0, 'shipping_method');
+                }
+            }
+        }
+
         foreach ($field_order as $section) {
             $this->render_section($section);
         }
