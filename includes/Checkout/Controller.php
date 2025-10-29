@@ -357,16 +357,15 @@ class Controller {
                     ? wc_cart_totals_shipping_method_label($method)
                     : $method->get_label();
 
-                // Get method logo if available
+                // Get method logo from GLS admin settings
                 $logo_html = '';
-                if (method_exists($method, 'get_instance_option')) {
-                    $logo_url = $method->get_instance_option('method_logo', '');
-                    if (!empty($logo_url)) {
-                        $logo_html = sprintf(
-                            '<img src="%s" alt="" class="mygls-shipping-method-logo" />',
-                            esc_url($logo_url)
-                        );
-                    }
+                $method_logos = $this->settings['shipping_method_logos'] ?? [];
+                $logo_url = $method_logos[$method_id] ?? '';
+                if (!empty($logo_url)) {
+                    $logo_html = sprintf(
+                        '<img src="%s" alt="" class="mygls-shipping-method-logo" />',
+                        esc_url($logo_url)
+                    );
                 }
 
                 printf(
@@ -665,13 +664,42 @@ class Controller {
                 display: none !important;
             }
 
+            /* Hide WooCommerce default privacy policy text in payment section */
+            .mygls-section-payment .woocommerce-privacy-policy-text {
+                display: none !important;
+            }
+
             /* Ensure order review table is always visible */
             .mygls-order-review-sidebar .shop_table,
-            .mygls-order-review-sidebar .woocommerce-checkout-review-order-table {
+            .mygls-order-review-sidebar .woocommerce-checkout-review-order-table,
+            .mygls-order-review-content table.shop_table {
                 display: table !important;
                 width: 100% !important;
                 visibility: visible !important;
                 opacity: 1 !important;
+                border-collapse: collapse !important;
+            }
+
+            .mygls-order-review-sidebar .shop_table thead,
+            .mygls-order-review-sidebar .shop_table tbody,
+            .mygls-order-review-sidebar .shop_table tfoot,
+            .mygls-order-review-content table.shop_table thead,
+            .mygls-order-review-content table.shop_table tbody,
+            .mygls-order-review-content table.shop_table tfoot {
+                display: table-row-group !important;
+            }
+
+            .mygls-order-review-sidebar .shop_table tr,
+            .mygls-order-review-content table.shop_table tr {
+                display: table-row !important;
+            }
+
+            .mygls-order-review-sidebar .shop_table th,
+            .mygls-order-review-sidebar .shop_table td,
+            .mygls-order-review-content table.shop_table th,
+            .mygls-order-review-content table.shop_table td {
+                display: table-cell !important;
+                padding: 10px !important;
             }
 
             /* Hide place order button from payment section on desktop (keep it in sidebar) */
@@ -890,13 +918,32 @@ class Controller {
                 }
             }
 
+            function movePrivacyCheckboxBeforeOrderButton() {
+                // Move privacy checkbox before the place order button in payment section
+                var $privacyCheckbox = $('.mygls-privacy-checkbox-wrapper');
+                var $placeOrderButton = $('.mygls-section-payment #place_order');
+
+                if ($privacyCheckbox.length && $placeOrderButton.length) {
+                    // Only move if not already in position
+                    if ($privacyCheckbox.next().attr('id') !== 'place_order') {
+                        $privacyCheckbox.insertBefore($placeOrderButton);
+                    }
+                }
+            }
+
             highlightSelectedShippingMethod();
             setSectionVisibility();
             ensureOrderReviewVisible();
+            movePrivacyCheckboxBeforeOrderButton();
 
             // Re-check on window resize
             $(window).on('resize', function() {
                 ensureOrderReviewVisible();
+            });
+
+            // Move checkbox on checkout update
+            $(document.body).on('updated_checkout', function() {
+                movePrivacyCheckboxBeforeOrderButton();
             });
         });
         ";
