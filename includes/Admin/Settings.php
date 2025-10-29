@@ -79,7 +79,7 @@ class Settings {
         $sanitized['status_sync_interval'] = absint($input['status_sync_interval'] ?? 60);
 
         // Parcelshop Map Settings
-        $sanitized['language'] = sanitize_text_field($input['language'] ?? '');
+        $sanitized['language'] = sanitize_text_field($input['language'] ?? 'hu');
         $sanitized['map_display_mode'] = sanitize_text_field($input['map_display_mode'] ?? 'modal');
         $sanitized['map_button_style'] = sanitize_text_field($input['map_button_style'] ?? 'primary');
         $sanitized['map_position'] = sanitize_text_field($input['map_position'] ?? 'after_shipping');

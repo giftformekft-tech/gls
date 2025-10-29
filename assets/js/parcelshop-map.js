@@ -129,7 +129,7 @@
                 if (widgetElement && typeof widgetElement.showModal === 'function') {
                     widgetElement.showModal();
                 } else {
-                    alert('GLS map widget is still loading. Please try again in a moment.');
+                    alert(myglsCheckout.i18n.mapLoading);
                 }
             }, 1000);
             return;
@@ -138,7 +138,7 @@
         // Verify showModal method exists
         if (typeof widgetElement.showModal !== 'function') {
             console.error('showModal method not available on widget element');
-            alert('GLS map widget is not fully loaded yet. Please refresh the page and try again.');
+            alert(myglsCheckout.i18n.mapError);
             return;
         }
 
@@ -148,7 +148,7 @@
             widgetElement.showModal();
         } catch (error) {
             console.error('Error opening GLS widget:', error);
-            alert('Error opening parcelshop map. Please refresh the page and try again.');
+            alert(myglsCheckout.i18n.mapError);
         }
     }
 
@@ -376,7 +376,7 @@
                     '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                     '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
                     '</svg>' +
-                    'Your order will be delivered to the selected GLS parcelshop. Shipping address is not required.' +
+                    'A rendelését a kiválasztott GLS csomagpontba szállítjuk. Szállítási cím megadása nem szükséges.' +
                     '</div>'
                 );
             }

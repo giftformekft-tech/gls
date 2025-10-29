@@ -169,11 +169,16 @@ function mygls_activate() {
     if (!get_option('mygls_settings')) {
         update_option('mygls_settings', array(
             'country' => 'HU',
+            'language' => 'hu',
             'test_mode' => false,
             'auto_generate_labels' => false,
             'auto_status_sync' => false,
             'sync_interval' => 60,
-            'printer_type' => 'A4_2x2'
+            'printer_type' => 'A4_2x2',
+            'map_display_mode' => 'modal',
+            'map_button_style' => 'primary',
+            'map_position' => 'after_shipping',
+            'enable_custom_checkout' => '1'
         ));
     }
 }
@@ -278,12 +283,15 @@ function mygls_frontend_enqueue_scripts() {
         'ajaxUrl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('mygls_checkout_nonce'),
         'country' => strtolower($settings['country'] ?? 'hu'),
+        'language' => strtolower($settings['language'] ?? 'hu'),
         'enabledMethods' => $settings['parcelshop_enabled_methods'] ?? [],
         'i18n' => array(
-            'searching' => __('Searching...', 'mygls-woocommerce'),
-            'noResults' => __('No parcelshops found', 'mygls-woocommerce'),
-            'error' => __('Error loading parcelshops', 'mygls-woocommerce'),
-            'selectParcelshop' => __('Please select a parcelshop', 'mygls-woocommerce')
+            'searching' => __('Keresés...', 'mygls-woocommerce'),
+            'noResults' => __('Nem található csomagpont', 'mygls-woocommerce'),
+            'error' => __('Hiba a csomagpontok betöltése közben', 'mygls-woocommerce'),
+            'selectParcelshop' => __('Kérjük, válasszon egy csomagpontot', 'mygls-woocommerce'),
+            'mapLoading' => __('A térkép betöltése folyamatban... Kérjük, próbálja újra egy pillanat múlva.', 'mygls-woocommerce'),
+            'mapError' => __('A térkép widget még nem töltődött be teljesen. Kérjük, frissítse az oldalt és próbálja újra.', 'mygls-woocommerce')
         )
     ));
 }
