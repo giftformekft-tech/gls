@@ -92,14 +92,14 @@ class Selector {
 
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
         $country = strtolower($settings['country'] ?? 'hu');
-        $language = strtolower($settings['language'] ?? '');
+        $language = strtolower($settings['language'] ?? 'hu');
 
         ?>
         <div class="mygls-parcelshop-selector" data-shipping-method="<?php echo esc_attr($method->get_id()); ?>" style="display: none;">
             <div class="mygls-parcelshop-trigger">
                 <button type="button" class="button mygls-select-parcelshop" data-method-id="<?php echo esc_attr($method->get_id()); ?>">
                     <span class="dashicons dashicons-location-alt"></span>
-                    <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
+                    <?php _e('Csomagpont kiválasztása', 'mygls-woocommerce'); ?>
                 </button>
 
                 <?php if ($selected_parcelshop): ?>
@@ -122,7 +122,7 @@ class Selector {
         <!-- GLS Official Map Widget Dialog (rendered once) -->
         <gls-dpm-dialog
             country="<?php echo esc_attr($country); ?>"
-            <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
+            language="<?php echo esc_attr($language); ?>"
             id="mygls-parcelshop-widget-classic"
             style="display: none;">
         </gls-dpm-dialog>
@@ -169,7 +169,7 @@ class Selector {
             $order = wc_get_order($order_id);
             $order->add_order_note(
                 sprintf(
-                    __('GLS Parcelshop selected: %s - %s', 'mygls-woocommerce'),
+                    __('GLS Csomagpont kiválasztva: %s - %s', 'mygls-woocommerce'),
                     $parcelshop_data['name'] ?? '',
                     $parcelshop_data['address'] ?? ''
                 )
@@ -182,15 +182,15 @@ class Selector {
      */
     public function display_parcelshop_in_admin($order) {
         $parcelshop_data = get_post_meta($order->get_id(), '_mygls_parcelshop_data', true);
-        
+
         if (!empty($parcelshop_data)) {
             ?>
             <div class="mygls-admin-parcelshop">
-                <h3><?php _e('GLS Parcelshop', 'mygls-woocommerce'); ?></h3>
+                <h3><?php _e('GLS Csomagpont', 'mygls-woocommerce'); ?></h3>
                 <p>
                     <strong><?php echo esc_html($parcelshop_data['name']); ?></strong><br>
                     <?php echo esc_html($parcelshop_data['address']); ?><br>
-                    <small><?php _e('ID:', 'mygls-woocommerce'); ?> <?php echo esc_html($parcelshop_data['id']); ?></small>
+                    <small><?php _e('Azonosító:', 'mygls-woocommerce'); ?> <?php echo esc_html($parcelshop_data['id']); ?></small>
                 </p>
             </div>
             <?php
@@ -226,7 +226,7 @@ class Selector {
             WC()->session->set('mygls_selected_parcelshop', $parcelshop);
             wp_send_json_success();
         } else {
-            wp_send_json_error(['message' => __('Invalid parcelshop data', 'mygls-woocommerce')]);
+            wp_send_json_error(['message' => __('Érvénytelen csomagpont adat', 'mygls-woocommerce')]);
         }
     }
     
@@ -353,7 +353,7 @@ class Selector {
         $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
-        $language = strtolower($settings['language'] ?? '');
+        $language = strtolower($settings['language'] ?? 'hu');
         $button_style = $settings['map_button_style'] ?? 'primary';
         $display_mode = $settings['map_display_mode'] ?? 'modal';
 
@@ -367,14 +367,6 @@ class Selector {
 
         ?>
         <div class="mygls-parcelshop-selector-wrapper mygls-modern">
-            <div class="mygls-parcelshop-header">
-                <svg class="mygls-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <h3><?php _e('GLS Parcelshop Selection', 'mygls-woocommerce'); ?></h3>
-            </div>
-
             <div class="mygls-parcelshop-selector" data-shipping-method="all">
                 <div class="mygls-parcelshop-trigger">
                     <button type="button" class="mygls-select-parcelshop <?php echo esc_attr($button_class); ?>">
@@ -382,7 +374,7 @@ class Selector {
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                             <circle cx="12" cy="10" r="3"></circle>
                         </svg>
-                        <?php _e('Select Parcelshop', 'mygls-woocommerce'); ?>
+                        <?php _e('Csomagpont kiválasztása térképen', 'mygls-woocommerce'); ?>
                     </button>
 
                     <?php if ($selected_parcelshop): ?>
@@ -404,7 +396,7 @@ class Selector {
                                 <line x1="12" y1="16" x2="12" y2="12"></line>
                                 <line x1="12" y1="8" x2="12.01" y2="8"></line>
                             </svg>
-                            <?php _e('Please select a GLS parcelshop for delivery', 'mygls-woocommerce'); ?>
+                            <?php _e('Kérjük, válasszon egy GLS csomagpontot a kézbesítéshez', 'mygls-woocommerce'); ?>
                         </p>
                     <?php endif; ?>
                 </div>
@@ -416,7 +408,7 @@ class Selector {
             <!-- GLS Official Map Widget Dialog -->
             <gls-dpm-dialog
                 country="<?php echo esc_attr($country); ?>"
-                <?php if ($language): ?>language="<?php echo esc_attr($language); ?>"<?php endif; ?>
+                language="<?php echo esc_attr($language); ?>"
                 id="mygls-parcelshop-widget"
                 class="mygls-widget-<?php echo esc_attr($display_mode); ?>">
             </gls-dpm-dialog>
