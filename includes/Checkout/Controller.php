@@ -513,7 +513,7 @@ class Controller {
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li {
                 padding: 15px 18px;
-                margin-bottom: 15px;
+                margin-bottom: 20px !important;
                 background: #f9f9f9;
                 border: 2px solid #e0e0e0;
                 border-radius: 6px;
@@ -521,15 +521,16 @@ class Controller {
                 cursor: pointer;
             }
 
-            <?php
-            $logo_size = $this->settings['shipping_logo_size'] ?? 40;
-            ?>
+            .mygls-section-shipping-method .woocommerce-shipping-methods li:last-child {
+                margin-bottom: 0 !important;
+            }
+
             .mygls-shipping-method-logo {
                 display: inline-block;
-                max-width: <?php echo absint($logo_size); ?>px;
-                max-height: <?php echo absint($logo_size); ?>px;
-                width: auto;
-                height: auto;
+                max-width: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
+                max-height: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
+                width: auto !important;
+                height: auto !important;
                 margin-right: 10px;
                 vertical-align: middle;
                 object-fit: contain;
@@ -706,17 +707,18 @@ class Controller {
             }
 
             /* Place order button visibility */
-            /* Desktop: show in order review sidebar */
+            /* Show in payment section always */
+            .mygls-section-payment #place_order,
+            .mygls-section-payment .place-order {
+                display: block !important;
+                width: 100% !important;
+                margin-top: 20px !important;
+            }
+
+            /* Hide in order review sidebar */
             .mygls-order-review-sidebar #place_order,
             .mygls-order-review-sidebar .place-order,
             .mygls-order-review-sidebar .woocommerce-checkout-payment #place_order {
-                display: block !important;
-                width: 100% !important;
-            }
-
-            /* Desktop: hide in payment section */
-            .mygls-section-payment #place_order,
-            .mygls-section-payment .place-order {
                 display: none !important;
             }
 
@@ -730,35 +732,11 @@ class Controller {
             @media (max-width: 992px) {
                 .mygls-custom-checkout-container {
                     grid-template-columns: 1fr;
-                    display: flex;
-                    flex-direction: column;
-                }
-
-                .mygls-checkout-main {
-                    order: 1;
                 }
 
                 /* Hide order summary completely on mobile */
                 .mygls-order-review-sidebar {
                     display: none !important;
-                }
-
-                /* Show place order button in payment section on mobile */
-                .mygls-section-payment #place_order,
-                .mygls-section-payment .place-order {
-                    display: block !important;
-                    width: 100% !important;
-                    margin-top: 20px !important;
-                }
-
-                /* Ensure button is at the bottom of payment section */
-                .mygls-section-payment .woocommerce-checkout-payment {
-                    display: flex !important;
-                    flex-direction: column !important;
-                }
-
-                .mygls-section-payment #place_order {
-                    order: 999 !important;
                 }
             }
 
@@ -890,17 +868,9 @@ class Controller {
             });
 
             function movePrivacyCheckboxBeforeOrderButton() {
-                // Move privacy checkbox before the place order button
+                // Move privacy checkbox before the place order button in payment section
                 var $privacyCheckbox = $('.mygls-privacy-checkbox-wrapper');
-                var $placeOrderButton;
-
-                // On mobile: place order button is in payment section
-                // On desktop: place order button is in order review sidebar
-                if ($(window).width() <= 992) {
-                    $placeOrderButton = $('.mygls-section-payment #place_order');
-                } else {
-                    $placeOrderButton = $('.mygls-order-review-sidebar #place_order');
-                }
+                var $placeOrderButton = $('.mygls-section-payment #place_order');
 
                 if ($privacyCheckbox.length && $placeOrderButton.length) {
                     // Only move if not already in position
