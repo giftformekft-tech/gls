@@ -521,10 +521,13 @@ class Controller {
                 cursor: pointer;
             }
 
+            <?php
+            $logo_size = $this->settings['shipping_logo_size'] ?? 40;
+            ?>
             .mygls-shipping-method-logo {
                 display: inline-block;
-                max-width: 40px;
-                max-height: 40px;
+                max-width: <?php echo absint($logo_size); ?>px;
+                max-height: <?php echo absint($logo_size); ?>px;
                 width: auto;
                 height: auto;
                 margin-right: 10px;
@@ -703,7 +706,20 @@ class Controller {
             }
 
             /* Hide place order button from payment section on desktop (keep it in sidebar) */
-            .mygls-section-payment #place_order {
+            .mygls-section-payment #place_order,
+            .mygls-section-payment .place-order {
+                display: none !important;
+            }
+
+            /* Ensure place order button is visible in order review on desktop */
+            .mygls-order-review-sidebar #place_order,
+            .mygls-order-review-sidebar .place-order {
+                display: block !important;
+            }
+
+            /* Hide back to cart link in payment section */
+            .mygls-section-payment .woocommerce-button--previous,
+            .mygls-section-payment a.woocommerce-button--previous {
                 display: none !important;
             }
 
