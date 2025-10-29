@@ -104,9 +104,9 @@ function mygls_init() {
         new MyGLS\Parcelshop\Selector();
     }
 
-    // Initialize Custom Checkout Controller
+    // Initialize Custom Checkout Controller (Singleton)
     if (class_exists('MyGLS\\Checkout\\Controller')) {
-        new MyGLS\Checkout\Controller();
+        MyGLS\Checkout\Controller::get_instance();
     }
 }
 add_action('plugins_loaded', 'mygls_init');
