@@ -1,20 +1,20 @@
 <?php
-/**
- * Plugin Name: MyGLS WooCommerce Integration
- * Plugin URI: https://github.com/giftformekft-tech/gls
- * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
- * Version: 1.1.1
- * Author: GiftForMe Kft
- * Author URI: https://giftforme.hu
- * License: GPL v2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain: mygls-woocommerce
- * Domain Path: /languages
- * Requires at least: 6.0
- * Requires PHP: 8.0
- * WC requires at least: 7.0
- * WC tested up to: 9.0
- */
+/*
+Plugin Name: MyGLS WooCommerce Integration
+Plugin URI: https://github.com/giftformekft-tech/gls
+Description: GLS szállítási címkék és csomagpont választó WooCommerce-hez
+Version: 1.1.6
+Author: GiftForMe Kft
+Author URI: https://giftforme.hu
+License: GPL v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: mygls-woocommerce
+Domain Path: /languages
+Requires at least: 5.8
+Requires PHP: 7.2
+WC requires at least: 6.5
+WC tested up to: 9.0
+*/
 
 // Exit if accessed directly
 if (!defined('ABSPATH')) {
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.1.1');
+define('MYGLS_VERSION', '1.1.6');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
