@@ -70,15 +70,25 @@
      * Setup widget event listeners
      */
     function setupWidget() {
+        console.log('setupWidget called, attempt:', widgetInitAttempts);
+
         // Try multiple widget IDs (for classic checkout, blocks, etc.)
-        const widgetIds = ['mygls-parcelshop-widget-classic', 'mygls-parcelshop-widget', 'mygls-checkout-widget'];
+        const widgetIds = ['mygls-parcelshop-widget', 'mygls-parcelshop-widget-classic', 'mygls-checkout-widget'];
 
         for (const id of widgetIds) {
             const element = document.getElementById(id);
             if (element) {
                 widgetElement = element;
-                console.log('Found GLS widget element:', id);
+                console.log('Found GLS widget element:', id, element);
                 break;
+            }
+        }
+
+        // Also try querySelector as fallback
+        if (!widgetElement) {
+            widgetElement = document.querySelector('gls-dpm-dialog');
+            if (widgetElement) {
+                console.log('Found GLS widget element via querySelector:', widgetElement);
             }
         }
 
@@ -90,14 +100,15 @@
 
         // Check if the widget element has the required showModal method
         if (typeof widgetElement.showModal !== 'function') {
-            console.warn('Widget element found but showModal method not available yet, will retry...');
+            console.warn('Widget element found but showModal method not available yet, will retry...', 'Element:', widgetElement);
+            console.log('Available methods on element:', Object.getOwnPropertyNames(Object.getPrototypeOf(widgetElement)));
             retrySetupWidget();
             return;
         }
 
         // Widget is ready!
         widgetInitialized = true;
-        console.log('GLS widget initialized successfully');
+        console.log('GLS widget initialized successfully!');
 
         // Listen for parcelshop selection change event
         widgetElement.addEventListener('change', function(event) {
@@ -118,27 +129,45 @@
      * Open the GLS widget modal
      */
     function openWidget() {
+        console.log('openWidget called, widgetElement:', widgetElement);
+
         if (!widgetElement) {
             console.error('Widget not initialized - attempting to re-initialize...');
             widgetInitialized = false;
             widgetInitAttempts = 0;
+
+            // Show loading message
+            if (typeof myglsCheckout !== 'undefined' && myglsCheckout.i18n && myglsCheckout.i18n.mapLoading) {
+                alert(myglsCheckout.i18n.mapLoading);
+            }
+
             initGLSWidget();
 
             // Try again after a short delay
             setTimeout(function() {
                 if (widgetElement && typeof widgetElement.showModal === 'function') {
+                    console.log('Retrying to open widget after initialization...');
                     widgetElement.showModal();
                 } else {
-                    alert(myglsCheckout.i18n.mapLoading);
+                    console.error('Still no widget element after retry');
                 }
-            }, 1000);
+            }, 1500);
             return;
         }
 
         // Verify showModal method exists
         if (typeof widgetElement.showModal !== 'function') {
-            console.error('showModal method not available on widget element');
-            alert(myglsCheckout.i18n.mapError);
+            console.error('showModal method not available on widget element. Available methods:', Object.keys(widgetElement));
+
+            // Try to re-initialize
+            widgetInitialized = false;
+            widgetInitAttempts = 0;
+
+            if (typeof myglsCheckout !== 'undefined' && myglsCheckout.i18n && myglsCheckout.i18n.mapError) {
+                alert(myglsCheckout.i18n.mapError);
+            }
+
+            initGLSWidget();
             return;
         }
 
@@ -146,9 +175,12 @@
             console.log('Opening GLS widget modal...');
             // Call the showModal() method as per GLS documentation
             widgetElement.showModal();
+            console.log('showModal() called successfully');
         } catch (error) {
             console.error('Error opening GLS widget:', error);
-            alert(myglsCheckout.i18n.mapError);
+            if (typeof myglsCheckout !== 'undefined' && myglsCheckout.i18n && myglsCheckout.i18n.mapError) {
+                alert(myglsCheckout.i18n.mapError);
+            }
         }
     }
 

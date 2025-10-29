@@ -80,7 +80,7 @@ class Controller {
      * Render checkout sections in custom order
      */
     public function render_checkout_sections() {
-        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping', 'parcelshop', 'order_notes'];
+        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
 
         foreach ($field_order as $section) {
             $this->render_section($section);
@@ -110,6 +110,23 @@ class Controller {
                     </div>
                 </div>
                 <?php
+                break;
+
+            case 'shipping_method':
+                // Only show if cart needs shipping
+                if (WC()->cart->needs_shipping() && WC()->cart->show_shipping()) {
+                    ?>
+                    <div class="mygls-checkout-section mygls-section-shipping-method">
+                        <h3 class="mygls-section-title">
+                            <span class="dashicons dashicons-car"></span>
+                            <?php _e('Szállítási mód', 'mygls-woocommerce'); ?>
+                        </h3>
+                        <div class="mygls-section-content">
+                            <?php woocommerce_order_review_shipping(); ?>
+                        </div>
+                    </div>
+                    <?php
+                }
                 break;
 
             case 'shipping':
@@ -208,6 +225,20 @@ class Controller {
                     </div>
                     <?php
                 }
+                break;
+
+            case 'payment':
+                ?>
+                <div class="mygls-checkout-section mygls-section-payment">
+                    <h3 class="mygls-section-title">
+                        <span class="dashicons dashicons-money-alt"></span>
+                        <?php _e('Fizetési mód', 'mygls-woocommerce'); ?>
+                    </h3>
+                    <div class="mygls-section-content">
+                        <?php woocommerce_checkout_payment(); ?>
+                    </div>
+                </div>
+                <?php
                 break;
         }
     }
@@ -308,6 +339,18 @@ class Controller {
             .mygls-custom-checkout-active .woocommerce-billing-fields,
             .mygls-custom-checkout-active .woocommerce-shipping-fields,
             .mygls-custom-checkout-active .woocommerce-additional-fields {
+                display: none !important;
+            }
+
+            /* Hide shipping and payment methods from order review sidebar */
+            .mygls-custom-checkout-active .mygls-order-review-sidebar #shipping_method,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-shipping-methods,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods {
+                display: none !important;
+            }
+
+            /* Hide place order button from payment section in main area (keep it in sidebar) */
+            .mygls-section-payment #place_order {
                 display: none !important;
             }
 
