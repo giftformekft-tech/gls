@@ -193,17 +193,23 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
 
-                // Add copy from billing button
-                echo '<div class="mygls-copy-billing-wrapper">';
-                echo '<button type="button" class="button mygls-copy-billing-button">';
-                echo '<span class="dashicons dashicons-admin-page"></span> ';
-                echo esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce');
-                echo '</button>';
+                // Add "Same as billing" checkbox
+                echo '<div class="mygls-same-as-billing-wrapper">';
+                woocommerce_form_field('mygls_same_as_billing', [
+                    'type' => 'checkbox',
+                    'class' => ['form-row-wide'],
+                    'label' => '<span class="dashicons dashicons-admin-page"></span> ' . esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce'),
+                    'required' => false,
+                ], $checkout->get_value('mygls_same_as_billing'));
                 echo '</div>';
 
+                // Shipping fields container
+                echo '<div class="mygls-shipping-fields-container">';
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
+                echo '</div>';
+
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
@@ -633,37 +639,46 @@ class Controller {
                 color: #764ba2;
             }
 
-            /* Copy Billing to Shipping Button */
-            .mygls-copy-billing-wrapper {
+            /* Same as Billing Checkbox */
+            .mygls-same-as-billing-wrapper {
                 margin-bottom: 20px;
+                padding: 15px;
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
+                border: 2px solid #667eea;
+                border-radius: 8px;
             }
 
-            .mygls-copy-billing-button {
-                display: inline-flex;
+            .mygls-same-as-billing-wrapper label {
+                font-size: 15px;
+                font-weight: 600;
+                color: #2d3748;
+                display: flex;
                 align-items: center;
                 gap: 8px;
-                padding: 12px 20px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: #fff;
-                border: none;
-                border-radius: 6px;
-                font-size: 14px;
-                font-weight: 600;
                 cursor: pointer;
-                transition: all 0.3s ease;
-                box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
             }
 
-            .mygls-copy-billing-button:hover {
-                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-                box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-                transform: translateY(-2px);
-            }
-
-            .mygls-copy-billing-button .dashicons {
+            .mygls-same-as-billing-wrapper .dashicons {
                 font-size: 18px;
                 width: 18px;
                 height: 18px;
+                color: #667eea;
+            }
+
+            .mygls-same-as-billing-wrapper input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+            }
+
+            /* Shipping fields container - hidden when same as billing is checked */
+            .mygls-shipping-fields-container {
+                display: block;
+                transition: all 0.3s ease;
+            }
+
+            .mygls-shipping-fields-container.mygls-hidden {
+                display: none;
             }
 
             /* Order Review Sidebar - Ultra Modern Clean Design */
@@ -1012,6 +1027,7 @@ class Controller {
                 highlightSelectedShippingMethod();
                 setSectionVisibility();
                 movePrivacyCheckboxBeforeOrderButton();
+                handleSameAsBillingCheckbox();
             });
 
             function movePrivacyCheckboxBeforeOrderButton() {
@@ -1027,50 +1043,58 @@ class Controller {
                 }
             }
 
-            // Copy billing to shipping functionality
-            $(document).on('click', '.mygls-copy-billing-button', function(e) {
-                e.preventDefault();
+            // Same as billing checkbox functionality
+            function handleSameAsBillingCheckbox() {
+                var $checkbox = $('#mygls_same_as_billing');
+                var $shippingFieldsContainer = $('.mygls-shipping-fields-container');
 
-                console.log('Copy billing button clicked');
+                if (!$checkbox.length || !$shippingFieldsContainer.length) {
+                    return;
+                }
 
-                var fieldMappings = {
-                    'billing_first_name': 'shipping_first_name',
-                    'billing_last_name': 'shipping_last_name',
-                    'billing_company': 'shipping_company',
-                    'billing_address_1': 'shipping_address_1',
-                    'billing_address_2': 'shipping_address_2',
-                    'billing_city': 'shipping_city',
-                    'billing_state': 'shipping_state',
-                    'billing_postcode': 'shipping_postcode',
-                    'billing_country': 'shipping_country'
-                };
+                if ($checkbox.is(':checked')) {
+                    console.log('Same as billing checked - copying data and hiding fields');
 
-                $.each(fieldMappings, function(billingField, shippingField) {
-                    var $billingInput = $('#' + billingField);
-                    var $shippingInput = $('#' + shippingField);
+                    // Copy billing data to shipping fields
+                    var fieldMappings = {
+                        'billing_first_name': 'shipping_first_name',
+                        'billing_last_name': 'shipping_last_name',
+                        'billing_company': 'shipping_company',
+                        'billing_address_1': 'shipping_address_1',
+                        'billing_address_2': 'shipping_address_2',
+                        'billing_city': 'shipping_city',
+                        'billing_state': 'shipping_state',
+                        'billing_postcode': 'shipping_postcode',
+                        'billing_country': 'shipping_country'
+                    };
 
-                    if ($billingInput.length && $shippingInput.length) {
-                        var value = $billingInput.val();
-                        console.log('Copying ' + billingField + ' to ' + shippingField + ': ' + value);
-                        $shippingInput.val(value).trigger('change');
-                    } else {
-                        console.log('Field not found: ' + billingField + ' or ' + shippingField);
-                    }
-                });
+                    $.each(fieldMappings, function(billingField, shippingField) {
+                        var $billingInput = $('#' + billingField);
+                        var $shippingInput = $('#' + shippingField);
 
-                var $button = $(this);
-                var originalText = $button.html();
-                $button.html('<span class=\"dashicons dashicons-yes\"></span> Átmásolva!');
-                $button.css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
+                        if ($billingInput.length && $shippingInput.length) {
+                            var value = $billingInput.val();
+                            console.log('Copying ' + billingField + ' to ' + shippingField + ': ' + value);
+                            $shippingInput.val(value).trigger('change');
+                        }
+                    });
 
-                setTimeout(function() {
-                    $button.html(originalText);
-                    $button.css('background', '');
-                }, 2000);
+                    // Hide shipping fields
+                    $shippingFieldsContainer.addClass('mygls-hidden');
+                } else {
+                    console.log('Same as billing unchecked - showing fields');
+                    // Show shipping fields
+                    $shippingFieldsContainer.removeClass('mygls-hidden');
+                }
+            }
 
-                // Trigger checkout update
-                $('body').trigger('update_checkout');
+            // Handle checkbox change
+            $(document).on('change', '#mygls_same_as_billing', function() {
+                handleSameAsBillingCheckbox();
             });
+
+            // Handle initial state
+            handleSameAsBillingCheckbox();
 
             highlightSelectedShippingMethod();
             setSectionVisibility();
@@ -1084,6 +1108,7 @@ class Controller {
             // Move checkbox on checkout update
             $(document.body).on('updated_checkout', function() {
                 movePrivacyCheckboxBeforeOrderButton();
+                handleSameAsBillingCheckbox();
             });
         });
         ";
