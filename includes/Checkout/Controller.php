@@ -127,7 +127,7 @@ class Controller {
                             <?php _e('Szállítási mód', 'mygls-woocommerce'); ?>
                         </h3>
                         <div class="mygls-section-content">
-                            <?php woocommerce_order_review_shipping(); ?>
+                            <?php $this->render_shipping_methods(); ?>
                         </div>
                     </div>
                     <?php
@@ -249,6 +249,41 @@ class Controller {
     }
 
     /**
+     * Render shipping methods selection
+     */
+    private function render_shipping_methods() {
+        $packages = WC()->shipping()->get_packages();
+
+        foreach ($packages as $i => $package) {
+            $chosen_method = isset(WC()->session->chosen_shipping_methods[$i]) ? WC()->session->chosen_shipping_methods[$i] : '';
+            $product_names = array();
+
+            if (count($packages) > 1) {
+                foreach ($package['contents'] as $item_id => $values) {
+                    $product_names[$item_id] = $values['data']->get_name() . ' &times;' . $values['quantity'];
+                }
+                $product_names = apply_filters('woocommerce_shipping_package_details_array', $product_names, $package);
+            }
+
+            wc_get_template(
+                'cart/cart-shipping.php',
+                array(
+                    'package'                  => $package,
+                    'available_methods'        => $package['rates'],
+                    'show_package_details'     => count($packages) > 1,
+                    'show_shipping_calculator' => false,
+                    'package_details'          => implode(', ', $product_names),
+                    'package_name'             => apply_filters('woocommerce_shipping_package_name', ( ( $i + 1 ) > 1 ) ? sprintf( _x( 'Shipping %d', 'shipping packages', 'woocommerce' ), ( $i + 1 ) ) : _x( 'Shipping', 'shipping packages', 'woocommerce' ), $i, $package ),
+                    'index'                    => $i,
+                    'chosen_method'            => $chosen_method,
+                    'formatted_destination'    => WC()->countries->get_formatted_address($package['destination'], ', '),
+                    'has_calculated_shipping'  => WC()->customer->has_calculated_shipping(),
+                )
+            );
+        }
+    }
+
+    /**
      * Enqueue custom checkout styles
      */
     public function enqueue_custom_styles() {
@@ -307,6 +342,54 @@ class Controller {
 
             .mygls-section-content {
                 padding: 20px;
+            }
+
+            /* Shipping Methods Styling */
+            .mygls-section-shipping-method .woocommerce-shipping-methods {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li {
+                padding: 12px 15px;
+                margin-bottom: 10px;
+                background: #f9f9f9;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+                transition: all 0.2s ease;
+                cursor: pointer;
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li:hover {
+                background: #f0f0f0;
+                border-color: #667eea;
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li input[type="radio"] {
+                margin-right: 10px;
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li input[type="radio"]:checked + label {
+                font-weight: 600;
+                color: #667eea;
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods li.woocommerce-shipping-method-selected {
+                background: #f0f4ff;
+                border-color: #667eea;
+                box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods label {
+                cursor: pointer;
+                display: inline-block;
+                width: calc(100% - 30px);
+            }
+
+            .mygls-section-shipping-method .woocommerce-shipping-methods .amount {
+                font-weight: 600;
+                color: #2c3e50;
             }
 
             /* Order Review Sidebar */
@@ -436,6 +519,12 @@ class Controller {
         // Add inline script to handle dynamic shipping/parcelshop toggle
         $inline_js = "
         jQuery(function($) {
+            // Function to highlight selected shipping method
+            function highlightSelectedShippingMethod() {
+                $('.mygls-section-shipping-method .woocommerce-shipping-methods li').removeClass('woocommerce-shipping-method-selected');
+                $('.mygls-section-shipping-method .woocommerce-shipping-methods input[type=\"radio\"]:checked').closest('li').addClass('woocommerce-shipping-method-selected');
+            }
+
             // Function to toggle shipping/parcelshop sections
             function toggleShippingSections() {
                 // Trigger checkout update to re-render sections
@@ -444,13 +533,18 @@ class Controller {
 
             // Listen for shipping method changes
             $(document.body).on('change', 'input[name^=\"shipping_method\"]', function() {
+                highlightSelectedShippingMethod();
                 toggleShippingSections();
             });
 
             // Initial check on page load
             $(document.body).on('updated_checkout', function() {
+                highlightSelectedShippingMethod();
                 console.log('Checkout updated - sections refreshed');
             });
+
+            // Initial highlight
+            highlightSelectedShippingMethod();
         });
         ";
 
