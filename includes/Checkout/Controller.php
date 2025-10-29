@@ -535,18 +535,23 @@ class Controller {
             }
 
             <?php
-            $logo_size = absint($this->settings['shipping_logo_size'] ?? 40);
+            // Load settings fresh to ensure we get the latest value
+            $current_settings = get_option('mygls_settings', []);
+            $logo_size = absint($current_settings['shipping_logo_size'] ?? 40);
             if ($logo_size < 20) $logo_size = 20;
             if ($logo_size > 100) $logo_size = 100;
+
+            // Debug: output the actual value
+            echo "\n/* DEBUG: Logo size from DB: " . $logo_size . "px */\n";
+            echo "/* DEBUG: Settings array has shipping_logo_size: " . (isset($current_settings['shipping_logo_size']) ? 'YES' : 'NO') . " */\n";
             ?>
-            /* Logo size setting: <?php echo $logo_size; ?>px */
             .mygls-shipping-method-logo {
                 display: inline-block !important;
                 max-width: <?php echo $logo_size; ?>px !important;
                 max-height: <?php echo $logo_size; ?>px !important;
                 min-width: unset !important;
                 min-height: unset !important;
-                width: auto !important;
+                width: <?php echo $logo_size; ?>px !important;
                 height: auto !important;
                 margin-right: 10px !important;
                 vertical-align: middle !important;
@@ -555,9 +560,11 @@ class Controller {
 
             /* Extra specificity for logo size */
             .mygls-section-shipping-method label .mygls-shipping-method-logo,
+            .mygls-section-shipping-method .woocommerce-shipping-methods li label img,
             img.mygls-shipping-method-logo {
                 max-width: <?php echo $logo_size; ?>px !important;
                 max-height: <?php echo $logo_size; ?>px !important;
+                width: <?php echo $logo_size; ?>px !important;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li:hover {
@@ -662,7 +669,7 @@ class Controller {
                 height: 18px;
             }
 
-            /* Order Review Sidebar - Modern Design */
+            /* Order Review Sidebar - Ultra Modern Clean Design */
             .mygls-order-review-sidebar {
                 position: sticky;
                 top: 20px;
@@ -670,131 +677,146 @@ class Controller {
             }
 
             .mygls-order-review {
-                background: #fff;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
+                background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+                border: none;
+                border-radius: 20px;
                 overflow: hidden;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             }
 
             .mygls-order-review-title {
                 margin: 0;
-                padding: 18px 24px;
+                padding: 24px 28px;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: #fff;
-                font-size: 17px;
-                font-weight: 700;
+                font-size: 18px;
+                font-weight: 800;
                 display: flex;
                 align-items: center;
-                gap: 10px;
-                letter-spacing: -0.02em;
+                gap: 12px;
+                letter-spacing: -0.03em;
+                text-transform: uppercase;
+                font-size: 14px;
             }
 
             .mygls-order-review-title .dashicons {
-                font-size: 22px;
-                width: 22px;
-                height: 22px;
+                font-size: 24px;
+                width: 24px;
+                height: 24px;
+                opacity: 0.9;
             }
 
             .mygls-order-review-content {
                 padding: 0;
             }
 
-            /* Modern Order Review Table */
+            /* Modern Order Review Table - No Borders */
             .mygls-order-review-sidebar .shop_table,
             .woocommerce-checkout-review-order-table {
                 border: none !important;
                 margin: 0 !important;
+                background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table thead {
-                display: none;
+                display: none !important;
             }
 
             .woocommerce-checkout-review-order-table tbody tr {
-                border-bottom: 1px solid #f3f4f6;
-            }
-
-            .woocommerce-checkout-review-order-table tbody tr:last-child {
-                border-bottom: none;
+                border: none !important;
+                background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table td {
-                padding: 16px 24px !important;
+                padding: 18px 28px !important;
                 border: none !important;
                 background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table .product-name {
-                font-size: 14px;
-                font-weight: 500;
-                color: #111827;
-                line-height: 1.5;
+                font-size: 15px;
+                font-weight: 600;
+                color: #1f2937;
+                line-height: 1.6;
             }
 
             .woocommerce-checkout-review-order-table .product-name .product-quantity {
                 display: inline-block;
-                margin-left: 8px;
-                color: #6b7280;
-                font-weight: 400;
-                font-size: 13px;
+                margin-left: 10px;
+                color: #9ca3af;
+                font-weight: 500;
+                font-size: 14px;
             }
 
             .woocommerce-checkout-review-order-table .product-total {
                 text-align: right;
-                font-weight: 600;
+                font-weight: 700;
                 color: #111827;
-                font-size: 14px;
+                font-size: 15px;
             }
 
-            /* Modern Footer Rows (subtotal, shipping, total) */
+            /* Modern Footer Rows - Clean, No Borders */
             .woocommerce-checkout-review-order-table tfoot {
-                background: #f9fafb;
+                background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot tr {
-                border-bottom: 1px solid #e5e7eb;
+                border: none !important;
+                background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot tr:last-child {
-                border-bottom: none;
-                background: linear-gradient(135deg, #f0f4ff 0%, #fef3f7 100%);
+                background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+                border-radius: 12px;
+                margin: 8px 20px;
+                display: block;
+            }
+
+            .woocommerce-checkout-review-order-table tfoot tr:last-child th,
+            .woocommerce-checkout-review-order-table tfoot tr:last-child td {
+                display: inline-block;
+                border: none !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot th,
             .woocommerce-checkout-review-order-table tfoot td {
-                padding: 14px 24px !important;
+                padding: 16px 28px !important;
                 font-size: 14px;
+                border: none !important;
+                background: transparent !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot th {
                 font-weight: 500;
-                color: #4b5563;
+                color: #6b7280;
                 text-align: left;
             }
 
             .woocommerce-checkout-review-order-table tfoot td {
                 text-align: right;
-                font-weight: 600;
-                color: #111827;
+                font-weight: 700;
+                color: #374151;
             }
 
-            /* Total Row - Special Styling */
+            /* Total Row - Special Ultra Modern Styling */
             .woocommerce-checkout-review-order-table tfoot .order-total th {
-                font-size: 16px;
-                font-weight: 700;
+                font-size: 17px;
+                font-weight: 800;
                 color: #111827;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
             }
 
             .woocommerce-checkout-review-order-table tfoot .order-total td {
-                font-size: 18px;
-                font-weight: 700;
+                font-size: 22px;
+                font-weight: 800;
                 color: #667eea;
+                letter-spacing: -0.02em;
             }
 
-            /* Product thumbnails in order review - Compact */
+            /* Product thumbnails in order review - Completely Hidden */
             .woocommerce-checkout-review-order-table .product-thumbnail {
-                display: none;
+                display: none !important;
             }
 
             .mygls-order-review-content #order_review {
@@ -1009,7 +1031,7 @@ class Controller {
             }
 
             // Copy billing to shipping functionality
-            jQuery(document).on('click', '.mygls-copy-billing-button', function(e) {
+            $(document).on('click', '.mygls-copy-billing-button', function(e) {
                 e.preventDefault();
 
                 console.log('Copy billing button clicked');
@@ -1026,31 +1048,31 @@ class Controller {
                     'billing_country': 'shipping_country'
                 };
 
-                jQuery.each(fieldMappings, function(billingField, shippingField) {
-                    var billingInput = jQuery('#' + billingField);
-                    var shippingInput = jQuery('#' + shippingField);
+                $.each(fieldMappings, function(billingField, shippingField) {
+                    var $billingInput = $('#' + billingField);
+                    var $shippingInput = $('#' + shippingField);
 
-                    if (billingInput.length && shippingInput.length) {
-                        var value = billingInput.val();
+                    if ($billingInput.length && $shippingInput.length) {
+                        var value = $billingInput.val();
                         console.log('Copying ' + billingField + ' to ' + shippingField + ': ' + value);
-                        shippingInput.val(value).trigger('change');
+                        $shippingInput.val(value).trigger('change');
                     } else {
                         console.log('Field not found: ' + billingField + ' or ' + shippingField);
                     }
                 });
 
-                var button = jQuery(this);
-                var originalText = button.html();
-                button.html('<span class=\"dashicons dashicons-yes\"></span> Átmásolva!');
-                button.css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
+                var $button = $(this);
+                var originalText = $button.html();
+                $button.html('<span class=\"dashicons dashicons-yes\"></span> Átmásolva!');
+                $button.css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
 
                 setTimeout(function() {
-                    button.html(originalText);
-                    button.css('background', '');
+                    $button.html(originalText);
+                    $button.css('background', '');
                 }, 2000);
 
                 // Trigger checkout update
-                jQuery('body').trigger('update_checkout');
+                $('body').trigger('update_checkout');
             });
 
             highlightSelectedShippingMethod();
