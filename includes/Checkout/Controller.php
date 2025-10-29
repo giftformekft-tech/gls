@@ -445,6 +445,7 @@ class Controller {
                 align-items: flex-start;
                 gap: 30px;
                 margin: 20px 0;
+                align-items: start;
             }
 
             .mygls-checkout-sections {
