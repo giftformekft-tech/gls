@@ -192,6 +192,15 @@ class Controller {
                 echo esc_html__('Szállítási adatok', 'mygls-woocommerce');
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
+
+                // Add "Copy from billing" button
+                echo '<div class="mygls-copy-billing-wrapper">';
+                echo '<button type="button" class="button mygls-copy-billing-button">';
+                echo '<span class="dashicons dashicons-admin-page"></span> ';
+                echo esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce');
+                echo '</button>';
+                echo '</div>';
+
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
@@ -525,15 +534,26 @@ class Controller {
                 margin-bottom: 0 !important;
             }
 
+            /* Logo size: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px */
             .mygls-shipping-method-logo {
-                display: inline-block;
+                display: inline-block !important;
                 max-width: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
                 max-height: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
+                min-width: unset !important;
+                min-height: unset !important;
                 width: auto !important;
                 height: auto !important;
-                margin-right: 10px;
-                vertical-align: middle;
-                object-fit: contain;
+                margin-right: 10px !important;
+                vertical-align: middle !important;
+                object-fit: contain !important;
+            }
+
+            /* Additional specificity for logo size */
+            .mygls-section-shipping-method .woocommerce-shipping-methods li label .mygls-shipping-method-logo,
+            label .mygls-shipping-method-logo,
+            img.mygls-shipping-method-logo {
+                max-width: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
+                max-height: <?php echo absint($this->settings['shipping_logo_size'] ?? 40); ?>px !important;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li:hover {
@@ -603,6 +623,39 @@ class Controller {
 
             .mygls-privacy-policy-checkbox a:hover {
                 color: #764ba2;
+            }
+
+            /* Copy Billing to Shipping Button */
+            .mygls-copy-billing-wrapper {
+                margin-bottom: 20px;
+            }
+
+            .mygls-copy-billing-button {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 12px 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+            }
+
+            .mygls-copy-billing-button:hover {
+                background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+                box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+                transform: translateY(-2px);
+            }
+
+            .mygls-copy-billing-button .dashicons {
+                font-size: 18px;
+                width: 18px;
+                height: 18px;
             }
 
             /* Order Review Sidebar */
@@ -879,6 +932,46 @@ class Controller {
                     }
                 }
             }
+
+            // Copy billing to shipping functionality
+            $(document).on('click', '.mygls-copy-billing-button', function(e) {
+                e.preventDefault();
+
+                // Mapping of billing to shipping fields
+                var fieldMappings = {
+                    'billing_first_name': 'shipping_first_name',
+                    'billing_last_name': 'shipping_last_name',
+                    'billing_company': 'shipping_company',
+                    'billing_address_1': 'shipping_address_1',
+                    'billing_address_2': 'shipping_address_2',
+                    'billing_city': 'shipping_city',
+                    'billing_state': 'shipping_state',
+                    'billing_postcode': 'shipping_postcode',
+                    'billing_country': 'shipping_country'
+                };
+
+                // Copy each field value
+                $.each(fieldMappings, function(billingField, shippingField) {
+                    var $billingInput = $('#' + billingField);
+                    var $shippingInput = $('#' + shippingField);
+
+                    if ($billingInput.length && $shippingInput.length) {
+                        var value = $billingInput.val();
+                        $shippingInput.val(value).trigger('change');
+                    }
+                });
+
+                // Show success message
+                var $button = $(this);
+                var originalText = $button.html();
+                $button.html('<span class="dashicons dashicons-yes"></span> Átmásolva!');
+                $button.css('background', 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)');
+
+                setTimeout(function() {
+                    $button.html(originalText);
+                    $button.css('background', '');
+                }, 2000);
+            });
 
             highlightSelectedShippingMethod();
             setSectionVisibility();
