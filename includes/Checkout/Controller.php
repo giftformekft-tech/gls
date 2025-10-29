@@ -762,13 +762,11 @@ class Controller {
             .woocommerce-checkout-review-order-table tfoot tr:last-child {
                 background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
                 border-radius: 12px;
-                margin: 8px 20px;
-                display: block;
+                border: none !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot tr:last-child th,
             .woocommerce-checkout-review-order-table tfoot tr:last-child td {
-                display: inline-block;
                 border: none !important;
             }
 
@@ -778,18 +776,21 @@ class Controller {
                 font-size: 14px;
                 border: none !important;
                 background: transparent !important;
+                white-space: nowrap;
             }
 
             .woocommerce-checkout-review-order-table tfoot th {
                 font-weight: 500;
                 color: #6b7280;
                 text-align: left;
+                width: 60%;
             }
 
             .woocommerce-checkout-review-order-table tfoot td {
                 text-align: right;
                 font-weight: 700;
                 color: #374151;
+                width: 40%;
             }
 
             /* Total Row - Special Ultra Modern Styling */
@@ -906,7 +907,7 @@ class Controller {
             }
 
             /* Responsive adjustments */
-            @media (max-width: 992px) {
+            @media (max-width: 768px) {
                 .mygls-custom-checkout-container {
                     grid-template-columns: 1fr;
                 }
@@ -917,7 +918,7 @@ class Controller {
                 }
             }
 
-            @media (max-width: 768px) {
+            @media (max-width: 600px) {
                 .mygls-checkout-section {
                     border-radius: 4px;
                 }
@@ -1035,6 +1036,8 @@ class Controller {
                 }
 
                 if ($checkbox.is(':checked')) {
+                    console.log('Same as billing: copying fields...');
+
                     // Copy billing data to shipping fields
                     var fieldMappings = {
                         'billing_first_name': 'shipping_first_name',
@@ -1043,23 +1046,47 @@ class Controller {
                         'billing_address_1': 'shipping_address_1',
                         'billing_address_2': 'shipping_address_2',
                         'billing_city': 'shipping_city',
-                        'billing_state': 'shipping_state',
-                        'billing_postcode': 'shipping_postcode',
-                        'billing_country': 'shipping_country'
+                        'billing_postcode': 'shipping_postcode'
                     };
 
+                    // Copy text fields
                     $.each(fieldMappings, function(billingField, shippingField) {
                         var $billingInput = $('#' + billingField);
                         var $shippingInput = $('#' + shippingField);
 
                         if ($billingInput.length && $shippingInput.length) {
-                            $shippingInput.val($billingInput.val()).trigger('change');
+                            var value = $billingInput.val();
+                            console.log('Copying ' + billingField + ': ' + value);
+                            $shippingInput.val(value).trigger('change');
                         }
                     });
 
+                    // Copy country - handle as select
+                    var $billingCountry = $('#billing_country');
+                    var $shippingCountry = $('#shipping_country');
+                    if ($billingCountry.length && $shippingCountry.length) {
+                        var countryValue = $billingCountry.val();
+                        console.log('Copying country: ' + countryValue);
+                        $shippingCountry.val(countryValue).trigger('change');
+                    }
+
+                    // Copy state after a small delay to ensure country is processed
+                    setTimeout(function() {
+                        var $billingState = $('#billing_state');
+                        var $shippingState = $('#shipping_state');
+                        if ($billingState.length && $shippingState.length) {
+                            var stateValue = $billingState.val();
+                            console.log('Copying state: ' + stateValue);
+                            $shippingState.val(stateValue).trigger('change');
+                        }
+                    }, 100);
+
                     // Hide shipping fields
                     $shippingWrap.addClass('mygls-hidden');
+
+                    console.log('Same as billing: fields copied and hidden');
                 } else {
+                    console.log('Same as billing: showing fields');
                     // Show shipping fields
                     $shippingWrap.removeClass('mygls-hidden');
                 }
@@ -1067,6 +1094,7 @@ class Controller {
 
             // Handle checkbox change
             $(document).on('change', '#mygls_same_as_billing', function() {
+                console.log('Checkbox changed, checked: ' + $(this).is(':checked'));
                 handleSameAsBillingCheckbox();
             });
 
