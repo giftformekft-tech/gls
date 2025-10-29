@@ -193,21 +193,21 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
 
-                // Add "Same as billing" checkbox
-                echo '<div class="mygls-same-as-billing-wrapper">';
-                echo '<label>';
-                echo '<input type="checkbox" id="mygls_same_as_billing" name="mygls_same_as_billing" value="1" />';
+                // Add same as billing checkbox
+                echo '<p class="form-row form-row-wide mygls-same-as-billing-field">';
+                echo '<label class="woocommerce-form__label woocommerce-form__label-for-checkbox checkbox">';
+                echo '<input type="checkbox" class="woocommerce-form__input woocommerce-form__input-checkbox input-checkbox" name="mygls_same_as_billing" id="mygls_same_as_billing" />';
                 echo '<span>' . esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce') . '</span>';
                 echo '</label>';
-                echo '</div>';
+                echo '</p>';
 
-                // Shipping fields container
-                echo '<div class="mygls-shipping-fields-container">';
+                echo '<div class="mygls-shipping-fields-wrap">';
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
                 echo '</div>';
 
+                echo '</div>';
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
@@ -638,44 +638,28 @@ class Controller {
             }
 
             /* Same as Billing Checkbox */
-            .mygls-same-as-billing-wrapper {
-                margin-bottom: 20px;
+            .mygls-same-as-billing-field {
                 padding: 15px;
                 background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
                 border: 2px solid #667eea;
                 border-radius: 8px;
+                margin-bottom: 20px !important;
             }
 
-            .mygls-same-as-billing-wrapper label {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                cursor: pointer;
-                margin: 0;
-            }
-
-            .mygls-same-as-billing-wrapper input[type="checkbox"] {
-                width: 18px;
-                height: 18px;
-                cursor: pointer;
-                margin: 0;
-                flex-shrink: 0;
-            }
-
-            .mygls-same-as-billing-wrapper label span {
+            .mygls-same-as-billing-field label {
                 font-size: 15px;
                 font-weight: 600;
                 color: #2d3748;
-                line-height: 1.4;
+                margin: 0;
             }
 
-            /* Shipping fields container - hidden when same as billing is checked */
-            .mygls-shipping-fields-container {
+            /* Hide shipping fields when checkbox is checked */
+            .mygls-shipping-fields-wrap {
                 display: block;
-                transition: all 0.3s ease;
+                transition: opacity 0.3s ease, height 0.3s ease;
             }
 
-            .mygls-shipping-fields-container.mygls-hidden {
+            .mygls-shipping-fields-wrap.mygls-hidden {
                 display: none;
             }
 
@@ -1044,15 +1028,13 @@ class Controller {
             // Same as billing checkbox functionality
             function handleSameAsBillingCheckbox() {
                 var $checkbox = $('#mygls_same_as_billing');
-                var $shippingFieldsContainer = $('.mygls-shipping-fields-container');
+                var $shippingWrap = $('.mygls-shipping-fields-wrap');
 
-                if (!$checkbox.length || !$shippingFieldsContainer.length) {
+                if (!$checkbox.length || !$shippingWrap.length) {
                     return;
                 }
 
                 if ($checkbox.is(':checked')) {
-                    console.log('Same as billing checked - copying data and hiding fields');
-
                     // Copy billing data to shipping fields
                     var fieldMappings = {
                         'billing_first_name': 'shipping_first_name',
@@ -1071,18 +1053,15 @@ class Controller {
                         var $shippingInput = $('#' + shippingField);
 
                         if ($billingInput.length && $shippingInput.length) {
-                            var value = $billingInput.val();
-                            console.log('Copying ' + billingField + ' to ' + shippingField + ': ' + value);
-                            $shippingInput.val(value).trigger('change');
+                            $shippingInput.val($billingInput.val()).trigger('change');
                         }
                     });
 
                     // Hide shipping fields
-                    $shippingFieldsContainer.addClass('mygls-hidden');
+                    $shippingWrap.addClass('mygls-hidden');
                 } else {
-                    console.log('Same as billing unchecked - showing fields');
                     // Show shipping fields
-                    $shippingFieldsContainer.removeClass('mygls-hidden');
+                    $shippingWrap.removeClass('mygls-hidden');
                 }
             }
 
@@ -1091,7 +1070,7 @@ class Controller {
                 handleSameAsBillingCheckbox();
             });
 
-            // Handle initial state
+            // Initialize on page load
             handleSameAsBillingCheckbox();
 
             highlightSelectedShippingMethod();
