@@ -206,6 +206,8 @@ class Controller {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
                 echo '</div>';
+
+                echo '</div>';
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
@@ -1007,6 +1009,7 @@ class Controller {
                 highlightSelectedShippingMethod();
                 setSectionVisibility();
                 movePrivacyCheckboxBeforeOrderButton();
+                handleSameAsBillingCheckbox();
             });
 
             function movePrivacyCheckboxBeforeOrderButton() {
