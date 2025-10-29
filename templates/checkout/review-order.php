@@ -69,15 +69,59 @@ defined( 'ABSPATH' ) || exit;
 			</tr>
 		<?php endforeach; ?>
 
-		<?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
+                <?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
 
-			<?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
+                        <?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
 
-			<?php wc_cart_totals_shipping_html(); ?>
+                        <?php
+                        $shipping_total_display = '';
+                        if ( method_exists( WC()->cart, 'get_cart_shipping_total' ) ) {
+                                $shipping_total_display = WC()->cart->get_cart_shipping_total();
+                        } else {
+                                $shipping_total_display = wc_price( (float) WC()->cart->get_shipping_total() + (float) WC()->cart->get_shipping_tax() );
+                        }
 
-			<?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
+                        $shipping_method_label = '';
+                        $chosen_methods        = (array) WC()->session->get( 'chosen_shipping_methods', [] );
+                        $shipping_controller   = WC()->shipping();
 
-		<?php endif; ?>
+                        if ( $shipping_controller ) {
+                                foreach ( $shipping_controller->get_packages() as $index => $package ) {
+                                        if ( empty( $chosen_methods[ $index ] ) ) {
+                                                continue;
+                                        }
+
+                                        $method_id = $chosen_methods[ $index ];
+
+                                        if ( isset( $package['rates'][ $method_id ] ) ) {
+                                                $rate = $package['rates'][ $method_id ];
+
+                                                if ( is_object( $rate ) && method_exists( $rate, 'get_label' ) ) {
+                                                        $shipping_method_label = $rate->get_label();
+                                                } elseif ( function_exists( 'wc_cart_totals_shipping_method_label' ) && is_object( $rate ) ) {
+                                                        $shipping_method_label = wc_cart_totals_shipping_method_label( $rate );
+                                                } else {
+                                                        $shipping_method_label = wc_clean( (string) $method_id );
+                                                }
+                                                break;
+                                        }
+                                }
+                        }
+                        ?>
+
+                        <tr class="cart-shipping-total">
+                                <th colspan="2"><?php esc_html_e( 'Szállítási díj', 'mygls-woocommerce' ); ?></th>
+                                <td>
+                                        <?php echo wp_kses_post( $shipping_total_display ); ?>
+                                        <?php if ( ! empty( $shipping_method_label ) ) : ?>
+                                                <small class="mygls-selected-shipping-method"><?php echo esc_html( $shipping_method_label ); ?></small>
+                                        <?php endif; ?>
+                                </td>
+                        </tr>
+
+                        <?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
+
+                <?php endif; ?>
 
 		<?php foreach ( WC()->cart->get_fees() as $fee ) : ?>
 			<tr class="fee">

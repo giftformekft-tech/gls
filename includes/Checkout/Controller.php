@@ -442,9 +442,10 @@ class Controller {
             /* Custom Checkout Layout */
             .mygls-custom-checkout-container {
                 display: grid;
-                grid-template-columns: 1fr 400px;
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
                 gap: 30px;
                 margin: 20px 0;
+                align-items: start;
             }
 
             .mygls-checkout-sections {
@@ -656,11 +657,26 @@ class Controller {
             /* Hide shipping fields when checkbox is checked */
             .mygls-shipping-fields-wrap {
                 display: block;
-                transition: opacity 0.3s ease, height 0.3s ease;
+                transition: opacity 0.3s ease;
             }
 
-            .mygls-shipping-fields-wrap.mygls-hidden {
-                display: none;
+            .mygls-shipping-fields-wrap.mygls-disabled {
+                opacity: 0.6;
+            }
+
+            .mygls-shipping-fields-wrap.mygls-disabled input,
+            .mygls-shipping-fields-wrap.mygls-disabled select,
+            .mygls-shipping-fields-wrap.mygls-disabled textarea {
+                background-color: #f3f4f6;
+                cursor: not-allowed;
+                pointer-events: none;
+                color: #6b7280;
+            }
+
+            .mygls-shipping-fields-wrap.mygls-disabled .select2-selection {
+                background-color: #f3f4f6;
+                cursor: not-allowed;
+                pointer-events: none;
             }
 
             /* Order Review Sidebar - Ultra Modern Clean Design */
@@ -668,6 +684,8 @@ class Controller {
                 position: sticky;
                 top: 20px;
                 height: fit-content;
+                align-self: start;
+                width: 100%;
             }
 
             .mygls-order-review {
@@ -791,6 +809,23 @@ class Controller {
                 font-weight: 700;
                 color: #374151;
                 width: 40%;
+            }
+
+            .woocommerce-checkout-review-order-table tfoot .cart-shipping-total th {
+                color: #1f2937;
+                font-weight: 700;
+            }
+
+            .woocommerce-checkout-review-order-table tfoot .cart-shipping-total td {
+                color: #1f2937;
+            }
+
+            .mygls-selected-shipping-method {
+                display: block;
+                margin-top: 4px;
+                font-size: 12px;
+                color: #6b7280;
+                font-weight: 500;
             }
 
             /* Total Row - Special Ultra Modern Styling */
@@ -1026,79 +1061,127 @@ class Controller {
                 }
             }
 
-            // Same as billing checkbox functionality
+            var billingToShippingMap = {
+                'billing_first_name': 'shipping_first_name',
+                'billing_last_name': 'shipping_last_name',
+                'billing_company': 'shipping_company',
+                'billing_address_1': 'shipping_address_1',
+                'billing_address_2': 'shipping_address_2',
+                'billing_city': 'shipping_city',
+                'billing_postcode': 'shipping_postcode',
+                'billing_phone': 'shipping_phone'
+            };
+
+            var copyShippingStateTimeout = null;
+
+            function syncShippingFieldsWithBilling() {
+                var $shippingWrap = $('.mygls-shipping-fields-wrap');
+                if (!$shippingWrap.length) {
+                    return;
+                }
+
+                $.each(billingToShippingMap, function(billingField, shippingField) {
+                    var $billingInput = $('#' + billingField);
+                    var $shippingInput = $('#' + shippingField);
+
+                    if ($billingInput.length && $shippingInput.length) {
+                        var value = $billingInput.val();
+                        $shippingInput.val(value).trigger('change');
+                    }
+                });
+
+                var $billingCountry = $('#billing_country');
+                var $shippingCountry = $('#shipping_country');
+                if ($billingCountry.length && $shippingCountry.length) {
+                    var countryValue = $billingCountry.val();
+                    if ($shippingCountry.val() !== countryValue) {
+                        $shippingCountry.val(countryValue).trigger('change');
+                    }
+                }
+
+                if (copyShippingStateTimeout) {
+                    clearTimeout(copyShippingStateTimeout);
+                }
+
+                copyShippingStateTimeout = setTimeout(function() {
+                    var $billingState = $('#billing_state');
+                    var $shippingState = $('#shipping_state');
+                    if ($billingState.length && $shippingState.length) {
+                        var stateValue = $billingState.val();
+                        if ($shippingState.val() !== stateValue) {
+                            $shippingState.val(stateValue).trigger('change');
+                        }
+                    }
+                }, 100);
+            }
+
+            function setShippingFieldsState(isDisabled) {
+                var $shippingWrap = $('.mygls-shipping-fields-wrap');
+                if (!$shippingWrap.length) {
+                    return;
+                }
+
+                var $fields = $shippingWrap.find('input, select, textarea');
+
+                if (isDisabled) {
+                    $shippingWrap.addClass('mygls-disabled').attr('aria-disabled', 'true');
+                    $fields.each(function() {
+                        var $field = $(this);
+                        if ($field.is('input, textarea')) {
+                            $field.prop('readonly', true);
+                        }
+                        $field.attr('aria-readonly', 'true');
+                    });
+                } else {
+                    $shippingWrap.removeClass('mygls-disabled').removeAttr('aria-disabled');
+                    $fields.each(function() {
+                        var $field = $(this);
+                        if ($field.is('input, textarea')) {
+                            $field.prop('readonly', false);
+                        }
+                        $field.removeAttr('aria-readonly');
+                    });
+                }
+            }
+
             function handleSameAsBillingCheckbox() {
                 var $checkbox = $('#mygls_same_as_billing');
-                var $shippingWrap = $('.mygls-shipping-fields-wrap');
 
-                if (!$checkbox.length || !$shippingWrap.length) {
+                if (!$checkbox.length) {
                     return;
                 }
 
                 if ($checkbox.is(':checked')) {
-                    console.log('Same as billing: copying fields...');
-
-                    // Copy billing data to shipping fields
-                    var fieldMappings = {
-                        'billing_first_name': 'shipping_first_name',
-                        'billing_last_name': 'shipping_last_name',
-                        'billing_company': 'shipping_company',
-                        'billing_address_1': 'shipping_address_1',
-                        'billing_address_2': 'shipping_address_2',
-                        'billing_city': 'shipping_city',
-                        'billing_postcode': 'shipping_postcode'
-                    };
-
-                    // Copy text fields
-                    $.each(fieldMappings, function(billingField, shippingField) {
-                        var $billingInput = $('#' + billingField);
-                        var $shippingInput = $('#' + shippingField);
-
-                        if ($billingInput.length && $shippingInput.length) {
-                            var value = $billingInput.val();
-                            console.log('Copying ' + billingField + ': ' + value);
-                            $shippingInput.val(value).trigger('change');
-                        }
-                    });
-
-                    // Copy country - handle as select
-                    var $billingCountry = $('#billing_country');
-                    var $shippingCountry = $('#shipping_country');
-                    if ($billingCountry.length && $shippingCountry.length) {
-                        var countryValue = $billingCountry.val();
-                        console.log('Copying country: ' + countryValue);
-                        $shippingCountry.val(countryValue).trigger('change');
-                    }
-
-                    // Copy state after a small delay to ensure country is processed
-                    setTimeout(function() {
-                        var $billingState = $('#billing_state');
-                        var $shippingState = $('#shipping_state');
-                        if ($billingState.length && $shippingState.length) {
-                            var stateValue = $billingState.val();
-                            console.log('Copying state: ' + stateValue);
-                            $shippingState.val(stateValue).trigger('change');
-                        }
-                    }, 100);
-
-                    // Hide shipping fields
-                    $shippingWrap.addClass('mygls-hidden');
-
-                    console.log('Same as billing: fields copied and hidden');
+                    syncShippingFieldsWithBilling();
+                    setShippingFieldsState(true);
                 } else {
-                    console.log('Same as billing: showing fields');
-                    // Show shipping fields
-                    $shippingWrap.removeClass('mygls-hidden');
+                    setShippingFieldsState(false);
                 }
             }
 
-            // Handle checkbox change
+            var billingFieldSelectors = [
+                '#billing_first_name',
+                '#billing_last_name',
+                '#billing_company',
+                '#billing_address_1',
+                '#billing_address_2',
+                '#billing_city',
+                '#billing_postcode',
+                '#billing_country',
+                '#billing_state',
+                '#billing_phone'
+            ].join(', ');
+
+            $(document).on('change input', billingFieldSelectors, function() {
+                if ($('#mygls_same_as_billing').is(':checked')) {
+                    syncShippingFieldsWithBilling();
+                }
+            });
+
             $(document).on('change', '#mygls_same_as_billing', function() {
-                console.log('Checkbox changed, checked: ' + $(this).is(':checked'));
                 handleSameAsBillingCheckbox();
             });
 
-            // Initialize on page load
             handleSameAsBillingCheckbox();
 
             highlightSelectedShippingMethod();
