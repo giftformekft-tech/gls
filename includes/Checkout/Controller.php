@@ -47,7 +47,7 @@ class Controller {
      * Reorder checkout fields based on admin settings
      */
     public function reorder_checkout_fields($fields) {
-        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+        $field_order = $this->settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
 
         // Set custom priorities for field groups
         $priorities = [];
@@ -65,9 +65,14 @@ class Controller {
      * Use custom checkout template
      */
     public function custom_checkout_template($template, $template_name, $template_path) {
-        // Only override the main checkout form template
-        if ($template_name === 'checkout/form-checkout.php') {
-            $custom_template = MYGLS_PLUGIN_DIR . 'templates/checkout/form-checkout.php';
+        // Override checkout templates
+        $templates_to_override = [
+            'checkout/form-checkout.php',
+            'checkout/review-order.php'
+        ];
+
+        if (in_array($template_name, $templates_to_override)) {
+            $custom_template = MYGLS_PLUGIN_DIR . 'templates/' . $template_name;
             if (file_exists($custom_template)) {
                 return $custom_template;
             }
@@ -379,6 +384,40 @@ class Controller {
 
                 .mygls-section-content {
                     padding: 15px;
+                }
+            }
+
+            /* Product thumbnails in order review */
+            .woocommerce-checkout-review-order-table .product-thumbnail {
+                width: 80px;
+                text-align: center;
+            }
+
+            .woocommerce-checkout-review-order-table .product-thumbnail img {
+                width: 60px;
+                height: 60px;
+                object-fit: cover;
+                border-radius: 4px;
+                border: 1px solid #e0e0e0;
+            }
+
+            .woocommerce-checkout-review-order-table .product-name {
+                padding-left: 10px;
+            }
+
+            .woocommerce-checkout-review-order-table .product-quantity {
+                color: #666;
+                font-weight: normal;
+            }
+
+            @media (max-width: 768px) {
+                .woocommerce-checkout-review-order-table .product-thumbnail {
+                    width: 60px;
+                }
+
+                .woocommerce-checkout-review-order-table .product-thumbnail img {
+                    width: 50px;
+                    height: 50px;
                 }
             }
         ";
