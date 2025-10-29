@@ -254,32 +254,44 @@ class Controller {
     private function render_shipping_methods() {
         $packages = WC()->shipping()->get_packages();
 
-        foreach ($packages as $i => $package) {
-            $chosen_method = isset(WC()->session->chosen_shipping_methods[$i]) ? WC()->session->chosen_shipping_methods[$i] : '';
-            $product_names = array();
+        if (empty($packages)) {
+            return;
+        }
 
-            if (count($packages) > 1) {
-                foreach ($package['contents'] as $item_id => $values) {
-                    $product_names[$item_id] = $values['data']->get_name() . ' &times;' . $values['quantity'];
-                }
-                $product_names = apply_filters('woocommerce_shipping_package_details_array', $product_names, $package);
+        foreach ($packages as $i => $package) {
+            $available_methods = $package['rates'];
+            $chosen_method = isset(WC()->session->chosen_shipping_methods[$i]) ? WC()->session->chosen_shipping_methods[$i] : '';
+
+            if (empty($available_methods)) {
+                echo '<p>' . __('Jelenleg nincsenek elérhető szállítási módok.', 'mygls-woocommerce') . '</p>';
+                continue;
             }
 
-            wc_get_template(
-                'cart/cart-shipping.php',
-                array(
-                    'package'                  => $package,
-                    'available_methods'        => $package['rates'],
-                    'show_package_details'     => count($packages) > 1,
-                    'show_shipping_calculator' => false,
-                    'package_details'          => implode(', ', $product_names),
-                    'package_name'             => apply_filters('woocommerce_shipping_package_name', ( ( $i + 1 ) > 1 ) ? sprintf( _x( 'Shipping %d', 'shipping packages', 'woocommerce' ), ( $i + 1 ) ) : _x( 'Shipping', 'shipping packages', 'woocommerce' ), $i, $package ),
-                    'index'                    => $i,
-                    'chosen_method'            => $chosen_method,
-                    'formatted_destination'    => WC()->countries->get_formatted_address($package['destination'], ', '),
-                    'has_calculated_shipping'  => WC()->customer->has_calculated_shipping(),
-                )
-            );
+            ?>
+            <ul class="woocommerce-shipping-methods" id="shipping_method">
+                <?php foreach ($available_methods as $method) : ?>
+                    <li>
+                        <input
+                            type="radio"
+                            name="shipping_method[<?php echo esc_attr($i); ?>]"
+                            data-index="<?php echo esc_attr($i); ?>"
+                            id="shipping_method_<?php echo esc_attr($i); ?>_<?php echo esc_attr(sanitize_title($method->id)); ?>"
+                            value="<?php echo esc_attr($method->id); ?>"
+                            class="shipping_method"
+                            <?php checked($method->id, $chosen_method); ?>
+                        />
+                        <label for="shipping_method_<?php echo esc_attr($i); ?>_<?php echo esc_attr(sanitize_title($method->id)); ?>">
+                            <?php echo wp_kses_post($method->get_label()); ?>
+                            <?php if ($method->cost > 0) : ?>
+                                <span class="amount"><?php echo wc_price($method->cost); ?></span>
+                            <?php else : ?>
+                                <span class="amount"><?php _e('Ingyenes', 'mygls-woocommerce'); ?></span>
+                            <?php endif; ?>
+                        </label>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+            <?php
         }
     }
 
