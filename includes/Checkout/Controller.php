@@ -964,6 +964,7 @@ class Controller {
                 .mygls-custom-checkout-container {
                     flex-direction: column;
                 }
+            }
 
                 .mygls-order-review-sidebar {
                     position: static;
