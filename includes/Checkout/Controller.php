@@ -509,18 +509,6 @@ class Controller {
                 box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
             }
 
-            .mygls-section-shipping-method .woocommerce-shipping-methods li.mygls-shipping-method--parcelshop label:after {
-                content: 'Csomagpont';
-                display: inline-block;
-                margin-left: 8px;
-                padding: 2px 6px;
-                font-size: 11px;
-                text-transform: uppercase;
-                background-color: rgba(118, 75, 162, 0.15);
-                color: #764ba2;
-                border-radius: 3px;
-                letter-spacing: 0.5px;
-            }
 
             .mygls-section-shipping-method .shipping-package-title {
                 margin: 0 0 8px 0;
@@ -577,6 +565,21 @@ class Controller {
                 padding: 20px;
             }
 
+            .mygls-order-review-content #order_review {
+                display: block;
+                width: 100%;
+            }
+
+            .mygls-order-review-content .woocommerce-checkout-review-order {
+                display: block;
+                width: 100%;
+            }
+
+            .woocommerce-checkout-review-order-table {
+                width: 100%;
+                display: table;
+            }
+
             /* Hide default WooCommerce elements when custom checkout is active */
             .mygls-custom-checkout-active .woocommerce-billing-fields,
             .mygls-custom-checkout-active .woocommerce-shipping-fields,
@@ -606,6 +609,17 @@ class Controller {
                     position: relative;
                     top: 0;
                     order: -1;
+                    margin-bottom: 20px;
+                }
+
+                .mygls-order-review-content {
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+
+                .woocommerce-checkout-review-order-table {
+                    display: table !important;
                 }
             }
 
