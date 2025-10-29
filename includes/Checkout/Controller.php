@@ -198,7 +198,7 @@ class Controller {
                 woocommerce_form_field('mygls_same_as_billing', [
                     'type' => 'checkbox',
                     'class' => ['form-row-wide'],
-                    'label' => '<span class="dashicons dashicons-admin-page"></span> ' . esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce'),
+                    'label' => esc_html__('Megegyezik a számlázási adatokkal', 'mygls-woocommerce'),
                     'required' => false,
                 ], $checkout->get_value('mygls_same_as_billing'));
                 echo '</div>';
@@ -652,23 +652,15 @@ class Controller {
                 font-size: 15px;
                 font-weight: 600;
                 color: #2d3748;
-                display: flex;
-                align-items: center;
-                gap: 8px;
                 cursor: pointer;
-            }
-
-            .mygls-same-as-billing-wrapper .dashicons {
-                font-size: 18px;
-                width: 18px;
-                height: 18px;
-                color: #667eea;
+                display: block;
             }
 
             .mygls-same-as-billing-wrapper input[type="checkbox"] {
-                width: 20px;
-                height: 20px;
+                width: 18px;
+                height: 18px;
                 cursor: pointer;
+                margin-right: 8px;
             }
 
             /* Shipping fields container - hidden when same as billing is checked */
