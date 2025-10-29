@@ -129,6 +129,11 @@ class Controller {
                 break;
 
             case 'shipping_method':
+                // Safety check: Ensure WooCommerce is available
+                if (!function_exists('WC') || !WC()->cart) {
+                    return;
+                }
+
                 // Only show if cart needs shipping
                 if (WC()->cart->needs_shipping() && WC()->cart->show_shipping()) {
                     ?>
@@ -146,6 +151,11 @@ class Controller {
                 break;
 
             case 'shipping':
+                // Safety check: Ensure WooCommerce session is available
+                if (!function_exists('WC') || !WC()->session) {
+                    return;
+                }
+
                 // Check if parcelshop is selected
                 $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
                 $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
@@ -186,6 +196,11 @@ class Controller {
                 break;
 
             case 'parcelshop':
+                // Safety check: Ensure WooCommerce session is available
+                if (!function_exists('WC') || !WC()->session) {
+                    return;
+                }
+
                 // Check if parcelshop is enabled for current shipping method
                 $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
                 $chosen_methods = WC()->session->get('chosen_shipping_methods', []);

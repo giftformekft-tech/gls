@@ -62,6 +62,11 @@ class Selector {
      * Add parcelshop selector after shipping rate
      */
     public function add_parcelshop_selector($method, $index) {
+        // Safety check: Ensure WooCommerce is available
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+
         // Get plugin settings
         $settings = get_option('mygls_settings', []);
         $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
@@ -224,6 +229,12 @@ class Selector {
     public function ajax_save_parcelshop() {
         check_ajax_referer('mygls_checkout_nonce', 'nonce');
 
+        // Safety check: Ensure WooCommerce session is available
+        if (!function_exists('WC') || !WC()->session) {
+            wp_send_json_error(['message' => __('WooCommerce session nem elérhető', 'mygls-woocommerce')]);
+            return;
+        }
+
         $parcelshop = isset($_POST['parcelshop']) ? json_decode(stripslashes($_POST['parcelshop']), true) : [];
 
         if (!empty($parcelshop)) {
@@ -300,6 +311,11 @@ class Selector {
      * Displays after shipping in order review
      */
     public function add_parcelshop_selector_fallback() {
+        // Safety check: Ensure WooCommerce is available
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+
         // Check if we should show the selector
         $settings = get_option('mygls_settings', []);
         $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
@@ -354,7 +370,12 @@ class Selector {
      * Common method for all display locations
      */
     private function render_parcelshop_selector_html() {
-        $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
+        // Safety check: Ensure WooCommerce session is available
+        $selected_parcelshop = null;
+        if (function_exists('WC') && WC()->session) {
+            $selected_parcelshop = WC()->session->get('mygls_selected_parcelshop');
+        }
+
         $settings = get_option('mygls_settings', []);
         $country = strtolower($settings['country'] ?? 'hu');
         $language = strtolower($settings['language'] ?? 'hu');
