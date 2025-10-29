@@ -111,6 +111,13 @@ class Controller {
         foreach ($field_order as $section) {
             echo $this->get_section_wrapper_markup($section);
         }
+
+        return sprintf(
+            '<div id="mygls-section-wrapper-%1$s" class="%2$s">%3$s</div>',
+            esc_attr($section),
+            esc_attr(implode(' ', $classes)),
+            $content
+        );
     }
 
     /**
@@ -317,11 +324,54 @@ class Controller {
         $payment_markup = ob_get_clean();
 
         $place_order_markup = '';
+        $wrapped_markup = '<div id="mygls-payment-wrapper">' . $payment_markup . '</div>';
 
-        if (preg_match('/<div[^>]*class="[^"]*place-order[^"]*"[^>]*>.*?<\/div>/si', $payment_markup, $matches)) {
+        if (class_exists('\DOMDocument')) {
+            $internal_errors = null;
+
+            if (function_exists('libxml_use_internal_errors')) {
+                $internal_errors = \libxml_use_internal_errors(true);
+            }
+            $dom = new \DOMDocument('1.0', 'UTF-8');
+
+            if ($dom->loadHTML('<?xml encoding="utf-8" ?>' . $wrapped_markup)) {
+                $wrapper = $dom->getElementById('mygls-payment-wrapper');
+
+                if ($wrapper instanceof \DOMElement) {
+                    $xpath = new \DOMXPath($dom);
+                    $place_order_nodes = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " place-order ")]', $wrapper);
+
+                    if ($place_order_nodes instanceof \DOMNodeList && $place_order_nodes->length > 0) {
+                        foreach ($place_order_nodes as $node) {
+                            $place_order_markup .= $dom->saveHTML($node);
+                            $node->parentNode->removeChild($node);
+                        }
+
+                        $payment_markup = '';
+
+                        foreach ($wrapper->childNodes as $child_node) {
+                            $payment_markup .= $dom->saveHTML($child_node);
+                        }
+                    }
+                }
+            }
+
+            if (function_exists('libxml_clear_errors')) {
+                \libxml_clear_errors();
+            }
+
+            if (function_exists('libxml_use_internal_errors')) {
+                \libxml_use_internal_errors($internal_errors);
+            }
+        }
+
+        if ($place_order_markup === '' && preg_match('/<div[^>]*class="[^"]*place-order[^"]*"[^>]*>.*?<\/div>/si', $payment_markup, $matches)) {
             $place_order_markup = $matches[0];
             $payment_markup = str_replace($matches[0], '', $payment_markup);
         }
+
+        $payment_markup = trim($payment_markup);
+        $place_order_markup = trim($place_order_markup);
 
         $this->payment_markup_parts = [
             'payment' => $payment_markup,
@@ -561,6 +611,10 @@ class Controller {
                 list-style: none;
                 padding: 0;
                 margin: 0;
+            }
+
+            .mygls-section-shipping-method .mygls-parcelshop-selector {
+                display: none !important;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li {
@@ -816,18 +870,40 @@ class Controller {
                 toggleWrapper($parcelshopWrapper, !isParcelshop);
             }
 
+            var orderSummaryResizeBound = false;
+
             function syncOrderSummaryToggleState($button, $details) {
                 var isExpanded = $button.attr('aria-expanded') === 'true';
+                var isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+                if (!isMobile) {
+                    $details.stop(true, true).show().addClass('is-open');
+                    return;
+                }
 
                 if (isExpanded) {
-                    $details.addClass('is-open');
+                    $details.addClass('is-open').stop(true, true).slideDown(200);
                 } else {
-                    $details.removeClass('is-open');
+                    $details.removeClass('is-open').stop(true, true).slideUp(200);
                 }
             }
 
+            function updateOrderSummaryToggleForViewport($button, $details) {
+                if (!window.matchMedia('(max-width: 768px)').matches) {
+                    $button.attr('aria-expanded', 'true');
+                }
+
+                syncOrderSummaryToggleState($button, $details);
+            }
+
             function bindOrderSummaryToggle() {
-                $('.mygls-order-summary-toggle').each(function() {
+                var $toggles = $('.mygls-order-summary-toggle');
+
+                if (!$toggles.length) {
+                    return;
+                }
+
+                $toggles.each(function() {
                     var $button = $(this);
                     var targetId = $button.attr('aria-controls');
                     var $details = $('#' + targetId);
@@ -842,8 +918,24 @@ class Controller {
                         syncOrderSummaryToggleState($button, $details);
                     });
 
-                    syncOrderSummaryToggleState($button, $details);
+                    updateOrderSummaryToggleForViewport($button, $details);
                 });
+
+                if (!orderSummaryResizeBound) {
+                    orderSummaryResizeBound = true;
+
+                    $(window).on('resize.myglsOrderSummary', function() {
+                        $('.mygls-order-summary-toggle').each(function() {
+                            var $button = $(this);
+                            var targetId = $button.attr('aria-controls');
+                            var $details = $('#' + targetId);
+
+                            if ($details.length) {
+                                updateOrderSummaryToggleForViewport($button, $details);
+                            }
+                        });
+                    });
+                }
             }
 
             function requestCheckoutRefresh() {
