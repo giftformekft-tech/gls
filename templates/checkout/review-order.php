@@ -69,37 +69,15 @@ defined( 'ABSPATH' ) || exit;
 			</tr>
 		<?php endforeach; ?>
 
-                <?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
+		<?php if ( WC()->cart->needs_shipping() && WC()->cart->show_shipping() ) : ?>
 
-                        <?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
+			<?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
 
-                        <?php
-                        $chosen_methods    = (array) WC()->session->get( 'chosen_shipping_methods', array() );
-                        $shipping_packages = WC()->shipping() ? WC()->shipping()->get_packages() : array();
-                        $chosen_label      = '';
+			<?php wc_cart_totals_shipping_html(); ?>
 
-                        if ( ! empty( $shipping_packages ) && ! empty( $chosen_methods ) ) {
-                                foreach ( $shipping_packages as $package_index => $package ) {
-                                        if ( isset( $chosen_methods[ $package_index ], $package['rates'][ $chosen_methods[ $package_index ] ] ) ) {
-                                                $chosen_label = $package['rates'][ $chosen_methods[ $package_index ] ]->get_label();
-                                                break;
-                                        }
-                                }
-                        }
-                        ?>
-                        <tr class="woocommerce-shipping-totals shipping shipping-total">
-                                <th colspan="2">
-                                        <?php esc_html_e( 'Szállítás', 'mygls-woocommerce' ); ?>
-                                        <?php if ( $chosen_label ) : ?>
-                                                <span class="mygls-chosen-shipping-method">&mdash; <?php echo esc_html( $chosen_label ); ?></span>
-                                        <?php endif; ?>
-                                </th>
-                                <td><?php echo wp_kses_post( WC()->cart->get_cart_shipping_total() ); ?></td>
-                        </tr>
+			<?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
 
-                        <?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
-
-                <?php endif; ?>
+		<?php endif; ?>
 
 		<?php foreach ( WC()->cart->get_fees() as $fee ) : ?>
 			<tr class="fee">
