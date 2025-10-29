@@ -91,9 +91,22 @@ class Settings {
 
         // Custom Checkout Settings
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
-        $sanitized['checkout_field_order'] = isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])
-            ? array_map('sanitize_text_field', $input['checkout_field_order'])
-            : ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+        $allowed_checkout_sections = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+
+        if (isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])) {
+            $configured_order = array_map('sanitize_text_field', $input['checkout_field_order']);
+            $configured_order = array_values(array_intersect($configured_order, $allowed_checkout_sections));
+
+            foreach ($allowed_checkout_sections as $section) {
+                if (!in_array($section, $configured_order, true)) {
+                    $configured_order[] = $section;
+                }
+            }
+
+            $sanitized['checkout_field_order'] = $configured_order;
+        } else {
+            $sanitized['checkout_field_order'] = $allowed_checkout_sections;
+        }
 
         return $sanitized;
     }
@@ -361,7 +374,15 @@ class Settings {
 
                                 <div id="mygls-field-order-sortable" class="mygls-sortable-list">
                                     <?php
-                                    $field_order = $settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+                                    $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+                                    $field_order = $settings['checkout_field_order'] ?? $default_field_order;
+                                    $field_order = array_values(array_intersect($field_order, $default_field_order));
+
+                                    foreach ($default_field_order as $field_key) {
+                                        if (!in_array($field_key, $field_order, true)) {
+                                            $field_order[] = $field_key;
+                                        }
+                                    }
                                     $field_labels = [
                                         'billing' => __('Billing Details', 'mygls-woocommerce'),
                                         'shipping_method' => __('Shipping Method', 'mygls-woocommerce'),
