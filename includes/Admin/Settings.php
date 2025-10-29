@@ -89,6 +89,12 @@ class Settings {
             ? array_map('sanitize_text_field', $input['parcelshop_enabled_methods'])
             : [];
 
+        // Custom Checkout Settings
+        $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
+        $sanitized['checkout_field_order'] = isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])
+            ? array_map('sanitize_text_field', $input['checkout_field_order'])
+            : ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+
         return $sanitized;
     }
     
@@ -322,6 +328,86 @@ class Settings {
                                     </td>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- Custom Checkout Settings -->
+                    <div class="mygls-card">
+                        <div class="mygls-card-header">
+                            <h2><span class="dashicons dashicons-cart"></span> <?php _e('Custom Checkout Settings', 'mygls-woocommerce'); ?></h2>
+                        </div>
+                        <div class="mygls-card-body">
+                            <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="enable_custom_checkout"><?php _e('Enable GLS Custom Checkout', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label class="mygls-toggle">
+                                            <input type="checkbox" name="mygls_settings[enable_custom_checkout]" id="enable_custom_checkout" value="1" <?php checked($settings['enable_custom_checkout'] ?? '0', '1'); ?>>
+                                            <span class="mygls-toggle-slider"></span>
+                                        </label>
+                                        <p class="description"><?php _e('When enabled, the GLS plugin will control the checkout page layout and fields. When disabled, standard WooCommerce checkout will be used.', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <div id="checkout-field-order-settings" style="<?php echo ($settings['enable_custom_checkout'] ?? '0') === '1' ? '' : 'display:none;'; ?>">
+                                <hr style="margin: 20px 0;">
+                                <h3><?php _e('Checkout Field Order', 'mygls-woocommerce'); ?></h3>
+                                <p class="description" style="margin-bottom: 15px;">
+                                    <?php _e('Drag and drop to reorder the checkout sections. This controls the order in which sections appear on the checkout page.', 'mygls-woocommerce'); ?>
+                                </p>
+
+                                <div id="mygls-field-order-sortable" class="mygls-sortable-list">
+                                    <?php
+                                    $field_order = $settings['checkout_field_order'] ?? ['billing', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+                                    $field_labels = [
+                                        'billing' => __('Billing Details', 'mygls-woocommerce'),
+                                        'shipping' => __('Shipping Details', 'mygls-woocommerce'),
+                                        'parcelshop' => __('Parcelshop Selection', 'mygls-woocommerce'),
+                                        'order_notes' => __('Order Notes', 'mygls-woocommerce'),
+                                        'payment' => __('Payment Method', 'mygls-woocommerce')
+                                    ];
+
+                                    foreach ($field_order as $index => $field):
+                                    ?>
+                                        <div class="mygls-sortable-item" data-field="<?php echo esc_attr($field); ?>">
+                                            <span class="dashicons dashicons-menu"></span>
+                                            <span class="mygls-sortable-label"><?php echo esc_html($field_labels[$field] ?? $field); ?></span>
+                                            <span class="mygls-sortable-order">#<?php echo ($index + 1); ?></span>
+                                            <input type="hidden" name="mygls_settings[checkout_field_order][]" value="<?php echo esc_attr($field); ?>">
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <script>
+                            jQuery(document).ready(function($) {
+                                // Toggle field order settings visibility
+                                $('#enable_custom_checkout').on('change', function() {
+                                    if ($(this).is(':checked')) {
+                                        $('#checkout-field-order-settings').slideDown();
+                                    } else {
+                                        $('#checkout-field-order-settings').slideUp();
+                                    }
+                                });
+
+                                // Initialize sortable
+                                if (typeof $.fn.sortable !== 'undefined') {
+                                    $('#mygls-field-order-sortable').sortable({
+                                        handle: '.dashicons-menu',
+                                        placeholder: 'mygls-sortable-placeholder',
+                                        update: function(event, ui) {
+                                            // Update order numbers
+                                            $('#mygls-field-order-sortable .mygls-sortable-item').each(function(index) {
+                                                $(this).find('.mygls-sortable-order').text('#' + (index + 1));
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                            </script>
                         </div>
                     </div>
 
