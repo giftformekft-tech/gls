@@ -427,6 +427,12 @@ class Controller {
             return;
         }
 
+        // Load settings fresh to ensure we get the latest value
+        $current_settings = get_option('mygls_settings', []);
+        $logo_size = absint($current_settings['shipping_logo_size'] ?? 40);
+        if ($logo_size < 20) $logo_size = 20;
+        if ($logo_size > 100) $logo_size = 100;
+
         // Add inline styles for custom checkout
         $custom_css = "
             /* Custom Checkout Layout */
@@ -534,24 +540,15 @@ class Controller {
                 margin-bottom: 0 !important;
             }
 
-            <?php
-            // Load settings fresh to ensure we get the latest value
-            $current_settings = get_option('mygls_settings', []);
-            $logo_size = absint($current_settings['shipping_logo_size'] ?? 40);
-            if ($logo_size < 20) $logo_size = 20;
-            if ($logo_size > 100) $logo_size = 100;
-
-            // Debug: output the actual value
-            echo "\n/* DEBUG: Logo size from DB: " . $logo_size . "px */\n";
-            echo "/* DEBUG: Settings array has shipping_logo_size: " . (isset($current_settings['shipping_logo_size']) ? 'YES' : 'NO') . " */\n";
-            ?>
+            /* DEBUG: Logo size from DB: {$logo_size}px */
+            /* DEBUG: Settings array has shipping_logo_size: " . (isset($current_settings['shipping_logo_size']) ? 'YES' : 'NO') . " */
             .mygls-shipping-method-logo {
                 display: inline-block !important;
-                max-width: <?php echo $logo_size; ?>px !important;
-                max-height: <?php echo $logo_size; ?>px !important;
+                max-width: {$logo_size}px !important;
+                max-height: {$logo_size}px !important;
                 min-width: unset !important;
                 min-height: unset !important;
-                width: <?php echo $logo_size; ?>px !important;
+                width: {$logo_size}px !important;
                 height: auto !important;
                 margin-right: 10px !important;
                 vertical-align: middle !important;
@@ -562,9 +559,9 @@ class Controller {
             .mygls-section-shipping-method label .mygls-shipping-method-logo,
             .mygls-section-shipping-method .woocommerce-shipping-methods li label img,
             img.mygls-shipping-method-logo {
-                max-width: <?php echo $logo_size; ?>px !important;
-                max-height: <?php echo $logo_size; ?>px !important;
-                width: <?php echo $logo_size; ?>px !important;
+                max-width: {$logo_size}px !important;
+                max-height: {$logo_size}px !important;
+                width: {$logo_size}px !important;
             }
 
             .mygls-section-shipping-method .woocommerce-shipping-methods li:hover {
