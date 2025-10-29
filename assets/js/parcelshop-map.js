@@ -10,16 +10,6 @@
     let widgetInitialized = false;
     let widgetInitAttempts = 0;
     const MAX_INIT_ATTEMPTS = 10;
-    const WIDGET_IDS = ['mygls-parcelshop-widget', 'mygls-parcelshop-widget-classic', 'mygls-checkout-widget'];
-
-    /**
-     * Shared event handler reference so listeners can be safely removed.
-     * @param {CustomEvent} event
-     */
-    function handleWidgetChange(event) {
-        console.log('Parcelshop selected:', event.detail);
-        handleParcelshopSelection(event.detail);
-    }
 
     $(document).ready(function() {
         initGLSWidget();
@@ -27,9 +17,11 @@
 
         // Re-initialize widget on checkout update (WooCommerce AJAX)
         $(document.body).on('updated_checkout', function() {
-            console.log('Checkout updated, refreshing GLS widget state...');
-            resetWidgetState();
-            initGLSWidget();
+            if (!widgetInitialized) {
+                console.log('Checkout updated, re-initializing GLS widget...');
+                widgetInitAttempts = 0;
+                initGLSWidget();
+            }
         });
     });
 
@@ -80,14 +72,17 @@
     function setupWidget() {
         console.log('setupWidget called, attempt:', widgetInitAttempts);
 
-        const element = findWidgetElement();
+        // Try multiple widget IDs (for classic checkout, blocks, etc.)
+        const widgetIds = ['mygls-parcelshop-widget', 'mygls-parcelshop-widget-classic', 'mygls-checkout-widget'];
 
-        if (widgetElement && widgetElement !== element) {
-            console.log('Replacing previous GLS widget reference');
-            widgetElement.removeEventListener('change', handleWidgetChange);
+        for (const id of widgetIds) {
+            const element = document.getElementById(id);
+            if (element) {
+                widgetElement = element;
+                console.log('Found GLS widget element:', id, element);
+                break;
+            }
         }
-
-        widgetElement = element;
 
         // Also try querySelector as fallback
         if (!widgetElement) {
@@ -99,12 +94,6 @@
 
         if (!widgetElement) {
             console.warn('GLS widget element not found yet, will retry...');
-            retrySetupWidget();
-            return;
-        }
-
-        if (!document.body.contains(widgetElement)) {
-            console.warn('GLS widget element is not attached to the document, will retry...');
             retrySetupWidget();
             return;
         }
@@ -122,7 +111,10 @@
         console.log('GLS widget initialized successfully!');
 
         // Listen for parcelshop selection change event
-        widgetElement.addEventListener('change', handleWidgetChange);
+        widgetElement.addEventListener('change', function(event) {
+            console.log('Parcelshop selected:', event.detail);
+            handleParcelshopSelection(event.detail);
+        });
 
         // Open widget modal when button is clicked (using event delegation)
         $(document).off('click.mygls-parcelshop').on('click.mygls-parcelshop', '.mygls-select-parcelshop', function(e) {
@@ -139,9 +131,10 @@
     function openWidget() {
         console.log('openWidget called, widgetElement:', widgetElement);
 
-        if (!widgetElement || !document.body.contains(widgetElement)) {
-            console.error('Widget not initialized or detached - attempting to re-initialize...');
-            resetWidgetState();
+        if (!widgetElement) {
+            console.error('Widget not initialized - attempting to re-initialize...');
+            widgetInitialized = false;
+            widgetInitAttempts = 0;
 
             // Show loading message
             if (typeof myglsCheckout !== 'undefined' && myglsCheckout.i18n && myglsCheckout.i18n.mapLoading) {
@@ -152,7 +145,7 @@
 
             // Try again after a short delay
             setTimeout(function() {
-                if (widgetElement && document.body.contains(widgetElement) && typeof widgetElement.showModal === 'function') {
+                if (widgetElement && typeof widgetElement.showModal === 'function') {
                     console.log('Retrying to open widget after initialization...');
                     widgetElement.showModal();
                 } else {
@@ -167,7 +160,8 @@
             console.error('showModal method not available on widget element. Available methods:', Object.keys(widgetElement));
 
             // Try to re-initialize
-            resetWidgetState();
+            widgetInitialized = false;
+            widgetInitAttempts = 0;
 
             if (typeof myglsCheckout !== 'undefined' && myglsCheckout.i18n && myglsCheckout.i18n.mapError) {
                 alert(myglsCheckout.i18n.mapError);
@@ -188,35 +182,6 @@
                 alert(myglsCheckout.i18n.mapError);
             }
         }
-    }
-
-    /**
-     * Locate the GLS widget element in the current DOM.
-     * @returns {HTMLElement|null}
-     */
-    function findWidgetElement() {
-        for (const id of WIDGET_IDS) {
-            const element = document.getElementById(id);
-            if (element) {
-                console.log('Found GLS widget element:', id, element);
-                return element;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Reset widget state so a fresh initialization can run.
-     */
-    function resetWidgetState() {
-        if (widgetElement) {
-            widgetElement.removeEventListener('change', handleWidgetChange);
-        }
-
-        widgetElement = null;
-        widgetInitialized = false;
-        widgetInitAttempts = 0;
     }
 
     /**

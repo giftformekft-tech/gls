@@ -25,14 +25,36 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
         <?php do_action('woocommerce_checkout_before_customer_details'); ?>
 
         <div class="mygls-custom-checkout-container">
-            <div class="mygls-checkout-sections">
-                <?php
-                // Get singleton controller instance and render sections
-                $controller = MyGLS\Checkout\Controller::get_instance();
+            <!-- Left Column: Customer Details & Sections -->
+            <div class="mygls-checkout-main">
+                <div class="mygls-checkout-sections">
+                    <?php
+                    // Get singleton controller instance and render sections
+                    $controller = MyGLS\Checkout\Controller::get_instance();
 
-                // Render custom sections
-                $controller->render_checkout_sections();
-                ?>
+                    // Render custom sections
+                    $controller->render_checkout_sections();
+                    ?>
+                </div>
+            </div>
+
+            <!-- Right Column: Order Review -->
+            <div class="mygls-order-review-sidebar">
+                <div class="mygls-order-review">
+                    <h3 class="mygls-order-review-title">
+                        <span class="dashicons dashicons-cart"></span>
+                        <?php _e('Rendelés összesítő', 'mygls-woocommerce'); ?>
+                    </h3>
+                    <div class="mygls-order-review-content">
+                        <?php do_action('woocommerce_checkout_before_order_review'); ?>
+
+                        <div id="order_review" class="woocommerce-checkout-review-order">
+                            <?php do_action('woocommerce_checkout_order_review'); ?>
+                        </div>
+
+                        <?php do_action('woocommerce_checkout_after_order_review'); ?>
+                    </div>
+                </div>
             </div>
         </div>
 

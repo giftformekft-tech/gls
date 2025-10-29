@@ -10,8 +10,6 @@ if (!defined('ABSPATH')) {
 }
 
 class Settings {
-    private $default_checkout_fields = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment', 'order_summary', 'place_order'];
-
     public function __construct() {
         add_action('admin_menu', [$this, 'add_menu']);
         add_action('admin_init', [$this, 'register_settings']);
@@ -93,12 +91,9 @@ class Settings {
 
         // Custom Checkout Settings
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
-        if (isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])) {
-            $order = array_map('sanitize_text_field', $input['checkout_field_order']);
-            $sanitized['checkout_field_order'] = $this->normalize_checkout_field_order($order);
-        } else {
-            $sanitized['checkout_field_order'] = $this->default_checkout_fields;
-        }
+        $sanitized['checkout_field_order'] = isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])
+            ? array_map('sanitize_text_field', $input['checkout_field_order'])
+            : ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
 
         return $sanitized;
     }
@@ -366,11 +361,15 @@ class Settings {
 
                                 <div id="mygls-field-order-sortable" class="mygls-sortable-list">
                                     <?php
-                                    $field_order_setting = $settings['checkout_field_order'] ?? $this->default_checkout_fields;
-                                    $field_order = is_array($field_order_setting)
-                                        ? $this->normalize_checkout_field_order($field_order_setting)
-                                        : $this->default_checkout_fields;
-                                    $field_labels = $this->get_checkout_field_labels();
+                                    $field_order = $settings['checkout_field_order'] ?? ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+                                    $field_labels = [
+                                        'billing' => __('Billing Details', 'mygls-woocommerce'),
+                                        'shipping_method' => __('Shipping Method', 'mygls-woocommerce'),
+                                        'shipping' => __('Shipping Details', 'mygls-woocommerce'),
+                                        'parcelshop' => __('Parcelshop Selection', 'mygls-woocommerce'),
+                                        'order_notes' => __('Order Notes', 'mygls-woocommerce'),
+                                        'payment' => __('Payment Method', 'mygls-woocommerce')
+                                    ];
 
                                     foreach ($field_order as $index => $field):
                                     ?>
@@ -712,30 +711,5 @@ class Settings {
                 wp_send_json_error(['message' => sprintf(__('Error: %s', 'mygls-woocommerce'), $error_msg)]);
             }
         }
-    }
-
-    private function get_checkout_field_labels(): array {
-        return [
-            'billing' => __('Billing Details', 'mygls-woocommerce'),
-            'shipping_method' => __('Shipping Method', 'mygls-woocommerce'),
-            'shipping' => __('Shipping Details', 'mygls-woocommerce'),
-            'parcelshop' => __('Parcelshop Selection', 'mygls-woocommerce'),
-            'order_notes' => __('Order Notes', 'mygls-woocommerce'),
-            'payment' => __('Payment Method', 'mygls-woocommerce'),
-            'order_summary' => __('Order Summary', 'mygls-woocommerce'),
-            'place_order' => __('Place Order', 'mygls-woocommerce')
-        ];
-    }
-
-    private function normalize_checkout_field_order(array $order): array {
-        $normalized = array_values(array_intersect($order, $this->default_checkout_fields));
-
-        foreach ($this->default_checkout_fields as $field) {
-            if (!in_array($field, $normalized, true)) {
-                $normalized[] = $field;
-            }
-        }
-
-        return $normalized;
     }
 }
