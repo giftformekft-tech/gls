@@ -14,7 +14,8 @@ class Controller {
     private $settings;
     private $enabled;
     private $field_priorities = [];
-    private $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+    private $default_field_order = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment', 'order_summary', 'place_order'];
+    private $payment_markup_parts = null;
     private static $instance = null;
 
     /**
@@ -230,6 +231,12 @@ class Controller {
                 return ob_get_clean();
 
             case 'payment':
+                $markup_parts = $this->get_payment_markup_parts();
+
+                if (trim($markup_parts['payment']) === '') {
+                    return '';
+                }
+
                 ob_start();
                 echo '<div class="mygls-checkout-section mygls-section-payment">';
                 echo '<h3 class="mygls-section-title">';
@@ -237,13 +244,91 @@ class Controller {
                 echo esc_html__('Fizetési mód', 'mygls-woocommerce');
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
-                woocommerce_checkout_payment();
+                echo $markup_parts['payment'];
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
+
+            case 'order_summary':
+                if (!function_exists('woocommerce_order_review')) {
+                    return '';
+                }
+
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-order-summary">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-cart"></span>';
+                echo esc_html__('Rendelés összesítő', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                echo '<button type="button" class="mygls-order-summary-toggle" aria-expanded="false" aria-controls="mygls-order-summary-details">';
+                echo esc_html__('Részletek', 'mygls-woocommerce');
+                echo '</button>';
+                echo '<div id="mygls-order-summary-details" class="mygls-order-summary-details">';
+                do_action('woocommerce_checkout_before_order_review');
+                echo '<div id="order_review" class="woocommerce-checkout-review-order">';
+                woocommerce_order_review();
+                echo '</div>';
+                do_action('woocommerce_checkout_after_order_review');
+                echo '</div>';
+                echo '</div>';
+                echo '</div>';
+                return ob_get_clean();
+
+            case 'place_order':
+                $markup_parts = $this->get_payment_markup_parts();
+
+                if (trim($markup_parts['place_order']) === '') {
+                    return '';
+                }
+
+                ob_start();
+                echo '<div class="mygls-checkout-section mygls-section-place-order">';
+                echo '<h3 class="mygls-section-title">';
+                echo '<span class="dashicons dashicons-yes"></span>';
+                echo esc_html__('Rendelés leadása', 'mygls-woocommerce');
+                echo '</h3>';
+                echo '<div class="mygls-section-content">';
+                echo $markup_parts['place_order'];
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
         }
 
         return '';
+    }
+
+    private function get_payment_markup_parts(): array {
+        if (is_array($this->payment_markup_parts)) {
+            return $this->payment_markup_parts;
+        }
+
+        if (!function_exists('woocommerce_checkout_payment')) {
+            $this->payment_markup_parts = [
+                'payment' => '',
+                'place_order' => '',
+            ];
+
+            return $this->payment_markup_parts;
+        }
+
+        ob_start();
+        woocommerce_checkout_payment();
+        $payment_markup = ob_get_clean();
+
+        $place_order_markup = '';
+
+        if (preg_match('/<div[^>]*class="[^"]*place-order[^"]*"[^>]*>.*?<\/div>/si', $payment_markup, $matches)) {
+            $place_order_markup = $matches[0];
+            $payment_markup = str_replace($matches[0], '', $payment_markup);
+        }
+
+        $this->payment_markup_parts = [
+            'payment' => $payment_markup,
+            'place_order' => $place_order_markup,
+        ];
+
+        return $this->payment_markup_parts;
     }
 
     /**
@@ -366,6 +451,8 @@ class Controller {
         $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
         $fragments['#mygls-section-wrapper-shipping'] = $this->get_section_wrapper_markup('shipping');
         $fragments['#mygls-section-wrapper-parcelshop'] = $this->get_section_wrapper_markup('parcelshop');
+        $fragments['#mygls-section-wrapper-order_summary'] = $this->get_section_wrapper_markup('order_summary');
+        $fragments['#mygls-section-wrapper-place_order'] = $this->get_section_wrapper_markup('place_order');
 
         return $fragments;
     }
@@ -390,15 +477,12 @@ class Controller {
         $custom_css = "
             /* Custom Checkout Layout */
             .mygls-custom-checkout-container {
-                display: grid;
-                grid-template-columns: 1fr 400px;
-                gap: 30px;
                 margin: 20px 0;
             }
 
             .mygls-checkout-sections {
-                display: flex;
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: 1fr;
                 gap: 20px;
             }
 
@@ -509,19 +593,6 @@ class Controller {
                 box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
             }
 
-            .mygls-section-shipping-method .woocommerce-shipping-methods li.mygls-shipping-method--parcelshop label:after {
-                content: 'Csomagpont';
-                display: inline-block;
-                margin-left: 8px;
-                padding: 2px 6px;
-                font-size: 11px;
-                text-transform: uppercase;
-                background-color: rgba(118, 75, 162, 0.15);
-                color: #764ba2;
-                border-radius: 3px;
-                letter-spacing: 0.5px;
-            }
-
             .mygls-section-shipping-method .shipping-package-title {
                 margin: 0 0 8px 0;
                 font-size: 14px;
@@ -546,37 +617,6 @@ class Controller {
                 color: #2c3e50;
             }
 
-            /* Order Review Sidebar */
-            .mygls-order-review-sidebar {
-                position: sticky;
-                top: 20px;
-                height: fit-content;
-            }
-
-            .mygls-order-review {
-                background: #fff;
-                border: 1px solid #e0e0e0;
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            }
-
-            .mygls-order-review-title {
-                margin: 0;
-                padding: 15px 20px;
-                background: linear-gradient(135deg, #2271b1 0%, #135e96 100%);
-                color: #fff;
-                font-size: 16px;
-                font-weight: 600;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-
-            .mygls-order-review-content {
-                padding: 20px;
-            }
-
             /* Hide default WooCommerce elements when custom checkout is active */
             .mygls-custom-checkout-active .woocommerce-billing-fields,
             .mygls-custom-checkout-active .woocommerce-shipping-fields,
@@ -584,31 +624,48 @@ class Controller {
                 display: none !important;
             }
 
-            /* Hide shipping and payment methods from order review sidebar */
-            .mygls-custom-checkout-active .mygls-order-review-sidebar #shipping_method,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-shipping-methods,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods {
-                display: none !important;
+            .mygls-order-summary-toggle {
+                display: none;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                padding: 10px 14px;
+                width: 100%;
+                border: 1px solid #667eea;
+                border-radius: 6px;
+                background: #667eea;
+                color: #fff;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
             }
 
-            /* Hide place order button from payment section in main area (keep it in sidebar) */
-            .mygls-section-payment #place_order {
-                display: none !important;
+            .mygls-order-summary-toggle:focus {
+                outline: 2px solid #764ba2;
+                outline-offset: 2px;
+            }
+
+            .mygls-order-summary-details {
+                margin-top: 15px;
+            }
+
+            .mygls-section-place-order .form-row.place-order {
+                margin: 0;
+            }
+
+            .mygls-section-place-order .woocommerce-terms-and-conditions-wrapper {
+                margin-bottom: 15px;
+            }
+
+            .mygls-section-place-order #place_order {
+                width: 100%;
+                padding: 14px 18px;
+                font-size: 16px;
+                font-weight: 600;
+                border-radius: 6px;
             }
 
             /* Responsive adjustments */
-            @media (max-width: 992px) {
-                .mygls-custom-checkout-container {
-                    grid-template-columns: 1fr;
-                }
-
-                .mygls-order-review-sidebar {
-                    position: relative;
-                    top: 0;
-                    order: -1;
-                }
-            }
-
             @media (max-width: 768px) {
                 .mygls-checkout-section {
                     border-radius: 4px;
@@ -621,6 +678,45 @@ class Controller {
 
                 .mygls-section-content {
                     padding: 15px;
+                }
+
+                .mygls-order-summary-toggle {
+                    display: inline-flex;
+                }
+
+                .mygls-order-summary-details {
+                    display: none;
+                }
+
+                .mygls-order-summary-details.is-open {
+                    display: block;
+                }
+            }
+
+            @media (min-width: 769px) {
+                .mygls-order-summary-details {
+                    display: block !important;
+                }
+
+                .mygls-order-summary-toggle {
+                    display: none !important;
+                }
+            }
+
+            @media (min-width: 992px) {
+                .mygls-checkout-sections {
+                    grid-template-columns: minmax(0, 1fr) 360px;
+                    gap: 20px 30px;
+                    align-items: flex-start;
+                }
+
+                .mygls-checkout-sections > .mygls-section-wrapper {
+                    grid-column: 1;
+                }
+
+                #mygls-section-wrapper-order_summary,
+                #mygls-section-wrapper-place_order {
+                    grid-column: 2;
                 }
             }
 
@@ -720,6 +816,36 @@ class Controller {
                 toggleWrapper($parcelshopWrapper, !isParcelshop);
             }
 
+            function syncOrderSummaryToggleState($button, $details) {
+                var isExpanded = $button.attr('aria-expanded') === 'true';
+
+                if (isExpanded) {
+                    $details.addClass('is-open');
+                } else {
+                    $details.removeClass('is-open');
+                }
+            }
+
+            function bindOrderSummaryToggle() {
+                $('.mygls-order-summary-toggle').each(function() {
+                    var $button = $(this);
+                    var targetId = $button.attr('aria-controls');
+                    var $details = $('#' + targetId);
+
+                    if (!$details.length) {
+                        return;
+                    }
+
+                    $button.off('click.myglsToggle').on('click.myglsToggle', function() {
+                        var isExpanded = $button.attr('aria-expanded') === 'true';
+                        $button.attr('aria-expanded', isExpanded ? 'false' : 'true');
+                        syncOrderSummaryToggleState($button, $details);
+                    });
+
+                    syncOrderSummaryToggleState($button, $details);
+                });
+            }
+
             function requestCheckoutRefresh() {
                 $('body').trigger('update_checkout');
             }
@@ -733,10 +859,12 @@ class Controller {
             $(document.body).on('updated_checkout', function() {
                 highlightSelectedShippingMethod();
                 setSectionVisibility();
+                bindOrderSummaryToggle();
             });
 
             highlightSelectedShippingMethod();
             setSectionVisibility();
+            bindOrderSummaryToggle();
         });
         ";
 

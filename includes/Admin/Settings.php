@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
 }
 
 class Settings {
-    private array $default_checkout_fields = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment'];
+    private $default_checkout_fields = ['billing', 'shipping_method', 'shipping', 'parcelshop', 'order_notes', 'payment', 'order_summary', 'place_order'];
 
     public function __construct() {
         add_action('admin_menu', [$this, 'add_menu']);
@@ -721,7 +721,9 @@ class Settings {
             'shipping' => __('Shipping Details', 'mygls-woocommerce'),
             'parcelshop' => __('Parcelshop Selection', 'mygls-woocommerce'),
             'order_notes' => __('Order Notes', 'mygls-woocommerce'),
-            'payment' => __('Payment Method', 'mygls-woocommerce')
+            'payment' => __('Payment Method', 'mygls-woocommerce'),
+            'order_summary' => __('Order Summary', 'mygls-woocommerce'),
+            'place_order' => __('Place Order', 'mygls-woocommerce')
         ];
     }
 
