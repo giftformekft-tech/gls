@@ -594,7 +594,7 @@ class Controller {
                 display: none !important;
             }
 
-            /* Hide place order button from payment section in main area (keep it in sidebar) */
+            /* Hide place order button from payment section on desktop (keep it in sidebar) */
             .mygls-section-payment #place_order {
                 display: none !important;
             }
@@ -603,13 +603,32 @@ class Controller {
             @media (max-width: 992px) {
                 .mygls-custom-checkout-container {
                     grid-template-columns: 1fr;
+                    display: flex;
+                    flex-direction: column;
                 }
 
+                .mygls-checkout-main {
+                    order: 1;
+                }
+
+                /* Order summary goes to bottom on mobile */
                 .mygls-order-review-sidebar {
                     position: relative;
                     top: 0;
-                    order: -1;
-                    margin-bottom: 20px;
+                    order: 2;
+                    margin-top: 20px;
+                    margin-bottom: 0;
+                }
+
+                /* Show place order button in payment section on mobile */
+                .mygls-section-payment #place_order {
+                    display: block !important;
+                }
+
+                /* Hide place order button in order review sidebar on mobile */
+                .mygls-order-review-sidebar #place_order,
+                .mygls-order-review-sidebar .place-order {
+                    display: none !important;
                 }
 
                 .mygls-order-review-content {
@@ -620,6 +639,35 @@ class Controller {
 
                 .woocommerce-checkout-review-order-table {
                     display: table !important;
+                    width: 100%;
+                    table-layout: auto !important;
+                }
+
+                .woocommerce-checkout-review-order-table thead,
+                .woocommerce-checkout-review-order-table tbody,
+                .woocommerce-checkout-review-order-table tfoot,
+                .woocommerce-checkout-review-order-table tr,
+                .woocommerce-checkout-review-order-table th,
+                .woocommerce-checkout-review-order-table td {
+                    display: table-cell !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+
+                .woocommerce-checkout-review-order-table thead {
+                    display: table-header-group !important;
+                }
+
+                .woocommerce-checkout-review-order-table tbody {
+                    display: table-row-group !important;
+                }
+
+                .woocommerce-checkout-review-order-table tfoot {
+                    display: table-footer-group !important;
+                }
+
+                .woocommerce-checkout-review-order-table tr {
+                    display: table-row !important;
                 }
             }
 
@@ -747,10 +795,29 @@ class Controller {
             $(document.body).on('updated_checkout', function() {
                 highlightSelectedShippingMethod();
                 setSectionVisibility();
+                ensureOrderReviewVisible();
             });
+
+            function ensureOrderReviewVisible() {
+                // Ensure order review is visible on mobile
+                if ($(window).width() <= 992) {
+                    $('.mygls-order-review-content').css({
+                        'display': 'block',
+                        'visibility': 'visible',
+                        'opacity': '1'
+                    });
+                    $('.woocommerce-checkout-review-order-table').css('display', 'table');
+                }
+            }
 
             highlightSelectedShippingMethod();
             setSectionVisibility();
+            ensureOrderReviewVisible();
+
+            // Re-check on window resize
+            $(window).on('resize', function() {
+                ensureOrderReviewVisible();
+            });
         });
         ";
 
