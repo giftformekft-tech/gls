@@ -208,8 +208,17 @@
             var $shippingInput = $('#' + shippingField);
 
             if ($billingInput.length && $shippingInput.length) {
-                if (setFieldValue($shippingInput, $billingInput.val())) {
+                var billingValue = $billingInput.val();
+                if (setFieldValue($shippingInput, billingValue)) {
                     pendingRefresh = true;
+                }
+            } else {
+                // Debug: log missing fields
+                if (!$billingInput.length) {
+                    console.log('Billing field not found: #' + billingField);
+                }
+                if (!$shippingInput.length) {
+                    console.log('Shipping field not found: #' + shippingField);
                 }
             }
         });
