@@ -115,6 +115,25 @@
         }, 180);
     }
 
+    function syncHiddenClone($field) {
+        if (!$field.length) {
+            return;
+        }
+
+        var fieldId = $field.attr('id') || '';
+        var identifier = fieldId ? fieldId : ($field.attr('name') || '');
+
+        if (!identifier) {
+            return;
+        }
+
+        var $clone = $field.siblings('[data-mygls-clone-for="' + identifier + '"]');
+
+        if ($clone.length) {
+            $clone.val($field.val());
+        }
+    }
+
     function setFieldValue($field, value) {
         if (!$field.length) {
             return false;
@@ -130,6 +149,10 @@
             $field.trigger('change.select2');
         } else {
             $field.trigger('change');
+        }
+
+        if ($field.attr('data-mygls-locked') === '1') {
+            syncHiddenClone($field);
         }
 
         return true;
@@ -277,12 +300,32 @@
             var $field = $(this);
 
             if (disable) {
-                $field.attr('readonly', 'readonly')
+                if (typeof $field.data('mygls-tabindex') === 'undefined') {
+                    $field.data('mygls-tabindex', $field.attr('tabindex'));
+                }
+
+                $field.prop('readOnly', true)
                     .attr('aria-readonly', 'true')
+                    .attr('tabindex', '-1')
+                    .attr('data-mygls-locked', '1')
                     .addClass('mygls-field-disabled');
             } else {
-                $field.removeAttr('readonly')
+                var originalTabIndex = $field.data('mygls-tabindex');
+
+                if (typeof originalTabIndex !== 'undefined') {
+                    if (originalTabIndex === null || originalTabIndex === undefined || originalTabIndex === '') {
+                        $field.removeAttr('tabindex');
+                    } else {
+                        $field.attr('tabindex', originalTabIndex);
+                    }
+                    $field.removeData('mygls-tabindex');
+                } else {
+                    $field.removeAttr('tabindex');
+                }
+
+                $field.prop('readOnly', false)
                     .removeAttr('aria-readonly')
+                    .removeAttr('data-mygls-locked')
                     .removeClass('mygls-field-disabled');
             }
         });
@@ -293,7 +336,27 @@
             var $select2Container = $field.next('.select2');
 
             if (disable) {
-                $field.attr('data-mygls-locked', '1').attr('aria-disabled', 'true');
+                var fieldId = $field.attr('id') || '';
+                var identifier = fieldId ? fieldId : ($field.attr('name') || '');
+
+                if (identifier) {
+                    var $existingClone = $field.siblings('[data-mygls-clone-for="' + identifier + '"]');
+
+                    if (!$existingClone.length) {
+                        $('<input>', {
+                            type: 'hidden',
+                            'data-mygls-clone-for': identifier,
+                            name: $field.attr('name'),
+                            value: $field.val()
+                        }).insertAfter($field);
+                    } else {
+                        $existingClone.val($field.val());
+                    }
+                }
+
+                $field.attr('data-mygls-locked', '1')
+                    .attr('aria-disabled', 'true')
+                    .prop('disabled', true);
                 if (typeof $field.data('mygls-tabindex') === 'undefined') {
                     $field.data('mygls-tabindex', $field.attr('tabindex'));
                 }
@@ -303,7 +366,14 @@
                     $select2Container.addClass('mygls-field-disabled');
                 }
             } else {
-                $field.removeAttr('data-mygls-locked').removeAttr('aria-disabled');
+                var identifier = ($field.attr('id') || $field.attr('name') || '');
+                if (identifier) {
+                    $field.siblings('[data-mygls-clone-for="' + identifier + '"]').remove();
+                }
+
+                $field.removeAttr('data-mygls-locked')
+                    .removeAttr('aria-disabled')
+                    .prop('disabled', false);
                 var originalTabIndex = $field.data('mygls-tabindex');
 
                 if (typeof originalTabIndex !== 'undefined') {
@@ -324,6 +394,8 @@
 
             if ($field.hasClass('select2-hidden-accessible')) {
                 $field.trigger('change.select2');
+            } else if ($field.attr('data-mygls-locked') === '1') {
+                syncHiddenClone($field);
             }
         });
 
@@ -409,7 +481,6 @@
         });
 
         $(document).on('change', '#mygls_same_as_billing', function() {
-            console.log('Checkbox changed, new state:', $(this).is(':checked'));
             handleSameAsBillingCheckbox();
         });
 

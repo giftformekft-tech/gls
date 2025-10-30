@@ -727,6 +727,11 @@ class Controller {
                 background-color: #f5f5f5 !important;
                 color: #999 !important;
                 cursor: not-allowed !important;
+                pointer-events: none !important;
+            }
+
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered {
+                color: #999 !important;
             }
 
             .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered {
