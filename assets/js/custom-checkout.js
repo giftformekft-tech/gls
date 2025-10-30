@@ -353,7 +353,14 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
+
+        // Initialize checkbox state immediately and after delay
         handleSameAsBillingCheckbox();
+
+        // Also run after delay to ensure all fields are loaded
+        setTimeout(function() {
+            handleSameAsBillingCheckbox();
+        }, 300);
 
         $(document.body).on('change', 'input[name^="shipping_method"]', function() {
             highlightSelectedShippingMethod();

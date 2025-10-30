@@ -69,7 +69,7 @@ class Controller {
         add_action('woocommerce_checkout_update_order_meta', [$this, 'save_privacy_checkbox']);
 
         // Format prices as integers (no decimals) on checkout page
-        add_filter('woocommerce_price_format_decimals', [$this, 'format_checkout_price_decimals']);
+        add_filter('wc_price_args', [$this, 'format_checkout_price_args']);
     }
 
     /**
@@ -204,8 +204,8 @@ class Controller {
                 echo '</label>';
                 echo '</div>';
 
-                // Shipping fields wrapper
-                echo '<div class="mygls-shipping-fields-wrap">';
+                // Shipping fields wrapper - disabled by default since checkbox is checked
+                echo '<div class="mygls-shipping-fields-wrap mygls-disabled" aria-disabled="true">';
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
@@ -1161,10 +1161,10 @@ class Controller {
     /**
      * Format prices as integers (no decimals) on checkout page
      */
-    public function format_checkout_price_decimals($decimals) {
+    public function format_checkout_price_args($args) {
         if (is_checkout()) {
-            return 0;
+            $args['decimals'] = 0;
         }
-        return $decimals;
+        return $args;
     }
 }
