@@ -734,6 +734,10 @@ class Controller {
                 color: #999 !important;
             }
 
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered {
+                color: #999 !important;
+            }
+
             /* Order Review Sidebar - Ultra Modern Clean Design */
             .mygls-order-review-sidebar {
                 position: sticky;
