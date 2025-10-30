@@ -70,6 +70,46 @@ class Controller {
 
         // Format prices as integers (no decimals) on checkout page
         add_filter('wc_price_args', [$this, 'format_checkout_price_args']);
+
+        // Ensure shipping name fields are enabled
+        add_filter('woocommerce_checkout_fields', [$this, 'ensure_shipping_name_fields'], 9998);
+    }
+
+    /**
+     * Ensure shipping name fields are present
+     */
+    public function ensure_shipping_name_fields($fields) {
+        // Ensure shipping first name field exists
+        if (!isset($fields['shipping']['shipping_first_name'])) {
+            $fields['shipping']['shipping_first_name'] = [
+                'label' => __('Keresztnév', 'mygls-woocommerce'),
+                'required' => true,
+                'class' => ['form-row-first'],
+                'priority' => 10,
+            ];
+        }
+
+        // Ensure shipping last name field exists
+        if (!isset($fields['shipping']['shipping_last_name'])) {
+            $fields['shipping']['shipping_last_name'] = [
+                'label' => __('Vezetéknév', 'mygls-woocommerce'),
+                'required' => true,
+                'class' => ['form-row-last'],
+                'priority' => 20,
+            ];
+        }
+
+        // Ensure shipping company field exists
+        if (!isset($fields['shipping']['shipping_company'])) {
+            $fields['shipping']['shipping_company'] = [
+                'label' => __('Cégnév', 'mygls-woocommerce'),
+                'class' => ['form-row-wide'],
+                'required' => false,
+                'priority' => 30,
+            ];
+        }
+
+        return $fields;
     }
 
     /**

@@ -264,7 +264,10 @@
     function toggleShippingFieldsDisabled(disable) {
         var $shippingWrap = $('.mygls-shipping-fields-wrap');
 
+        console.log('toggleShippingFieldsDisabled called, disable:', disable, 'found wrapper:', $shippingWrap.length);
+
         if (!$shippingWrap.length) {
+            console.log('No shipping fields wrapper found!');
             return;
         }
 
@@ -363,13 +366,20 @@
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
 
-        // Initialize checkbox state immediately and after delay
+        // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();
 
-        // Also run after delay to ensure all fields are loaded
         setTimeout(function() {
             handleSameAsBillingCheckbox();
-        }, 300);
+        }, 100);
+
+        setTimeout(function() {
+            handleSameAsBillingCheckbox();
+        }, 500);
+
+        setTimeout(function() {
+            handleSameAsBillingCheckbox();
+        }, 1000);
 
         $(document.body).on('change', 'input[name^="shipping_method"]', function() {
             highlightSelectedShippingMethod();
@@ -386,7 +396,10 @@
             handleSameAsBillingCheckbox();
         });
 
-        $(document).on('change', '#mygls_same_as_billing', handleSameAsBillingCheckbox);
+        $(document).on('change', '#mygls_same_as_billing', function() {
+            console.log('Checkbox changed, new state:', $(this).is(':checked'));
+            handleSameAsBillingCheckbox();
+        });
 
         $(document).on(
             'input change',
