@@ -454,6 +454,7 @@ class Controller {
         $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
         $fragments['#mygls-section-wrapper-shipping'] = $this->get_section_wrapper_markup('shipping');
         $fragments['#mygls-section-wrapper-parcelshop'] = $this->get_section_wrapper_markup('parcelshop');
+        $fragments['#mygls-section-wrapper-payment'] = $this->get_section_wrapper_markup('payment');
 
         return $fragments;
     }
