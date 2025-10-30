@@ -115,6 +115,25 @@
         }, 180);
     }
 
+    function syncHiddenClone($field) {
+        if (!$field.length) {
+            return;
+        }
+
+        var fieldId = $field.attr('id') || '';
+        var identifier = fieldId ? fieldId : ($field.attr('name') || '');
+
+        if (!identifier) {
+            return;
+        }
+
+        var $clone = $field.siblings('[data-mygls-clone-for="' + identifier + '"]');
+
+        if ($clone.length) {
+            $clone.val($field.val());
+        }
+    }
+
     function setFieldValue($field, value) {
         if (!$field.length) {
             return false;
@@ -128,6 +147,12 @@
 
         if ($field.hasClass('select2-hidden-accessible')) {
             $field.trigger('change.select2');
+        } else {
+            $field.trigger('change');
+        }
+
+        if ($field.attr('data-mygls-locked') === '1') {
+            syncHiddenClone($field);
         }
 
         return true;
@@ -264,10 +289,7 @@
     function toggleShippingFieldsDisabled(disable) {
         var $shippingWrap = $('.mygls-shipping-fields-wrap');
 
-        console.log('toggleShippingFieldsDisabled called, disable:', disable, 'found wrapper:', $shippingWrap.length);
-
         if (!$shippingWrap.length) {
-            console.log('No shipping fields wrapper found!');
             return;
         }
 
@@ -278,24 +300,16 @@
             var $field = $(this);
 
             if (disable) {
-                $field.attr('readonly', 'readonly').attr('aria-readonly', 'true');
-            } else {
-                $field.removeAttr('readonly').removeAttr('aria-readonly');
-            }
-        });
-
-        var $selects = $shippingWrap.find('select');
-        $selects.each(function() {
-            var $field = $(this);
-
-            if (disable) {
-                $field.attr('data-mygls-locked', '1').attr('aria-disabled', 'true');
                 if (typeof $field.data('mygls-tabindex') === 'undefined') {
                     $field.data('mygls-tabindex', $field.attr('tabindex'));
                 }
-                $field.attr('tabindex', '-1');
+
+                $field.prop('readOnly', true)
+                    .attr('aria-readonly', 'true')
+                    .attr('tabindex', '-1')
+                    .attr('data-mygls-locked', '1')
+                    .addClass('mygls-field-disabled');
             } else {
-                $field.removeAttr('data-mygls-locked').removeAttr('aria-disabled');
                 var originalTabIndex = $field.data('mygls-tabindex');
 
                 if (typeof originalTabIndex !== 'undefined') {
@@ -308,10 +322,80 @@
                 } else {
                     $field.removeAttr('tabindex');
                 }
+
+                $field.prop('readOnly', false)
+                    .removeAttr('aria-readonly')
+                    .removeAttr('data-mygls-locked')
+                    .removeClass('mygls-field-disabled');
+            }
+        });
+
+        var $selects = $shippingWrap.find('select');
+        $selects.each(function() {
+            var $field = $(this);
+            var $select2Container = $field.next('.select2');
+
+            if (disable) {
+                var fieldId = $field.attr('id') || '';
+                var identifier = fieldId ? fieldId : ($field.attr('name') || '');
+
+                if (identifier) {
+                    var $existingClone = $field.siblings('[data-mygls-clone-for="' + identifier + '"]');
+
+                    if (!$existingClone.length) {
+                        $('<input>', {
+                            type: 'hidden',
+                            'data-mygls-clone-for': identifier,
+                            name: $field.attr('name'),
+                            value: $field.val()
+                        }).insertAfter($field);
+                    } else {
+                        $existingClone.val($field.val());
+                    }
+                }
+
+                $field.attr('data-mygls-locked', '1')
+                    .attr('aria-disabled', 'true')
+                    .prop('disabled', true);
+                if (typeof $field.data('mygls-tabindex') === 'undefined') {
+                    $field.data('mygls-tabindex', $field.attr('tabindex'));
+                }
+                $field.attr('tabindex', '-1');
+                $field.addClass('mygls-field-disabled');
+                if ($select2Container.length) {
+                    $select2Container.addClass('mygls-field-disabled');
+                }
+            } else {
+                var identifier = ($field.attr('id') || $field.attr('name') || '');
+                if (identifier) {
+                    $field.siblings('[data-mygls-clone-for="' + identifier + '"]').remove();
+                }
+
+                $field.removeAttr('data-mygls-locked')
+                    .removeAttr('aria-disabled')
+                    .prop('disabled', false);
+                var originalTabIndex = $field.data('mygls-tabindex');
+
+                if (typeof originalTabIndex !== 'undefined') {
+                    if (originalTabIndex === null || originalTabIndex === undefined || originalTabIndex === '') {
+                        $field.removeAttr('tabindex');
+                    } else {
+                        $field.attr('tabindex', originalTabIndex);
+                    }
+                    $field.removeData('mygls-tabindex');
+                } else {
+                    $field.removeAttr('tabindex');
+                }
+                $field.removeClass('mygls-field-disabled');
+                if ($select2Container.length) {
+                    $select2Container.removeClass('mygls-field-disabled');
+                }
             }
 
             if ($field.hasClass('select2-hidden-accessible')) {
                 $field.trigger('change.select2');
+            } else if ($field.attr('data-mygls-locked') === '1') {
+                syncHiddenClone($field);
             }
         });
 
@@ -397,7 +481,6 @@
         });
 
         $(document).on('change', '#mygls_same_as_billing', function() {
-            console.log('Checkbox changed, new state:', $(this).is(':checked'));
             handleSameAsBillingCheckbox();
         });
 

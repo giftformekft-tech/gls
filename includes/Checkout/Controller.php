@@ -454,6 +454,7 @@ class Controller {
         $fragments['div#mygls-shipping-methods'] = $this->get_shipping_methods_markup();
         $fragments['#mygls-section-wrapper-shipping'] = $this->get_section_wrapper_markup('shipping');
         $fragments['#mygls-section-wrapper-parcelshop'] = $this->get_section_wrapper_markup('parcelshop');
+        $fragments['#mygls-section-wrapper-payment'] = $this->get_section_wrapper_markup('payment');
 
         return $fragments;
     }
@@ -719,10 +720,19 @@ class Controller {
 
             .mygls-shipping-fields-wrap.mygls-disabled input,
             .mygls-shipping-fields-wrap.mygls-disabled textarea,
-            .mygls-shipping-fields-wrap.mygls-disabled select {
+            .mygls-shipping-fields-wrap.mygls-disabled select,
+            .mygls-shipping-fields-wrap .mygls-field-disabled,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__arrow {
                 background-color: #f5f5f5 !important;
                 color: #999 !important;
                 cursor: not-allowed !important;
+                pointer-events: none !important;
+            }
+
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered {
+                color: #999 !important;
             }
 
             /* Order Review Sidebar - Ultra Modern Clean Design */
@@ -764,6 +774,23 @@ class Controller {
 
             .mygls-order-review-content {
                 padding: 0;
+            }
+
+            .mygls-order-review-shipping-line {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .mygls-order-review-shipping-line + .mygls-order-review-shipping-line {
+                margin-top: 6px;
+            }
+
+            .mygls-order-review-shipping-line .woocommerce-Price-amount {
+                font-weight: 600;
+                color: #2d3748;
             }
 
             /* Modern Order Review Table - No Borders */
@@ -1015,102 +1042,21 @@ class Controller {
             return;
         }
 
-        // Add inline script to handle dynamic shipping/parcelshop toggle
-        $loading_message = esc_js(__('Betöltés...', 'mygls-woocommerce'));
-        $placeholder_markup = wp_json_encode('<div class="mygls-checkout-section mygls-section-loading"><div class="mygls-section-content"><p class="mygls-loading-message"></p></div></div>');
-        $inline_js = "
-        jQuery(function($) {
-            var loadingMessage = '{$loading_message}';
-            var placeholderMarkup = {$placeholder_markup};
+        wp_register_script(
+            'mygls-custom-checkout',
+            MYGLS_PLUGIN_URL . 'assets/js/custom-checkout.js',
+            ['jquery', 'wc-checkout'],
+            MYGLS_VERSION,
+            true
+        );
 
-            function highlightSelectedShippingMethod() {
-                var $lists = $('.mygls-section-shipping-method .woocommerce-shipping-methods');
-                $lists.find('li').removeClass('woocommerce-shipping-method-selected');
-                $lists.find('input[type=\"radio\"]:checked').closest('li').addClass('woocommerce-shipping-method-selected');
-            }
+        $settings = [
+            'loadingMessage'    => __('Betöltés...', 'mygls-woocommerce'),
+            'placeholderMarkup' => '<div class="mygls-checkout-section mygls-section-loading"><div class="mygls-section-content"><p class="mygls-loading-message"></p></div></div>',
+        ];
 
-            function toggleWrapper($wrapper, shouldHide) {
-                if (!$wrapper.length) {
-                    return;
-                }
-
-                if (!shouldHide) {
-                    $wrapper.removeClass('mygls-section-wrapper--empty');
-
-                    if (!$wrapper.children().length) {
-                        $wrapper.html(placeholderMarkup);
-                        $wrapper.find('.mygls-loading-message').text(loadingMessage);
-                        $wrapper.addClass('mygls-section-wrapper--loading');
-                    }
-                } else {
-                    $wrapper.removeClass('mygls-section-wrapper--loading');
-                }
-
-                $wrapper.toggleClass('mygls-section-wrapper--hidden', shouldHide);
-            }
-
-            function setSectionVisibility() {
-                var $selected = $('.mygls-section-shipping-method input[type=\"radio\"]:checked');
-                var isParcelshop = false;
-
-                if ($selected.length) {
-                    var dataValue = $selected.data('parcelshop');
-                    isParcelshop = dataValue === 1 || dataValue === '1';
-                }
-
-                var $shippingWrapper = $('#mygls-section-wrapper-shipping');
-                var $parcelshopWrapper = $('#mygls-section-wrapper-parcelshop');
-
-                toggleWrapper($shippingWrapper, isParcelshop);
-                toggleWrapper($parcelshopWrapper, !isParcelshop);
-            }
-
-            function requestCheckoutRefresh() {
-                $('body').trigger('update_checkout');
-            }
-
-            $(document.body).on('change', 'input[name^=\"shipping_method\"]', function() {
-                highlightSelectedShippingMethod();
-                setSectionVisibility();
-                requestCheckoutRefresh();
-            });
-
-            $(document.body).on('updated_checkout', function() {
-                highlightSelectedShippingMethod();
-                setSectionVisibility();
-                movePrivacyCheckboxBeforeOrderButton();
-            });
-
-            function movePrivacyCheckboxBeforeOrderButton() {
-                // Move privacy checkbox before the place order button in payment section
-                var $privacyCheckbox = $('.mygls-privacy-checkbox-wrapper');
-                var $placeOrderButton = $('.mygls-section-payment #place_order');
-
-                if ($privacyCheckbox.length && $placeOrderButton.length) {
-                    // Only move if not already in position
-                    if ($privacyCheckbox.next().attr('id') !== 'place_order') {
-                        $privacyCheckbox.insertBefore($placeOrderButton);
-                    }
-                }
-            }
-
-            highlightSelectedShippingMethod();
-            setSectionVisibility();
-            movePrivacyCheckboxBeforeOrderButton();
-
-            // Re-check on window resize
-            $(window).on('resize', function() {
-                movePrivacyCheckboxBeforeOrderButton();
-            });
-
-            // Move checkbox on checkout update
-            $(document.body).on('updated_checkout', function() {
-                movePrivacyCheckboxBeforeOrderButton();
-            });
-        });
-        ";
-
-        wp_add_inline_script('wc-checkout', $inline_js);
+        wp_localize_script('mygls-custom-checkout', 'myglsCustomCheckout', $settings);
+        wp_enqueue_script('mygls-custom-checkout');
     }
 
     private function get_configured_field_order(): array {
