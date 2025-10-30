@@ -73,10 +73,50 @@ defined( 'ABSPATH' ) || exit;
 
 			<?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
 
-			<tr class="woocommerce-shipping-totals shipping">
-				<th colspan="2"><?php esc_html_e( 'Szállítás', 'mygls-woocommerce' ); ?></th>
-				<td data-title="<?php esc_attr_e( 'Szállítás', 'mygls-woocommerce' ); ?>"><?php wc_cart_totals_shipping_html(); ?></td>
-			</tr>
+                        <?php
+                        $shipping_summary_lines = [];
+
+                        if ( WC()->cart && WC()->shipping() ) {
+                                $packages        = WC()->shipping()->get_packages();
+                                $chosen_methods  = WC()->session ? (array) WC()->session->get( 'chosen_shipping_methods', [] ) : [];
+
+                                foreach ( $packages as $package_index => $package ) {
+                                        $chosen_rate_id = $chosen_methods[ $package_index ] ?? '';
+
+                                        if ( $chosen_rate_id && isset( $package['rates'][ $chosen_rate_id ] ) ) {
+                                                $rate        = $package['rates'][ $chosen_rate_id ];
+                                                $label_html  = function_exists( 'wc_cart_totals_shipping_method_label' )
+                                                        ? wc_cart_totals_shipping_method_label( $rate )
+                                                        : $rate->get_label();
+
+                                                if ( $label_html ) {
+                                                        $shipping_summary_lines[] = $label_html;
+                                                }
+                                        }
+                                }
+                        }
+
+                        if ( empty( $shipping_summary_lines ) && WC()->cart ) {
+                                $shipping_total = WC()->cart->get_cart_shipping_total();
+
+                                if ( $shipping_total ) {
+                                        $shipping_summary_lines[] = $shipping_total;
+                                }
+                        }
+
+                        if ( empty( $shipping_summary_lines ) ) {
+                                $shipping_summary_lines[] = '&ndash;';
+                        }
+                        ?>
+
+                        <tr class="woocommerce-shipping-totals shipping">
+                                <th colspan="2"><?php esc_html_e( 'Szállítás', 'mygls-woocommerce' ); ?></th>
+                                <td data-title="<?php esc_attr_e( 'Szállítás', 'mygls-woocommerce' ); ?>">
+                                        <?php foreach ( $shipping_summary_lines as $shipping_line ) : ?>
+                                                <div class="mygls-order-review-shipping-line"><?php echo wp_kses_post( $shipping_line ); ?></div>
+                                        <?php endforeach; ?>
+                                </td>
+                        </tr>
 
 			<?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
 
