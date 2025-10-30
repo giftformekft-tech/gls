@@ -660,7 +660,7 @@ class Controller {
                 margin: 0;
             }
 
-            .mygls-same-as-billing-label input[type="checkbox"] {
+            .mygls-same-as-billing-label input[type=\"checkbox\"] {
                 width: 20px;
                 height: 20px;
                 cursor: pointer;
@@ -672,7 +672,7 @@ class Controller {
             }
 
             /* Disabled shipping fields styling */
-            .mygls-shipping-fields-wrap[aria-disabled="true"] {
+            .mygls-shipping-fields-wrap[aria-disabled=\"true\"] {
                 opacity: 0.6;
                 pointer-events: none;
             }
