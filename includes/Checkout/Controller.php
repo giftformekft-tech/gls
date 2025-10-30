@@ -204,8 +204,8 @@ class Controller {
                 echo '</label>';
                 echo '</div>';
 
-                // Shipping fields wrapper - disabled by default since checkbox is checked
-                echo '<div class="mygls-shipping-fields-wrap mygls-disabled" aria-disabled="true">';
+                // Shipping fields wrapper
+                echo '<div class="mygls-shipping-fields-wrap">';
                 foreach ($checkout->get_checkout_fields('shipping') as $key => $field) {
                     woocommerce_form_field($key, $field, $checkout->get_value($key));
                 }
@@ -785,13 +785,16 @@ class Controller {
                 background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
                 border-radius: 12px;
                 margin: 8px 20px;
-                display: block;
+                display: table;
+                width: calc(100% - 40px) !important;
             }
 
             .woocommerce-checkout-review-order-table tfoot tr:last-child th,
             .woocommerce-checkout-review-order-table tfoot tr:last-child td {
-                display: inline-block;
+                display: table-cell !important;
                 border: none !important;
+                vertical-align: middle;
+                white-space: nowrap;
             }
 
             .woocommerce-checkout-review-order-table tfoot th,
@@ -857,14 +860,19 @@ class Controller {
                 display: none !important;
             }
 
-            /* Hide shipping and payment methods from order review sidebar */
-            .mygls-custom-checkout-active .mygls-order-review-sidebar #shipping_method,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-shipping-methods,
+            /* Hide shipping method selection from order review sidebar (but NOT shipping cost row) */
+            .mygls-custom-checkout-active .mygls-order-review-sidebar ul.woocommerce-shipping-methods,
             .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods,
             .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-checkout-payment,
             .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-privacy-policy-text,
             .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-terms-and-conditions-wrapper {
                 display: none !important;
+            }
+
+            /* Ensure shipping cost row is visible */
+            .woocommerce-checkout-review-order-table tr.woocommerce-shipping-totals,
+            .woocommerce-checkout-review-order-table tr.shipping {
+                display: table-row !important;
             }
 
             /* Hide WooCommerce default privacy policy text in payment section */
