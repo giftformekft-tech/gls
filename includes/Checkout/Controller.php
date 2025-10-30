@@ -719,10 +719,18 @@ class Controller {
 
             .mygls-shipping-fields-wrap.mygls-disabled input,
             .mygls-shipping-fields-wrap.mygls-disabled textarea,
-            .mygls-shipping-fields-wrap.mygls-disabled select {
+            .mygls-shipping-fields-wrap.mygls-disabled select,
+            .mygls-shipping-fields-wrap .mygls-field-disabled,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered,
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__arrow {
                 background-color: #f5f5f5 !important;
                 color: #999 !important;
                 cursor: not-allowed !important;
+            }
+
+            .mygls-shipping-fields-wrap .mygls-field-disabled .select2-selection__rendered {
+                color: #999 !important;
             }
 
             /* Order Review Sidebar - Ultra Modern Clean Design */
@@ -764,6 +772,23 @@ class Controller {
 
             .mygls-order-review-content {
                 padding: 0;
+            }
+
+            .mygls-order-review-shipping-line {
+                display: flex;
+                justify-content: space-between;
+                gap: 12px;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .mygls-order-review-shipping-line + .mygls-order-review-shipping-line {
+                margin-top: 6px;
+            }
+
+            .mygls-order-review-shipping-line .woocommerce-Price-amount {
+                font-weight: 600;
+                color: #2d3748;
             }
 
             /* Modern Order Review Table - No Borders */

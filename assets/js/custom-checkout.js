@@ -128,6 +128,8 @@
 
         if ($field.hasClass('select2-hidden-accessible')) {
             $field.trigger('change.select2');
+        } else {
+            $field.trigger('change');
         }
 
         return true;
@@ -264,10 +266,7 @@
     function toggleShippingFieldsDisabled(disable) {
         var $shippingWrap = $('.mygls-shipping-fields-wrap');
 
-        console.log('toggleShippingFieldsDisabled called, disable:', disable, 'found wrapper:', $shippingWrap.length);
-
         if (!$shippingWrap.length) {
-            console.log('No shipping fields wrapper found!');
             return;
         }
 
@@ -278,15 +277,20 @@
             var $field = $(this);
 
             if (disable) {
-                $field.attr('readonly', 'readonly').attr('aria-readonly', 'true');
+                $field.attr('readonly', 'readonly')
+                    .attr('aria-readonly', 'true')
+                    .addClass('mygls-field-disabled');
             } else {
-                $field.removeAttr('readonly').removeAttr('aria-readonly');
+                $field.removeAttr('readonly')
+                    .removeAttr('aria-readonly')
+                    .removeClass('mygls-field-disabled');
             }
         });
 
         var $selects = $shippingWrap.find('select');
         $selects.each(function() {
             var $field = $(this);
+            var $select2Container = $field.next('.select2');
 
             if (disable) {
                 $field.attr('data-mygls-locked', '1').attr('aria-disabled', 'true');
@@ -294,6 +298,10 @@
                     $field.data('mygls-tabindex', $field.attr('tabindex'));
                 }
                 $field.attr('tabindex', '-1');
+                $field.addClass('mygls-field-disabled');
+                if ($select2Container.length) {
+                    $select2Container.addClass('mygls-field-disabled');
+                }
             } else {
                 $field.removeAttr('data-mygls-locked').removeAttr('aria-disabled');
                 var originalTabIndex = $field.data('mygls-tabindex');
@@ -307,6 +315,10 @@
                     $field.removeData('mygls-tabindex');
                 } else {
                     $field.removeAttr('tabindex');
+                }
+                $field.removeClass('mygls-field-disabled');
+                if ($select2Container.length) {
+                    $select2Container.removeClass('mygls-field-disabled');
                 }
             }
 
