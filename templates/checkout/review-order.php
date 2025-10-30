@@ -73,7 +73,10 @@ defined( 'ABSPATH' ) || exit;
 
 			<?php do_action( 'woocommerce_review_order_before_shipping' ); ?>
 
-			<?php wc_cart_totals_shipping_html(); ?>
+			<tr class="woocommerce-shipping-totals shipping">
+				<th colspan="2"><?php esc_html_e( 'Szállítás', 'mygls-woocommerce' ); ?></th>
+				<td data-title="<?php esc_attr_e( 'Szállítás', 'mygls-woocommerce' ); ?>"><?php wc_cart_totals_shipping_html(); ?></td>
+			</tr>
 
 			<?php do_action( 'woocommerce_review_order_after_shipping' ); ?>
 
