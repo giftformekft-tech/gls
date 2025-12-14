@@ -649,12 +649,14 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table td.product-thumbnail {
     width: 10% !important;
     min-width: 60px;
+    padding-right: 12px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
     width: 65% !important;
     min-width: 65%;
+    padding-left: 6px;
 }
 
 .mygls-review-order-table th.product-total,
@@ -670,6 +672,13 @@ gls-dpm-widget.mygls-inline-widget {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
+.mygls-review-order-table .product-thumbnail a,
+.mygls-review-order-table .product-thumbnail img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
 .mygls-review-order-table .mygls-order-item {
     display: flex;
     flex-direction: column;
@@ -681,7 +690,7 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table td.product-name .mygls-order-item__title,
 .mygls-review-order-table td.product-name .mygls-order-item__title a {
     font-weight: 700 !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     color: #111827;
     text-decoration: none;
     line-height: 1.3;
@@ -689,7 +698,7 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table td.product-name .mygls-order-item__title-text {
     font-weight: 700 !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     display: inline-block;
 }
 
