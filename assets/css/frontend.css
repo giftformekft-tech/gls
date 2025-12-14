@@ -715,19 +715,3 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table col.mygls-col-total {
     width: 6% !important;
 }
-
-.mygls-review-order-table tfoot th,
-.mygls-review-order-table tfoot td {
-    padding-top: 6px;
-    padding-bottom: 6px;
-}
-
-.mygls-review-order-table tfoot td,
-.mygls-review-order-table .mygls-order-review-shipping-line {
-    text-align: right;
-}
-
-.mygls-review-order-table .mygls-order-review-shipping-line {
-    display: block;
-    margin: 0;
-}
