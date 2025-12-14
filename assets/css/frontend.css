@@ -647,19 +647,19 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table th.product-thumbnail,
 .mygls-review-order-table td.product-thumbnail {
-    width: 6% !important;
-    min-width: 64px;
+    width: 5% !important;
+    min-width: 60px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
-    width: 88% !important;
-    min-width: 70%;
+    width: 90% !important;
+    min-width: 72%;
 }
 
 .mygls-review-order-table th.product-total,
 .mygls-review-order-table td.product-total {
-    width: 6% !important;
+    width: 5% !important;
     min-width: 72px;
     white-space: nowrap;
     text-align: right;
@@ -687,6 +687,12 @@ gls-dpm-widget.mygls-inline-widget {
     line-height: 1.3;
 }
 
+.mygls-review-order-table td.product-name .mygls-order-item__title-text {
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    display: inline-block;
+}
+
 .mygls-review-order-table td.product-name .mygls-order-item__meta {
     font-size: 12px !important;
     color: #4b5563;
@@ -705,13 +711,51 @@ gls-dpm-widget.mygls-inline-widget {
 }
 
 .mygls-review-order-table col.mygls-col-thumbnail {
-    width: 6% !important;
+    width: 5% !important;
 }
 
 .mygls-review-order-table col.mygls-col-name {
-    width: 88% !important;
+    width: 90% !important;
 }
 
 .mygls-review-order-table col.mygls-col-total {
-    width: 6% !important;
+    width: 5% !important;
+}
+
+.mygls-review-order-table tfoot th,
+.mygls-review-order-table tfoot td {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.mygls-review-order-table tfoot td,
+.mygls-review-order-table .mygls-order-review-shipping-line {
+    text-align: right !important;
+}
+
+.mygls-review-order-table .mygls-order-review-shipping-line {
+    display: block;
+    margin: 0;
+}
+
+.mygls-review-order-table .woocommerce-shipping-totals td,
+.mygls-review-order-table .fee td,
+.mygls-review-order-table .cart-subtotal td,
+.mygls-review-order-table .tax-total td,
+.mygls-review-order-table .order-total td,
+.mygls-review-order-table .woocommerce-shipping-totals th,
+.mygls-review-order-table .fee th,
+.mygls-review-order-table .cart-subtotal th,
+.mygls-review-order-table .tax-total th,
+.mygls-review-order-table .order-total th {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.mygls-review-order-table .woocommerce-shipping-totals td,
+.mygls-review-order-table .fee td,
+.mygls-review-order-table .cart-subtotal td,
+.mygls-review-order-table .tax-total td,
+.mygls-review-order-table .order-total td {
+    text-align: right !important;
 }

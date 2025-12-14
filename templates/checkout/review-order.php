@@ -13,9 +13,9 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <table class="shop_table woocommerce-checkout-review-order-table mygls-review-order-table">
         <colgroup>
-                <col class="mygls-col-thumbnail" style="width:6%">
-                <col class="mygls-col-name" style="width:88%">
-                <col class="mygls-col-total" style="width:6%">
+                <col class="mygls-col-thumbnail" style="width:5%">
+                <col class="mygls-col-name" style="width:90%">
+                <col class="mygls-col-total" style="width:5%">
         </colgroup>
 	<thead>
 		<tr>
@@ -46,9 +46,9 @@ defined( 'ABSPATH' ) || exit;
 				</td>
 				<td class="product-name">
 				<div class="mygls-order-item">
-				<div class="mygls-order-item__title">
-				<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
-				</div>
+                                <div class="mygls-order-item__title">
+                                <span class="mygls-order-item__title-text"><?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?></span>
+                                </div>
                                 <?php
                                 $variation_values = wc_get_formatted_variation( $cart_item['variation'], true, false );
 
