@@ -681,7 +681,7 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table td.product-name .mygls-order-item__title,
 .mygls-review-order-table td.product-name .mygls-order-item__title a {
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 15px !important;
     color: #111827;
     text-decoration: none;
     line-height: 1.3;
@@ -689,7 +689,7 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table td.product-name .mygls-order-item__title-text {
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 15px !important;
     display: inline-block;
 }
 

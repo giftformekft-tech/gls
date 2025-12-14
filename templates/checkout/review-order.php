@@ -17,16 +17,9 @@ defined( 'ABSPATH' ) || exit;
                 <col class="mygls-col-name" style="width:65%">
                 <col class="mygls-col-total" style="width:25%">
         </colgroup>
-	<thead>
-		<tr>
-			<th class="product-thumbnail"><?php esc_html_e( 'Product', 'woocommerce' ); ?></th>
-			<th class="product-name"><?php esc_html_e( 'Name', 'woocommerce' ); ?></th>
-			<th class="product-total"><?php esc_html_e( 'Subtotal', 'woocommerce' ); ?></th>
-		</tr>
-	</thead>
-	<tbody>
-		<?php
-		do_action( 'woocommerce_review_order_before_cart_contents' );
+        <tbody>
+                <?php
+                do_action( 'woocommerce_review_order_before_cart_contents' );
 
 		foreach ( WC()->cart->get_cart() as $cart_item_key => $cart_item ) {
 			$_product = apply_filters( 'woocommerce_cart_item_product', $cart_item['data'], $cart_item, $cart_item_key );
