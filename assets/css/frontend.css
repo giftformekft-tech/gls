@@ -641,24 +641,26 @@ gls-dpm-widget.mygls-inline-widget {
 }
 
 .mygls-review-order-table {
-    table-layout: auto;
+    table-layout: fixed;
+    width: 100%;
 }
 
 .mygls-review-order-table th.product-thumbnail,
 .mygls-review-order-table td.product-thumbnail {
-    width: 8% !important;
-    min-width: 72px;
+    width: 6% !important;
+    min-width: 64px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
-    width: 84% !important;
+    width: 88% !important;
     min-width: 70%;
 }
 
 .mygls-review-order-table th.product-total,
 .mygls-review-order-table td.product-total {
-    width: 8% !important;
+    width: 6% !important;
+    min-width: 72px;
     white-space: nowrap;
     text-align: right;
 }
@@ -676,20 +678,16 @@ gls-dpm-widget.mygls-inline-widget {
     width: 100%;
 }
 
-.mygls-review-order-table .mygls-order-item__title {
-    font-weight: 700 !important;
-    font-size: 15px !important;
-    color: #1f2937;
-}
-
-.mygls-review-order-table .mygls-order-item__title a {
-    font-weight: 700 !important;
-    font-size: 15px !important;
-    color: #1f2937;
+.mygls-review-order-table td.product-name .mygls-order-item__title,
+.mygls-review-order-table td.product-name .mygls-order-item__title a {
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    color: #111827;
     text-decoration: none;
+    line-height: 1.3;
 }
 
-.mygls-review-order-table .mygls-order-item__meta {
+.mygls-review-order-table td.product-name .mygls-order-item__meta {
     font-size: 12px !important;
     color: #4b5563;
     line-height: 1.4;
@@ -707,13 +705,29 @@ gls-dpm-widget.mygls-inline-widget {
 }
 
 .mygls-review-order-table col.mygls-col-thumbnail {
-    width: 8% !important;
+    width: 6% !important;
 }
 
 .mygls-review-order-table col.mygls-col-name {
-    width: 84% !important;
+    width: 88% !important;
 }
 
 .mygls-review-order-table col.mygls-col-total {
-    width: 8% !important;
+    width: 6% !important;
+}
+
+.mygls-review-order-table tfoot th,
+.mygls-review-order-table tfoot td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.mygls-review-order-table tfoot td,
+.mygls-review-order-table .mygls-order-review-shipping-line {
+    text-align: right;
+}
+
+.mygls-review-order-table .mygls-order-review-shipping-line {
+    display: block;
+    margin: 0;
 }
