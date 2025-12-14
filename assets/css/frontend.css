@@ -634,3 +634,60 @@ gls-dpm-widget.mygls-inline-widget {
         min-height: 350px;
     }
 }
+
+/* Checkout order review styling */
+.woocommerce-checkout-review-order-table .cart_item {
+    vertical-align: top;
+}
+
+.woocommerce-checkout-review-order-table th.product-thumbnail,
+.woocommerce-checkout-review-order-table td.product-thumbnail {
+    width: 15%;
+    min-width: 90px;
+}
+
+.woocommerce-checkout-review-order-table th.product-name,
+.woocommerce-checkout-review-order-table td.product-name {
+    width: 55%;
+}
+
+.woocommerce-checkout-review-order-table th.product-total,
+.woocommerce-checkout-review-order-table td.product-total {
+    width: 30%;
+    text-align: right;
+}
+
+.woocommerce-checkout-review-order-table .product-thumbnail img {
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.woocommerce-checkout-review-order-table .mygls-order-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.woocommerce-checkout-review-order-table .mygls-order-item__title {
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.woocommerce-checkout-review-order-table .mygls-order-item__meta {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.woocommerce-checkout-review-order-table .mygls-order-item__meta .variation p {
+    margin: 0;
+}
+
+.woocommerce-checkout-review-order-table .mygls-order-item__quantity {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
