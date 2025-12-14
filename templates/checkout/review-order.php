@@ -12,6 +12,11 @@
 defined( 'ABSPATH' ) || exit;
 ?>
 <table class="shop_table woocommerce-checkout-review-order-table mygls-review-order-table">
+        <colgroup>
+                <col class="mygls-col-thumbnail" style="width:8%">
+                <col class="mygls-col-name" style="width:82%">
+                <col class="mygls-col-total" style="width:10%">
+        </colgroup>
 	<thead>
 		<tr>
 			<th class="product-thumbnail"><?php esc_html_e( 'Product', 'woocommerce' ); ?></th>

@@ -699,3 +699,15 @@ gls-dpm-widget.mygls-inline-widget {
     color: #6b7280;
     font-weight: 500;
 }
+
+.mygls-review-order-table col.mygls-col-thumbnail {
+    width: 8% !important;
+}
+
+.mygls-review-order-table col.mygls-col-name {
+    width: 82% !important;
+}
+
+.mygls-review-order-table col.mygls-col-total {
+    width: 10% !important;
+}
