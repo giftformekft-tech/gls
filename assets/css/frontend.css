@@ -642,18 +642,18 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table th.product-thumbnail,
 .mygls-review-order-table td.product-thumbnail {
-    width: 12% !important;
+    width: 10% !important;
     min-width: 80px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
-    width: 63% !important;
+    width: 72% !important;
 }
 
 .mygls-review-order-table th.product-total,
 .mygls-review-order-table td.product-total {
-    width: 25% !important;
+    width: 18% !important;
     text-align: right;
 }
 
