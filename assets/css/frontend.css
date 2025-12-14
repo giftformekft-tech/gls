@@ -647,20 +647,20 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table th.product-thumbnail,
 .mygls-review-order-table td.product-thumbnail {
-    width: 5% !important;
+    width: 10% !important;
     min-width: 60px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
-    width: 90% !important;
-    min-width: 72%;
+    width: 65% !important;
+    min-width: 65%;
 }
 
 .mygls-review-order-table th.product-total,
 .mygls-review-order-table td.product-total {
-    width: 5% !important;
-    min-width: 72px;
+    width: 25% !important;
+    min-width: 25%;
     white-space: nowrap;
     text-align: right;
 }
@@ -711,15 +711,15 @@ gls-dpm-widget.mygls-inline-widget {
 }
 
 .mygls-review-order-table col.mygls-col-thumbnail {
-    width: 5% !important;
+    width: 10% !important;
 }
 
 .mygls-review-order-table col.mygls-col-name {
-    width: 90% !important;
+    width: 65% !important;
 }
 
 .mygls-review-order-table col.mygls-col-total {
-    width: 5% !important;
+    width: 25% !important;
 }
 
 .mygls-review-order-table tfoot th,
