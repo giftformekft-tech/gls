@@ -771,3 +771,9 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table .order-total td {
     text-align: right !important;
 }
+
+.mygls-review-order-table .order-total th,
+.mygls-review-order-table .order-total td {
+    font-weight: 700 !important;
+    font-size: 14px !important;
+}
