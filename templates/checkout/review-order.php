@@ -44,18 +44,44 @@ defined( 'ABSPATH' ) || exit;
 				<div class="mygls-order-item__title">
 				<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
 				</div>
-				<?php $item_data = wc_get_formatted_cart_item_data( $cart_item ); ?>
-				<?php if ( $item_data ) : ?>
-				<div class="mygls-order-item__meta"><?php echo $item_data; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
-				<?php endif; ?>
-				<div class="mygls-order-item__quantity">
-				<?php
-				$quantity_html = apply_filters( 'woocommerce_checkout_cart_item_quantity', ' <strong class="product-quantity">' . sprintf( '&times;&nbsp;%s', $cart_item['quantity'] ) . '</strong>', $cart_item, $cart_item_key );
-				echo $quantity_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				?>
-				</div>
-				</div>
-				</td>
+                                <?php
+                                $variation_values = wc_get_formatted_variation( $cart_item['variation'], true, false );
+
+                                $additional_data = [];
+
+                                foreach ( WC()->cart->get_item_data( $cart_item ) as $item_data_entry ) {
+                                        $display_value = $item_data_entry['display'] ?? $item_data_entry['value'] ?? '';
+
+                                        if ( $display_value ) {
+                                                $additional_data[] = wp_strip_all_tags( $display_value );
+                                        }
+                                }
+
+                                $meta_parts = array_filter(
+                                        array_map( 'wc_clean', array_filter( [ $variation_values ] ) )
+                                );
+
+                                if ( $additional_data ) {
+                                        $meta_parts = array_merge( $meta_parts, array_map( 'wc_clean', $additional_data ) );
+                                }
+
+                                if ( $meta_parts ) :
+                                        ?>
+                                        <div class="mygls-order-item__meta"><?php echo esc_html( implode( ', ', $meta_parts ) ); ?></div>
+                                <?php endif; ?>
+                                <div class="mygls-order-item__quantity">
+                                <?php
+                                $quantity_html = apply_filters(
+                                        'woocommerce_checkout_cart_item_quantity',
+                                        sprintf( '<strong class="product-quantity">%s db</strong>', $cart_item['quantity'] ),
+                                        $cart_item,
+                                        $cart_item_key
+                                );
+                                echo $quantity_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                                ?>
+                                </div>
+                                </div>
+                                </td>
 				<td class="product-total">
 				<?php echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</td>

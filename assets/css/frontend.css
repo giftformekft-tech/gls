@@ -648,19 +648,20 @@ gls-dpm-widget.mygls-inline-widget {
 .woocommerce-checkout-review-order-table .mygls-order-item {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     align-items: flex-start;
 }
 
 .woocommerce-checkout-review-order-table .mygls-order-item__title {
-    font-weight: 600;
-    color: #1d4ed8;
+    font-weight: 700;
+    color: #1f2937;
 }
 
 .woocommerce-checkout-review-order-table .mygls-order-item__meta {
     font-size: 13px;
-    color: #374151;
-    line-height: 1.4;
+    color: #4b5563;
+    line-height: 1.5;
+    font-weight: 400;
 }
 
 .woocommerce-checkout-review-order-table .mygls-order-item__meta .variation p {
@@ -669,5 +670,6 @@ gls-dpm-widget.mygls-inline-widget {
 
 .woocommerce-checkout-review-order-table .mygls-order-item__quantity {
     font-size: 14px;
-    color: #111827;
+    color: #6b7280;
+    font-weight: 500;
 }
