@@ -11,7 +11,12 @@
 
 defined( 'ABSPATH' ) || exit;
 ?>
-<table class="shop_table woocommerce-checkout-review-order-table">
+<table class="shop_table woocommerce-checkout-review-order-table mygls-review-order-table">
+        <colgroup>
+                <col class="mygls-col-thumbnail" style="width:6%">
+                <col class="mygls-col-name" style="width:88%">
+                <col class="mygls-col-total" style="width:6%">
+        </colgroup>
 	<thead>
 		<tr>
 			<th class="product-thumbnail"><?php esc_html_e( 'Product', 'woocommerce' ); ?></th>
@@ -29,24 +34,62 @@ defined( 'ABSPATH' ) || exit;
 			if ( $_product && $_product->exists() && $cart_item['quantity'] > 0 && apply_filters( 'woocommerce_checkout_cart_item_visible', true, $cart_item, $cart_item_key ) ) {
 				?>
 				<tr class="<?php echo esc_attr( apply_filters( 'woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key ) ); ?>">
-					<td class="product-thumbnail">
-						<?php
-						$thumbnail = apply_filters( 'woocommerce_cart_item_thumbnail', $_product->get_image( 'thumbnail' ), $cart_item, $cart_item_key );
-						if ( ! $cart_item['data']->is_visible() ) {
-							echo $thumbnail; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						} else {
-							printf( '<a href="%s">%s</a>', esc_url( $_product->get_permalink( $cart_item ) ), $thumbnail ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						}
-						?>
-					</td>
-					<td class="product-name">
-						<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
-						<?php echo apply_filters( 'woocommerce_checkout_cart_item_quantity', ' <strong class="product-quantity">' . sprintf( '&times;&nbsp;%s', $cart_item['quantity'] ) . '</strong>', $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<?php echo wc_get_formatted_cart_item_data( $cart_item ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</td>
-					<td class="product-total">
-						<?php echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</td>
+				<td class="product-thumbnail">
+				<?php
+				$thumbnail = apply_filters( 'woocommerce_cart_item_thumbnail', $_product->get_image( 'thumbnail' ), $cart_item, $cart_item_key );
+				if ( ! $cart_item['data']->is_visible() ) {
+				echo $thumbnail; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				} else {
+				printf( '<a href="%s">%s</a>', esc_url( $_product->get_permalink( $cart_item ) ), $thumbnail ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				}
+				?>
+				</td>
+				<td class="product-name">
+				<div class="mygls-order-item">
+				<div class="mygls-order-item__title">
+				<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
+				</div>
+                                <?php
+                                $variation_values = wc_get_formatted_variation( $cart_item['variation'], true, false );
+
+                                $additional_data = [];
+
+                                foreach ( WC()->cart->get_item_data( $cart_item ) as $item_data_entry ) {
+                                        $display_value = $item_data_entry['display'] ?? $item_data_entry['value'] ?? '';
+
+                                        if ( $display_value ) {
+                                                $additional_data[] = wp_strip_all_tags( $display_value );
+                                        }
+                                }
+
+                                $meta_parts = array_filter(
+                                        array_map( 'wc_clean', array_filter( [ $variation_values ] ) )
+                                );
+
+                                if ( $additional_data ) {
+                                        $meta_parts = array_merge( $meta_parts, array_map( 'wc_clean', $additional_data ) );
+                                }
+
+                                if ( $meta_parts ) :
+                                        ?>
+                                        <div class="mygls-order-item__meta"><?php echo esc_html( implode( ', ', $meta_parts ) ); ?></div>
+                                <?php endif; ?>
+                                <div class="mygls-order-item__quantity">
+                                <?php
+                                $quantity_html = apply_filters(
+                                        'woocommerce_checkout_cart_item_quantity',
+                                        sprintf( '<strong class="product-quantity">%s db</strong>', $cart_item['quantity'] ),
+                                        $cart_item,
+                                        $cart_item_key
+                                );
+                                echo $quantity_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                                ?>
+                                </div>
+                                </div>
+                                </td>
+				<td class="product-total">
+				<?php echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</td>
 				</tr>
 				<?php
 			}
@@ -76,27 +119,7 @@ defined( 'ABSPATH' ) || exit;
                         <?php
                         $shipping_summary_lines = [];
 
-                        if ( WC()->cart && WC()->shipping() ) {
-                                $packages        = WC()->shipping()->get_packages();
-                                $chosen_methods  = WC()->session ? (array) WC()->session->get( 'chosen_shipping_methods', [] ) : [];
-
-                                foreach ( $packages as $package_index => $package ) {
-                                        $chosen_rate_id = $chosen_methods[ $package_index ] ?? '';
-
-                                        if ( $chosen_rate_id && isset( $package['rates'][ $chosen_rate_id ] ) ) {
-                                                $rate        = $package['rates'][ $chosen_rate_id ];
-                                                $label_html  = function_exists( 'wc_cart_totals_shipping_method_label' )
-                                                        ? wc_cart_totals_shipping_method_label( $rate )
-                                                        : $rate->get_label();
-
-                                                if ( $label_html ) {
-                                                        $shipping_summary_lines[] = $label_html;
-                                                }
-                                        }
-                                }
-                        }
-
-                        if ( empty( $shipping_summary_lines ) && WC()->cart ) {
+                        if ( WC()->cart ) {
                                 $shipping_total = WC()->cart->get_cart_shipping_total();
 
                                 if ( $shipping_total ) {
