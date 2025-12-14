@@ -642,18 +642,18 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table th.product-thumbnail,
 .mygls-review-order-table td.product-thumbnail {
-    width: 15%;
-    min-width: 90px;
+    width: 12% !important;
+    min-width: 80px;
 }
 
 .mygls-review-order-table th.product-name,
 .mygls-review-order-table td.product-name {
-    width: 60%;
+    width: 63% !important;
 }
 
 .mygls-review-order-table th.product-total,
 .mygls-review-order-table td.product-total {
-    width: 30%;
+    width: 25% !important;
     text-align: right;
 }
 
@@ -672,14 +672,21 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-review-order-table .mygls-order-item__title {
     font-weight: 700 !important;
-    font-size: 15px;
+    font-size: 15px !important;
     color: #1f2937;
 }
 
+.mygls-review-order-table .mygls-order-item__title a {
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    color: #1f2937;
+    text-decoration: none;
+}
+
 .mygls-review-order-table .mygls-order-item__meta {
-    font-size: 13px !important;
+    font-size: 12px !important;
     color: #4b5563;
-    line-height: 1.5;
+    line-height: 1.4;
     font-weight: 400 !important;
 }
 
