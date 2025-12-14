@@ -29,24 +29,36 @@ defined( 'ABSPATH' ) || exit;
 			if ( $_product && $_product->exists() && $cart_item['quantity'] > 0 && apply_filters( 'woocommerce_checkout_cart_item_visible', true, $cart_item, $cart_item_key ) ) {
 				?>
 				<tr class="<?php echo esc_attr( apply_filters( 'woocommerce_cart_item_class', 'cart_item', $cart_item, $cart_item_key ) ); ?>">
-					<td class="product-thumbnail">
-						<?php
-						$thumbnail = apply_filters( 'woocommerce_cart_item_thumbnail', $_product->get_image( 'thumbnail' ), $cart_item, $cart_item_key );
-						if ( ! $cart_item['data']->is_visible() ) {
-							echo $thumbnail; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						} else {
-							printf( '<a href="%s">%s</a>', esc_url( $_product->get_permalink( $cart_item ) ), $thumbnail ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						}
-						?>
-					</td>
-					<td class="product-name">
-						<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
-						<?php echo apply_filters( 'woocommerce_checkout_cart_item_quantity', ' <strong class="product-quantity">' . sprintf( '&times;&nbsp;%s', $cart_item['quantity'] ) . '</strong>', $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-						<?php echo wc_get_formatted_cart_item_data( $cart_item ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</td>
-					<td class="product-total">
-						<?php echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					</td>
+				<td class="product-thumbnail">
+				<?php
+				$thumbnail = apply_filters( 'woocommerce_cart_item_thumbnail', $_product->get_image( 'thumbnail' ), $cart_item, $cart_item_key );
+				if ( ! $cart_item['data']->is_visible() ) {
+				echo $thumbnail; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				} else {
+				printf( '<a href="%s">%s</a>', esc_url( $_product->get_permalink( $cart_item ) ), $thumbnail ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				}
+				?>
+				</td>
+				<td class="product-name">
+				<div class="mygls-order-item">
+				<div class="mygls-order-item__title">
+				<?php echo wp_kses_post( apply_filters( 'woocommerce_cart_item_name', $_product->get_name(), $cart_item, $cart_item_key ) ); ?>
+				</div>
+				<?php $item_data = wc_get_formatted_cart_item_data( $cart_item ); ?>
+				<?php if ( $item_data ) : ?>
+				<div class="mygls-order-item__meta"><?php echo $item_data; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+				<?php endif; ?>
+				<div class="mygls-order-item__quantity">
+				<?php
+				$quantity_html = apply_filters( 'woocommerce_checkout_cart_item_quantity', ' <strong class="product-quantity">' . sprintf( '&times;&nbsp;%s', $cart_item['quantity'] ) . '</strong>', $cart_item, $cart_item_key );
+				echo $quantity_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				?>
+				</div>
+				</div>
+				</td>
+				<td class="product-total">
+				<?php echo apply_filters( 'woocommerce_cart_item_subtotal', WC()->cart->get_product_subtotal( $_product, $cart_item['quantity'] ), $cart_item, $cart_item_key ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</td>
 				</tr>
 				<?php
 			}
