@@ -13,9 +13,9 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <table class="shop_table woocommerce-checkout-review-order-table mygls-review-order-table">
         <colgroup>
-                <col class="mygls-col-thumbnail" style="width:15%">
-                <col class="mygls-col-name" style="width:70%">
-                <col class="mygls-col-total" style="width:15%">
+                <col class="mygls-col-thumbnail" style="width:20%">
+                <col class="mygls-col-name" style="width:60%">
+                <col class="mygls-col-total" style="width:20%">
         </colgroup>
         <tbody>
                 <?php
