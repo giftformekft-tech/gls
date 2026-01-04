@@ -844,7 +844,22 @@ class Controller {
                 border-radius: 6px;
             }
 
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper,
+            .mygls-section-payment .hostinger-reach-optin {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f0f4ff;
+                border: 1px solid #667eea;
+                border-radius: 6px;
+            }
+
             .mygls-privacy-policy-checkbox label {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper label,
+            .mygls-section-payment .hostinger-reach-optin label {
                 font-size: 14px;
                 line-height: 1.6;
             }
@@ -855,7 +870,19 @@ class Controller {
                 font-weight: 600;
             }
 
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper a,
+            .mygls-section-payment .hostinger-reach-optin a {
+                color: #667eea;
+                text-decoration: underline;
+                font-weight: 600;
+            }
+
             .mygls-privacy-policy-checkbox a:hover {
+                color: #764ba2;
+            }
+
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper a:hover,
+            .mygls-section-payment .hostinger-reach-optin a:hover {
                 color: #764ba2;
             }
 

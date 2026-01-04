@@ -439,6 +439,15 @@
         }
     }
 
+    function reorderPaymentCheckboxes() {
+        var $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
+        var $newsletter = $('.hostinger-reach-optin');
+
+        if ($termsWrapper.length && $newsletter.length) {
+            $termsWrapper.insertAfter($newsletter);
+        }
+    }
+
     function moveMobileOrderSummary() {
         var $summary = $('.mygls-mobile-order-summary');
         if (!$summary.length) {
@@ -514,6 +523,7 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
+        reorderPaymentCheckboxes();
         moveMobileOrderSummary();
         bindMobileCartPopup();
 
@@ -544,6 +554,7 @@
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
+            reorderPaymentCheckboxes();
             moveMobileOrderSummary();
             handleSameAsBillingCheckbox();
         });
