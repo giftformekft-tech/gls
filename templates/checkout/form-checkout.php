@@ -32,18 +32,14 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
                     // Get singleton controller instance and render sections
                     $controller = MyGLS\Checkout\Controller::get_instance();
 
-                    // Render custom sections except payment (rendered in sidebar)
-                    $controller->render_checkout_sections(['payment']);
+                    // Render custom sections
+                    $controller->render_checkout_sections();
                     ?>
                 </div>
             </div>
 
             <!-- Right Column: Order Review -->
             <div class="mygls-order-review-sidebar">
-                <div class="mygls-payment-review">
-                    <?php $controller->render_checkout_section('payment'); ?>
-                </div>
-
                 <div class="mygls-order-review">
                     <h3 class="mygls-order-review-title">
                         <span class="dashicons dashicons-cart"></span>
@@ -58,10 +54,6 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
                         <?php do_action('woocommerce_checkout_after_order_review'); ?>
                     </div>
-                </div>
-
-                <div class="mygls-payment-review">
-                    <?php $controller->render_checkout_section('payment'); ?>
                 </div>
             </div>
         </div>
