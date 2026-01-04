@@ -135,6 +135,26 @@ class Controller {
             )));
         }
 
+        foreach ($fields['billing'] as $key => $field) {
+            $label = isset($field['label']) ? (string) $field['label'] : '';
+            $type = isset($field['type']) ? (string) $field['type'] : '';
+            if (
+                $label === 'Subscribe to our Newsletter'
+                || $label === __('Subscribe to our Newsletter', 'mygls-woocommerce')
+                || stripos($key, 'newsletter') !== false
+                || stripos($key, 'subscribe') !== false
+            ) {
+                $fields['billing'][$key]['priority'] = 6;
+                if ($type === 'checkbox') {
+                    $fields['billing'][$key]['class'] = array_values(array_unique(array_merge(
+                        (array) ($fields['billing'][$key]['class'] ?? []),
+                        ['form-row-wide']
+                    )));
+                }
+                break;
+            }
+        }
+
         return $fields;
     }
 
