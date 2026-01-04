@@ -439,26 +439,48 @@
         }
     }
 
+    var mobileOrderSummaryMoveTimer = null;
+
     function moveMobileOrderSummary() {
-        var $summary = $('.mygls-mobile-order-summary');
-        if (!$summary.length) {
+        var $summaries = $('.mygls-mobile-order-summary');
+        if (!$summaries.length) {
             return;
         }
 
+        if ($summaries.length > 1) {
+            $summaries.not(':last').remove();
+        }
+
+        var $summary = $('.mygls-mobile-order-summary').last();
         var isMobile = window.matchMedia('(max-width: 992px)').matches;
         var $anchor = $('.mygls-mobile-order-summary-anchor').first();
         var $payment = $('#payment');
 
         if (isMobile && $payment.length) {
+            var $termsWrapper = $payment.find('.woocommerce-terms-and-conditions-wrapper').first();
+            var $privacyWrapper = $payment.find('.mygls-privacy-checkbox-wrapper').first();
             var $placeOrder = $payment.find('.form-row.place-order').first();
-            if ($placeOrder.length) {
-                $summary.insertBefore($placeOrder);
+            var $target = $termsWrapper.length ? $termsWrapper : ($privacyWrapper.length ? $privacyWrapper : $placeOrder);
+
+            if ($target.length) {
+                $summary.insertBefore($target);
             } else {
                 $summary.appendTo($payment);
             }
         } else if ($anchor.length) {
             $summary.insertAfter($anchor);
         }
+    }
+
+    function scheduleMobileOrderSummaryMove() {
+        if (mobileOrderSummaryMoveTimer) {
+            window.clearTimeout(mobileOrderSummaryMoveTimer);
+        }
+
+        mobileOrderSummaryMoveTimer = window.setTimeout(function() {
+            moveMobileOrderSummary();
+            mobileOrderSummaryMoveTimer = null;
+        }, 150);
     }
 
     function openCartPopup($popup) {
@@ -514,7 +536,7 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
-        moveMobileOrderSummary();
+        scheduleMobileOrderSummaryMove();
         bindMobileCartPopup();
 
         // Initialize checkbox state - multiple attempts to ensure it works
@@ -538,13 +560,14 @@
             handleSameAsBillingCheckbox();
             cancelScheduledCheckoutRefresh();
             requestCheckoutRefresh();
+            scheduleMobileOrderSummaryMove();
         });
 
         $(document.body).on('updated_checkout', function() {
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
-            moveMobileOrderSummary();
+            scheduleMobileOrderSummaryMove();
             handleSameAsBillingCheckbox();
         });
 
@@ -560,7 +583,7 @@
 
         $(window).on('resize', function() {
             movePrivacyCheckboxBeforeOrderButton();
-            moveMobileOrderSummary();
+            scheduleMobileOrderSummaryMove();
         });
     });
 })(jQuery);
