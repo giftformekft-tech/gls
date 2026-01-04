@@ -777,3 +777,35 @@ gls-dpm-widget.mygls-inline-widget {
     font-weight: 700 !important;
     font-size: 14px !important;
 }
+
+/* Checkout field layout improvements */
+#billing_first_name_field,
+#billing_last_name_field {
+    width: 48% !important;
+}
+
+#billing_postcode_field,
+#billing_city_field,
+#billing_address_1_field,
+#billing_address_2_field,
+#billing_state_field {
+    width: 100% !important;
+}
+
+@media (max-width: 544px) {
+    .woocommerce-checkout .woocommerce form .form-row input.input-text,
+    .woocommerce-checkout .woocommerce form .form-row textarea,
+    .woocommerce-checkout .woocommerce form .form-row select,
+    .mygls-section-wrapper input.input-text,
+    .mygls-section-wrapper textarea,
+    .mygls-section-wrapper select {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+        padding: 10px 12px !important;
+    }
+
+    .woocommerce-checkout .woocommerce form .form-row label,
+    .mygls-section-wrapper label {
+        font-size: 12px !important;
+    }
+}
