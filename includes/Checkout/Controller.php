@@ -713,6 +713,13 @@ class Controller {
                 transition: all 0.3s ease;
             }
 
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row,
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row-first,
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row-last {
+                float: none;
+                width: 100%;
+            }
+
             .mygls-section-hidden,
             .mygls-section-disabled {
                 display: none;

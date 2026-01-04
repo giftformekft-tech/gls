@@ -562,6 +562,17 @@
         }, 150);
     }
 
+    function scheduleMobileOrderSummaryMove() {
+        if (mobileOrderSummaryMoveTimer) {
+            window.clearTimeout(mobileOrderSummaryMoveTimer);
+        }
+
+        mobileOrderSummaryMoveTimer = window.setTimeout(function() {
+            moveMobileOrderSummary();
+            mobileOrderSummaryMoveTimer = null;
+        }, 150);
+    }
+
     function openCartPopup($popup) {
         if (!$popup.length) {
             return;
