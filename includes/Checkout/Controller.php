@@ -73,6 +73,9 @@ class Controller {
 
         // Ensure shipping name fields are enabled
         add_filter('woocommerce_checkout_fields', [$this, 'ensure_shipping_name_fields'], 9998);
+
+        // Remove default payment render from order review to avoid duplication
+        remove_action('woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20);
     }
 
     /**
