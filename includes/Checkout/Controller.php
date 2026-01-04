@@ -713,29 +713,6 @@ class Controller {
                 transition: all 0.3s ease;
             }
 
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row,
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row-first,
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row-last {
-                float: none;
-                width: 100%;
-            }
-
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row .woocommerce-input-wrapper,
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row input.input-text,
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row select,
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row textarea {
-                width: 100%;
-                max-width: 100%;
-                box-sizing: border-box;
-            }
-
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row[class*="ast-column-"],
-            .mygls-custom-checkout-active .mygls-checkout-section .form-row-full {
-                width: 100% !important;
-                display: block;
-                float: none;
-            }
-
             .mygls-section-hidden,
             .mygls-section-disabled {
                 display: none;
