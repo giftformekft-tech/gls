@@ -729,6 +729,13 @@ class Controller {
                 box-sizing: border-box;
             }
 
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row[class*="ast-column-"],
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row-full {
+                width: 100% !important;
+                display: block;
+                float: none;
+            }
+
             .mygls-section-hidden,
             .mygls-section-disabled {
                 display: none;
