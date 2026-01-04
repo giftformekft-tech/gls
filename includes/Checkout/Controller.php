@@ -836,28 +836,7 @@ class Controller {
             }
 
             /* Privacy policy checkbox in payment section */
-            .mygls-payment-checkbox-container {
-                margin-top: 20px;
-                padding: 15px;
-                background: #f0f4ff;
-                border: 1px solid #667eea;
-                border-radius: 6px;
-                display: flex;
-                flex-direction: column;
-                gap: 12px;
-            }
-
-            .mygls-payment-checkbox-container .woocommerce-terms-and-conditions-wrapper,
-            .mygls-payment-checkbox-container .hostinger-reach-optin,
-            .mygls-payment-checkbox-container .mygls-privacy-checkbox-wrapper {
-                margin: 0;
-                padding: 0;
-                background: transparent;
-                border: none;
-            }
-
-            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper,
-            .mygls-section-payment .hostinger-reach-optin {
+            .mygls-privacy-checkbox-wrapper {
                 margin-top: 20px;
                 padding: 15px;
                 background: #f0f4ff;
@@ -870,31 +849,13 @@ class Controller {
                 line-height: 1.6;
             }
 
-            .mygls-payment-checkbox-container .woocommerce-terms-and-conditions-wrapper label,
-            .mygls-payment-checkbox-container .hostinger-reach-optin label {
-                font-size: 14px;
-                line-height: 1.6;
-            }
-
             .mygls-privacy-policy-checkbox a {
                 color: #667eea;
                 text-decoration: underline;
                 font-weight: 600;
             }
 
-            .mygls-payment-checkbox-container .woocommerce-terms-and-conditions-wrapper a,
-            .mygls-payment-checkbox-container .hostinger-reach-optin a {
-                color: #667eea;
-                text-decoration: underline;
-                font-weight: 600;
-            }
-
             .mygls-privacy-policy-checkbox a:hover {
-                color: #764ba2;
-            }
-
-            .mygls-payment-checkbox-container .woocommerce-terms-and-conditions-wrapper a:hover,
-            .mygls-payment-checkbox-container .hostinger-reach-optin a:hover {
                 color: #764ba2;
             }
 
