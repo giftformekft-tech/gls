@@ -153,12 +153,19 @@ class Controller {
     /**
      * Render checkout sections in custom order
      */
-    public function render_checkout_sections() {
+    public function render_checkout_sections(array $excluded_sections = []) {
         $field_order = $this->get_configured_field_order();
 
         foreach ($field_order as $section) {
+            if (in_array($section, $excluded_sections, true)) {
+                continue;
+            }
             echo $this->get_section_wrapper_markup($section);
         }
+    }
+
+    public function render_checkout_section(string $section) {
+        echo $this->get_section_wrapper_markup($section);
     }
 
     /**
@@ -740,6 +747,9 @@ class Controller {
                 position: sticky;
                 top: 20px;
                 height: fit-content;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
             }
 
             .mygls-order-review {
@@ -927,12 +937,12 @@ class Controller {
                 display: none !important;
             }
 
-            /* Hide shipping method selection from order review sidebar (but NOT shipping cost row) */
-            .mygls-custom-checkout-active .mygls-order-review-sidebar ul.woocommerce-shipping-methods,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .wc_payment_methods,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-checkout-payment,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-privacy-policy-text,
-            .mygls-custom-checkout-active .mygls-order-review-sidebar .woocommerce-terms-and-conditions-wrapper {
+            /* Hide default selection elements inside order review tile only (keep payment tile visible) */
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .mygls-order-review ul.woocommerce-shipping-methods,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .mygls-order-review .wc_payment_methods,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .mygls-order-review .woocommerce-checkout-payment,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .mygls-order-review .woocommerce-privacy-policy-text,
+            .mygls-custom-checkout-active .mygls-order-review-sidebar .mygls-order-review .woocommerce-terms-and-conditions-wrapper {
                 display: none !important;
             }
 
