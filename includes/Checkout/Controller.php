@@ -720,6 +720,15 @@ class Controller {
                 width: 100%;
             }
 
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row .woocommerce-input-wrapper,
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row input.input-text,
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row select,
+            .mygls-custom-checkout-active .mygls-checkout-section .form-row textarea {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+
             .mygls-section-hidden,
             .mygls-section-disabled {
                 display: none;
