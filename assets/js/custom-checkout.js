@@ -439,26 +439,83 @@
         }
     }
 
+    var mobileOrderSummaryObserver = null;
+    var isMovingMobileSummary = false;
+
     function moveMobileOrderSummary() {
-        var $summary = $('.mygls-mobile-order-summary');
-        if (!$summary.length) {
+        if (isMovingMobileSummary) {
             return;
         }
 
+        isMovingMobileSummary = true;
+        var $summaries = $('.mygls-mobile-order-summary');
+        if (!$summaries.length) {
+            isMovingMobileSummary = false;
+            return;
+        }
+
+        if ($summaries.length > 1) {
+            $summaries.not(':last').remove();
+        }
+
+        var $summary = $('.mygls-mobile-order-summary').last();
         var isMobile = window.matchMedia('(max-width: 992px)').matches;
         var $anchor = $('.mygls-mobile-order-summary-anchor').first();
         var $payment = $('#payment');
 
         if (isMobile && $payment.length) {
+            var $termsWrapper = $payment.find('.woocommerce-terms-and-conditions-wrapper').first();
+            var $privacyWrapper = $payment.find('.mygls-privacy-checkbox-wrapper').first();
             var $placeOrder = $payment.find('.form-row.place-order').first();
-            if ($placeOrder.length) {
-                $summary.insertBefore($placeOrder);
+            var $target = $termsWrapper.length ? $termsWrapper : ($privacyWrapper.length ? $privacyWrapper : $placeOrder);
+
+            if ($target.length) {
+                $summary.insertBefore($target);
             } else {
                 $summary.appendTo($payment);
             }
         } else if ($anchor.length) {
             $summary.insertAfter($anchor);
         }
+
+        isMovingMobileSummary = false;
+    }
+
+    function attachMobileOrderSummaryObserver() {
+        if (mobileOrderSummaryObserver) {
+            mobileOrderSummaryObserver.disconnect();
+            mobileOrderSummaryObserver = null;
+        }
+
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+            return;
+        }
+
+        if (typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        var paymentNode = document.getElementById('payment');
+        if (!paymentNode) {
+            return;
+        }
+
+        mobileOrderSummaryObserver = new MutationObserver(function() {
+            if (isMovingMobileSummary) {
+                return;
+            }
+
+            mobileOrderSummaryObserver.disconnect();
+            moveMobileOrderSummary();
+            window.setTimeout(function() {
+                attachMobileOrderSummaryObserver();
+            }, 50);
+        });
+
+        mobileOrderSummaryObserver.observe(paymentNode, {
+            childList: true,
+            subtree: true
+        });
     }
 
     function openCartPopup($popup) {
@@ -515,6 +572,7 @@
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
         moveMobileOrderSummary();
+        attachMobileOrderSummaryObserver();
         bindMobileCartPopup();
 
         // Initialize checkbox state - multiple attempts to ensure it works
@@ -545,6 +603,7 @@
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
             moveMobileOrderSummary();
+            attachMobileOrderSummaryObserver();
             handleSameAsBillingCheckbox();
         });
 
@@ -561,6 +620,7 @@
         $(window).on('resize', function() {
             movePrivacyCheckboxBeforeOrderButton();
             moveMobileOrderSummary();
+            attachMobileOrderSummaryObserver();
         });
     });
 })(jQuery);
