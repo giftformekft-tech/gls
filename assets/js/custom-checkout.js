@@ -443,6 +443,11 @@
         var $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
         var $newsletter = $('.hostinger-reach-optin');
 
+        if ($termsWrapper.length) {
+            $termsWrapper.slice(1).remove();
+            $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
+        }
+
         if ($termsWrapper.length && $newsletter.length) {
             $termsWrapper.insertAfter($newsletter);
         }
