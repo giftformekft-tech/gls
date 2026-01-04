@@ -59,6 +59,10 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
                         <?php do_action('woocommerce_checkout_after_order_review'); ?>
                     </div>
                 </div>
+
+                <div class="mygls-payment-review">
+                    <?php $controller->render_checkout_section('payment'); ?>
+                </div>
             </div>
         </div>
 
