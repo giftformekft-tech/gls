@@ -314,6 +314,7 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
                 woocommerce_checkout_payment();
+                echo '<div class="mygls-payment-actions-tile"></div>';
 
                 // Add privacy policy checkbox
                 echo '<div class="mygls-privacy-checkbox-wrapper">';
@@ -678,6 +679,15 @@ class Controller {
                 background: #f0f4ff;
                 border: 1px solid #667eea;
                 border-radius: 6px;
+            }
+
+            .mygls-payment-actions-tile {
+                margin-top: 20px;
+                padding: 20px;
+                background: #fff;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             }
 
             .mygls-privacy-policy-checkbox label {
