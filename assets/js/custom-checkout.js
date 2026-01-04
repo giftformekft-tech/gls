@@ -439,6 +439,23 @@
         }
     }
 
+    function movePaymentActionsToTile() {
+        var $paymentSection = $('.mygls-section-payment');
+        if (!$paymentSection.length) {
+            return;
+        }
+
+        var $tile = $paymentSection.find('.mygls-payment-actions-tile');
+        if (!$tile.length) {
+            return;
+        }
+
+        var $actions = $paymentSection.find('.woocommerce-terms-and-conditions-wrapper, .woocommerce-privacy-policy-text, .place-order');
+        if ($actions.length) {
+            $actions.appendTo($tile);
+        }
+    }
+
     function maybeSyncBillingFields() {
         if ($('#mygls_same_as_billing').is(':checked') && isShippingSectionVisible()) {
             syncShippingFieldsWithBilling();
@@ -449,6 +466,7 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
+        movePaymentActionsToTile();
 
         // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();
@@ -477,6 +495,7 @@
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
+            movePaymentActionsToTile();
             handleSameAsBillingCheckbox();
         });
 
@@ -490,6 +509,9 @@
             maybeSyncBillingFields
         );
 
-        $(window).on('resize', movePrivacyCheckboxBeforeOrderButton);
+        $(window).on('resize', function() {
+            movePrivacyCheckboxBeforeOrderButton();
+            movePaymentActionsToTile();
+        });
     });
 })(jQuery);
