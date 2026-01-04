@@ -439,6 +439,8 @@
         }
     }
 
+    var mobileOrderSummaryObserver = null;
+
     function moveMobileOrderSummary() {
         var $summary = $('.mygls-mobile-order-summary');
         if (!$summary.length) {
@@ -452,13 +454,44 @@
         if (isMobile && $payment.length) {
             var $placeOrder = $payment.find('.form-row.place-order').first();
             if ($placeOrder.length) {
-                $summary.insertBefore($placeOrder);
+                if (!$summary.nextAll('.form-row.place-order').first().is($placeOrder)) {
+                    $summary.insertBefore($placeOrder);
+                }
             } else {
                 $summary.appendTo($payment);
             }
         } else if ($anchor.length) {
             $summary.insertAfter($anchor);
         }
+    }
+
+    function attachMobileOrderSummaryObserver() {
+        if (mobileOrderSummaryObserver) {
+            mobileOrderSummaryObserver.disconnect();
+            mobileOrderSummaryObserver = null;
+        }
+
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+            return;
+        }
+
+        if (typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        var paymentNode = document.getElementById('payment');
+        if (!paymentNode) {
+            return;
+        }
+
+        mobileOrderSummaryObserver = new MutationObserver(function() {
+            moveMobileOrderSummary();
+        });
+
+        mobileOrderSummaryObserver.observe(paymentNode, {
+            childList: true,
+            subtree: true
+        });
     }
 
     function openCartPopup($popup) {
@@ -515,6 +548,7 @@
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
         moveMobileOrderSummary();
+        attachMobileOrderSummaryObserver();
         bindMobileCartPopup();
 
         // Initialize checkbox state - multiple attempts to ensure it works
@@ -545,6 +579,7 @@
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
             moveMobileOrderSummary();
+            attachMobileOrderSummaryObserver();
             handleSameAsBillingCheckbox();
         });
 
@@ -561,6 +596,7 @@
         $(window).on('resize', function() {
             movePrivacyCheckboxBeforeOrderButton();
             moveMobileOrderSummary();
+            attachMobileOrderSummaryObserver();
         });
     });
 })(jQuery);
