@@ -300,6 +300,8 @@ class Controller {
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
                 woocommerce_checkout_payment();
+                echo '<div class="mygls-mobile-order-summary-anchor"></div>';
+                echo $this->get_mobile_order_summary_markup();
 
                 // Add privacy policy checkbox
                 echo '<div class="mygls-privacy-checkbox-wrapper">';
@@ -320,6 +322,182 @@ class Controller {
         }
 
         return '';
+    }
+
+    private function get_mobile_order_summary_markup(): string {
+        if (!function_exists('WC') || !WC()->cart) {
+            return '';
+        }
+
+        $cart = WC()->cart;
+        $item_count = $cart->get_cart_contents_count();
+        $totals = $cart->get_totals();
+        $subtotal = $totals['subtotal'] ?? 0;
+        $shipping_total = ($totals['shipping_total'] ?? 0) + ($totals['shipping_tax'] ?? 0);
+        $grand_total = $totals['total'] ?? 0;
+        $fees = $cart->get_fees();
+
+        $popup_id = 'mygls-cart-popup';
+
+        ob_start();
+        ?>
+        <div class="mygls-mobile-order-summary" aria-hidden="false">
+            <div class="mygls-mobile-order-summary-header">
+                <span class="mygls-mobile-order-summary-title"><?php echo esc_html__('Rendelés összesítő', 'mygls-woocommerce'); ?></span>
+                <div class="mygls-mobile-order-summary-actions">
+                    <span class="mygls-mobile-order-summary-count">
+                        <?php echo esc_html(sprintf(__('A kosárban %d tétel van.', 'mygls-woocommerce'), $item_count)); ?>
+                    </span>
+                    <button type="button" class="mygls-mobile-cart-link" data-mygls-cart-popup="<?php echo esc_attr($popup_id); ?>">
+                        <?php echo esc_html__('Kosár tartalma', 'mygls-woocommerce'); ?>
+                    </button>
+                </div>
+            </div>
+            <div class="mygls-mobile-order-summary-totals">
+                <div class="mygls-summary-line">
+                    <span><?php echo esc_html__('Részösszeg', 'mygls-woocommerce'); ?></span>
+                    <span><?php echo wp_kses_post(wc_price($subtotal)); ?></span>
+                </div>
+                <div class="mygls-summary-line">
+                    <span><?php echo esc_html__('Szállítás', 'mygls-woocommerce'); ?></span>
+                    <span><?php echo wp_kses_post(wc_price($shipping_total)); ?></span>
+                </div>
+                <?php if (!empty($fees)) : ?>
+                    <?php foreach ($fees as $fee) : ?>
+                        <div class="mygls-summary-line">
+                            <span><?php echo esc_html($fee->name); ?></span>
+                            <span><?php echo wp_kses_post(wc_price($fee->amount + $fee->tax)); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+                <div class="mygls-summary-line mygls-summary-total">
+                    <span><?php echo esc_html__('Összesen', 'mygls-woocommerce'); ?></span>
+                    <span><?php echo wp_kses_post(wc_price($grand_total)); ?></span>
+                </div>
+            </div>
+            <div class="mygls-cart-popup" id="<?php echo esc_attr($popup_id); ?>" aria-hidden="true" role="dialog" aria-modal="true">
+                <div class="mygls-cart-popup__overlay" data-mygls-cart-popup-close></div>
+                <div class="mygls-cart-popup__content" role="document">
+                    <div class="mygls-cart-popup__header">
+                        <h4><?php echo esc_html__('Kosár tartalma', 'mygls-woocommerce'); ?></h4>
+                        <button type="button" class="mygls-cart-popup__close" data-mygls-cart-popup-close aria-label="<?php echo esc_attr__('Bezárás', 'mygls-woocommerce'); ?>">
+                            ×
+                        </button>
+                    </div>
+                    <ul class="mygls-cart-popup__items">
+                        <?php foreach ($cart->get_cart() as $cart_item) : ?>
+                            <?php
+                            $product = $cart_item['data'] ?? null;
+                            $quantity = $cart_item['quantity'] ?? 0;
+                            if (!$product || $quantity < 1) {
+                                continue;
+                            }
+                            $item_name = $product->get_name();
+                            $item_total = $cart->get_product_subtotal($product, $quantity);
+                            $item_thumbnail = $product->get_image('thumbnail', [
+                                'class' => 'mygls-cart-popup__thumb',
+                                'alt' => $item_name,
+                            ]);
+                            $attribute_values = [];
+                            $variation = $cart_item['variation'] ?? [];
+                            $attribute_groups = [
+                                [
+                                    'attribute_pa_termektipus',
+                                    'attribute_termektipus',
+                                    'pa_termektipus',
+                                    'termektipus',
+                                    'attribute_pa_type',
+                                    'attribute_type',
+                                    'pa_type',
+                                    'type',
+                                ],
+                                [
+                                    'attribute_pa_szin',
+                                    'attribute_szin',
+                                    'pa_szin',
+                                    'szin',
+                                    'attribute_pa_color',
+                                    'attribute_color',
+                                    'pa_color',
+                                    'color',
+                                ],
+                                [
+                                    'attribute_pa_meret',
+                                    'attribute_meret',
+                                    'pa_meret',
+                                    'meret',
+                                    'attribute_pa_size',
+                                    'attribute_size',
+                                    'pa_size',
+                                    'size',
+                                ],
+                            ];
+
+                            foreach ($attribute_groups as $attribute_keys) {
+                                $value = '';
+                                foreach ($attribute_keys as $attribute_key) {
+                                    if (!isset($variation[$attribute_key]) || $variation[$attribute_key] === '') {
+                                        continue;
+                                    }
+
+                                    $value = (string) $variation[$attribute_key];
+                                    $taxonomy = str_replace('attribute_', '', $attribute_key);
+                                    if (taxonomy_exists($taxonomy)) {
+                                        $term = get_term_by('slug', $value, $taxonomy);
+                                        if ($term && !is_wp_error($term)) {
+                                            $value = $term->name;
+                                        }
+                                    }
+                                    break;
+                                }
+
+                                if ($value !== '') {
+                                    $attribute_values[] = $value;
+                                }
+                            }
+
+                            $bonus_fee = '';
+                            $item_data = wc_get_formatted_cart_item_data($cart_item, false);
+                            if (is_array($item_data)) {
+                                foreach ($item_data as $data) {
+                                    $label = $data['key'] ?? '';
+                                    if ($label && (stripos($label, 'bónusz') !== false || stripos($label, 'bonus') !== false)) {
+                                        $bonus_fee = wp_strip_all_tags($data['display'] ?? '');
+                                        break;
+                                    }
+                                }
+                            }
+                            ?>
+                            <li class="mygls-cart-popup__item">
+                                <div class="mygls-cart-popup__item-thumb"><?php echo wp_kses_post($item_thumbnail); ?></div>
+                                <div class="mygls-cart-popup__item-details">
+                                    <div class="mygls-cart-popup__item-name"><?php echo esc_html($item_name); ?></div>
+                                    <div class="mygls-cart-popup__item-meta">
+                                        <span class="mygls-cart-popup__item-qty"><?php echo esc_html(sprintf(__('Mennyiség: %d', 'mygls-woocommerce'), $quantity)); ?></span>
+                                        <span class="mygls-cart-popup__item-total"><?php echo wp_kses_post($item_total); ?></span>
+                                    </div>
+                                    <?php if (!empty($attribute_values)) : ?>
+                                        <div class="mygls-cart-popup__item-attributes">
+                                            <?php echo esc_html(implode(', ', $attribute_values)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($bonus_fee !== '') : ?>
+                                        <div class="mygls-cart-popup__item-bonus">
+                                            <?php echo esc_html($bonus_fee); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php
+                                ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <?php
+
+        return ob_get_clean();
     }
 
     /**
@@ -666,7 +844,22 @@ class Controller {
                 border-radius: 6px;
             }
 
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper,
+            .mygls-section-payment .hostinger-reach-optin {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f0f4ff;
+                border: 1px solid #667eea;
+                border-radius: 6px;
+            }
+
             .mygls-privacy-policy-checkbox label {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper label,
+            .mygls-section-payment .hostinger-reach-optin label {
                 font-size: 14px;
                 line-height: 1.6;
             }
@@ -677,8 +870,214 @@ class Controller {
                 font-weight: 600;
             }
 
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper a,
+            .mygls-section-payment .hostinger-reach-optin a {
+                color: #667eea;
+                text-decoration: underline;
+                font-weight: 600;
+            }
+
             .mygls-privacy-policy-checkbox a:hover {
                 color: #764ba2;
+            }
+
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper a:hover,
+            .mygls-section-payment .hostinger-reach-optin a:hover {
+                color: #764ba2;
+            }
+
+            /* Mobile order summary inside payment section */
+            .mygls-mobile-order-summary {
+                display: none;
+                margin-top: 16px;
+                padding: 16px;
+                background: #f9fafb;
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+            }
+
+            .mygls-mobile-order-summary-header {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                margin-bottom: 12px;
+            }
+
+            .mygls-mobile-order-summary-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
+            .mygls-mobile-order-summary-title {
+                font-weight: 700;
+                font-size: 15px;
+                color: #111827;
+            }
+
+            .mygls-mobile-order-summary-count {
+                font-size: 13px;
+                color: #6b7280;
+            }
+
+            .mygls-mobile-cart-link {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 12px;
+                font-size: 13px;
+                font-weight: 600;
+                color: #667eea;
+                background: transparent;
+                border: 1px solid #c7d2fe;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+
+            .mygls-mobile-cart-link:hover {
+                background: #eef2ff;
+            }
+
+            .mygls-mobile-order-summary-totals {
+                margin-top: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .mygls-summary-line {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                color: #374151;
+            }
+
+            .mygls-summary-total {
+                font-weight: 700;
+                font-size: 14px;
+                color: #111827;
+            }
+
+            .mygls-cart-popup {
+                position: fixed;
+                inset: 0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            }
+
+            .mygls-cart-popup.is-active {
+                display: flex;
+            }
+
+            .mygls-cart-popup__overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.55);
+            }
+
+            .mygls-cart-popup__content {
+                position: relative;
+                width: min(92vw, 420px);
+                max-height: 80vh;
+                overflow: auto;
+                background: #fff;
+                border-radius: 12px;
+                padding: 18px;
+                z-index: 1;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            }
+
+            .mygls-cart-popup__header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 12px;
+            }
+
+            .mygls-cart-popup__header h4 {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 700;
+                color: #111827;
+            }
+
+            .mygls-cart-popup__close {
+                background: transparent;
+                border: none;
+                font-size: 22px;
+                line-height: 1;
+                cursor: pointer;
+                color: #6b7280;
+            }
+
+            .mygls-cart-popup__items {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .mygls-cart-popup__item {
+                display: grid;
+                grid-template-columns: 56px 1fr;
+                gap: 12px;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 12px;
+            }
+
+            .mygls-cart-popup__thumb {
+                width: 56px;
+                height: 56px;
+                border-radius: 8px;
+                object-fit: cover;
+                background: #f3f4f6;
+            }
+
+            .mygls-cart-popup__item-thumb {
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+
+            .mygls-cart-popup__item-details {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .mygls-cart-popup__item-name {
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 6px;
+            }
+
+            .mygls-cart-popup__item-meta {
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                color: #4b5563;
+            }
+
+            .mygls-cart-popup__item-attributes {
+                font-size: 12px;
+                color: #6b7280;
+            }
+
+            .mygls-cart-popup__item-bonus {
+                font-size: 12px;
+                color: #111827;
+                font-weight: 600;
+            }
+
+            body.mygls-cart-popup-open {
+                overflow: hidden;
             }
 
             /* Same as Billing Checkbox */
@@ -1011,6 +1410,17 @@ class Controller {
                 /* Hide order summary completely on mobile */
                 .mygls-order-review-sidebar {
                     display: none !important;
+                }
+
+                .mygls-mobile-order-summary {
+                    display: block;
+                }
+
+                .mygls-cart-popup__content {
+                    width: 100vw;
+                    max-width: 100vw;
+                    max-height: 85vh;
+                    border-radius: 0;
                 }
             }
 

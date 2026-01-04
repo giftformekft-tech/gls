@@ -439,6 +439,85 @@
         }
     }
 
+    function reorderPaymentCheckboxes() {
+        var $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
+        var $newsletter = $('.hostinger-reach-optin');
+
+        if ($termsWrapper.length) {
+            $termsWrapper.slice(1).remove();
+            $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
+        }
+
+        if ($termsWrapper.length && $newsletter.length) {
+            $termsWrapper.insertAfter($newsletter);
+        }
+    }
+
+    function moveMobileOrderSummary() {
+        var $summary = $('.mygls-mobile-order-summary');
+        if (!$summary.length) {
+            return;
+        }
+
+        var isMobile = window.matchMedia('(max-width: 992px)').matches;
+        var $anchor = $('.mygls-mobile-order-summary-anchor').first();
+        var $payment = $('#payment');
+
+        if (isMobile && $payment.length) {
+            var $placeOrder = $payment.find('.form-row.place-order').first();
+            if ($placeOrder.length) {
+                $summary.insertBefore($placeOrder);
+            } else {
+                $summary.appendTo($payment);
+            }
+        } else if ($anchor.length) {
+            $summary.insertAfter($anchor);
+        }
+    }
+
+    function openCartPopup($popup) {
+        if (!$popup.length) {
+            return;
+        }
+
+        $popup.addClass('is-active').attr('aria-hidden', 'false');
+        $('body').addClass('mygls-cart-popup-open');
+    }
+
+    function closeCartPopup($popup) {
+        if (!$popup.length) {
+            return;
+        }
+
+        $popup.removeClass('is-active').attr('aria-hidden', 'true');
+        $('body').removeClass('mygls-cart-popup-open');
+    }
+
+    function bindMobileCartPopup() {
+        $(document).on('click', '.mygls-mobile-cart-link', function(event) {
+            event.preventDefault();
+            var targetId = $(this).data('myglsCartPopup');
+            var $popup = targetId ? $('#' + targetId) : $();
+
+            if (!$popup.length) {
+                $popup = $(this).closest('.mygls-mobile-order-summary').find('.mygls-cart-popup');
+            }
+
+            openCartPopup($popup);
+        });
+
+        $(document).on('click', '[data-mygls-cart-popup-close]', function() {
+            var $popup = $(this).closest('.mygls-cart-popup');
+            closeCartPopup($popup);
+        });
+
+        $(document).on('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeCartPopup($('.mygls-cart-popup.is-active'));
+            }
+        });
+    }
+
     function maybeSyncBillingFields() {
         if ($('#mygls_same_as_billing').is(':checked') && isShippingSectionVisible()) {
             syncShippingFieldsWithBilling();
@@ -449,6 +528,9 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
+        reorderPaymentCheckboxes();
+        moveMobileOrderSummary();
+        bindMobileCartPopup();
 
         // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();
@@ -477,6 +559,8 @@
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
+            reorderPaymentCheckboxes();
+            moveMobileOrderSummary();
             handleSameAsBillingCheckbox();
         });
 
@@ -490,6 +574,9 @@
             maybeSyncBillingFields
         );
 
-        $(window).on('resize', movePrivacyCheckboxBeforeOrderButton);
+        $(window).on('resize', function() {
+            movePrivacyCheckboxBeforeOrderButton();
+            moveMobileOrderSummary();
+        });
     });
 })(jQuery);
