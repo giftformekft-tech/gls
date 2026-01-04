@@ -457,10 +457,10 @@
         var $payment = $('#payment');
 
         if (isMobile && $payment.length) {
-            var $privacyWrapper = $payment.find('.mygls-privacy-checkbox-wrapper').first();
             var $termsWrapper = $payment.find('.woocommerce-terms-and-conditions-wrapper').first();
+            var $privacyWrapper = $payment.find('.mygls-privacy-checkbox-wrapper').first();
             var $placeOrder = $payment.find('.form-row.place-order').first();
-            var $target = $privacyWrapper.length ? $privacyWrapper : ($termsWrapper.length ? $termsWrapper : $placeOrder);
+            var $target = $termsWrapper.length ? $termsWrapper : ($privacyWrapper.length ? $privacyWrapper : $placeOrder);
 
             if ($target.length) {
                 $summary.insertBefore($target);
