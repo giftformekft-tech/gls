@@ -75,6 +75,10 @@ class Controller {
         add_filter('woocommerce_checkout_fields', [$this, 'ensure_shipping_name_fields'], 9998);
 
         // Remove default payment render from order review to avoid duplication
+        add_action('wp', [$this, 'remove_default_payment_from_order_review'], 20);
+    }
+
+    public function remove_default_payment_from_order_review() {
         remove_action('woocommerce_checkout_order_review', 'woocommerce_checkout_payment', 20);
     }
 
@@ -1003,9 +1007,9 @@ class Controller {
             }
 
             /* Hide in order review sidebar */
-            .mygls-order-review-sidebar #place_order,
-            .mygls-order-review-sidebar .place-order,
-            .mygls-order-review-sidebar .woocommerce-checkout-payment #place_order {
+            .mygls-order-review-sidebar .mygls-order-review #place_order,
+            .mygls-order-review-sidebar .mygls-order-review .place-order,
+            .mygls-order-review-sidebar .mygls-order-review .woocommerce-checkout-payment #place_order {
                 display: none !important;
             }
 
