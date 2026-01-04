@@ -470,6 +470,74 @@
         } else if ($anchor.length) {
             $summary.insertAfter($anchor);
         }
+
+        isMovingMobileSummary = false;
+    }
+
+    function attachMobileOrderSummaryObserver() {
+        if (mobileOrderSummaryObserver) {
+            mobileOrderSummaryObserver.disconnect();
+            mobileOrderSummaryObserver = null;
+        }
+
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+            return;
+        }
+
+        if (typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        var paymentNode = document.getElementById('payment');
+        if (!paymentNode) {
+            return;
+        }
+
+        mobileOrderSummaryObserver = new MutationObserver(function() {
+            if (isMovingMobileSummary) {
+                return;
+            }
+
+            mobileOrderSummaryObserver.disconnect();
+            moveMobileOrderSummary();
+            window.setTimeout(function() {
+                attachMobileOrderSummaryObserver();
+            }, 50);
+        });
+
+        mobileOrderSummaryObserver.observe(paymentNode, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    function attachMobileOrderSummaryObserver() {
+        if (mobileOrderSummaryObserver) {
+            mobileOrderSummaryObserver.disconnect();
+            mobileOrderSummaryObserver = null;
+        }
+
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+            return;
+        }
+
+        if (typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        var paymentNode = document.getElementById('payment');
+        if (!paymentNode) {
+            return;
+        }
+
+        mobileOrderSummaryObserver = new MutationObserver(function() {
+            moveMobileOrderSummary();
+        });
+
+        mobileOrderSummaryObserver.observe(paymentNode, {
+            childList: true,
+            subtree: true
+        });
     }
 
     function scheduleMobileOrderSummaryMove() {
