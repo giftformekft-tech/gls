@@ -518,6 +518,35 @@
         });
     }
 
+    function attachMobileOrderSummaryObserver() {
+        if (mobileOrderSummaryObserver) {
+            mobileOrderSummaryObserver.disconnect();
+            mobileOrderSummaryObserver = null;
+        }
+
+        if (!window.matchMedia('(max-width: 992px)').matches) {
+            return;
+        }
+
+        if (typeof MutationObserver === 'undefined') {
+            return;
+        }
+
+        var paymentNode = document.getElementById('payment');
+        if (!paymentNode) {
+            return;
+        }
+
+        mobileOrderSummaryObserver = new MutationObserver(function() {
+            moveMobileOrderSummary();
+        });
+
+        mobileOrderSummaryObserver.observe(paymentNode, {
+            childList: true,
+            subtree: true
+        });
+    }
+
     function openCartPopup($popup) {
         if (!$popup.length) {
             return;
