@@ -153,12 +153,19 @@ class Controller {
     /**
      * Render checkout sections in custom order
      */
-    public function render_checkout_sections() {
+    public function render_checkout_sections(array $excluded_sections = []) {
         $field_order = $this->get_configured_field_order();
 
         foreach ($field_order as $section) {
+            if (in_array($section, $excluded_sections, true)) {
+                continue;
+            }
             echo $this->get_section_wrapper_markup($section);
         }
+    }
+
+    public function render_checkout_section(string $section) {
+        echo $this->get_section_wrapper_markup($section);
     }
 
     /**
@@ -740,6 +747,9 @@ class Controller {
                 position: sticky;
                 top: 20px;
                 height: fit-content;
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
             }
 
             .mygls-order-review {
