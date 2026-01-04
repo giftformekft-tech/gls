@@ -343,13 +343,15 @@ class Controller {
         <div class="mygls-mobile-order-summary" aria-hidden="false">
             <div class="mygls-mobile-order-summary-header">
                 <span class="mygls-mobile-order-summary-title"><?php echo esc_html__('Rendelés összesítő', 'mygls-woocommerce'); ?></span>
-                <span class="mygls-mobile-order-summary-count">
-                    <?php echo esc_html(sprintf(__('A kosárban %d tétel van.', 'mygls-woocommerce'), $item_count)); ?>
-                </span>
+                <div class="mygls-mobile-order-summary-actions">
+                    <span class="mygls-mobile-order-summary-count">
+                        <?php echo esc_html(sprintf(__('A kosárban %d tétel van.', 'mygls-woocommerce'), $item_count)); ?>
+                    </span>
+                    <button type="button" class="mygls-mobile-cart-link" data-mygls-cart-popup="<?php echo esc_attr($popup_id); ?>">
+                        <?php echo esc_html__('Kosár tartalma', 'mygls-woocommerce'); ?>
+                    </button>
+                </div>
             </div>
-            <button type="button" class="mygls-mobile-cart-link" data-mygls-cart-popup="<?php echo esc_attr($popup_id); ?>">
-                <?php echo esc_html__('Kosár tartalma', 'mygls-woocommerce'); ?>
-            </button>
             <div class="mygls-mobile-order-summary-totals">
                 <div class="mygls-summary-line">
                     <span><?php echo esc_html__('Részösszeg', 'mygls-woocommerce'); ?></span>
@@ -383,19 +385,28 @@ class Controller {
                             }
                             $item_name = $product->get_name();
                             $item_total = $cart->get_product_subtotal($product, $quantity);
+                            $item_thumbnail = $product->get_image('thumbnail', [
+                                'class' => 'mygls-cart-popup__thumb',
+                                'alt' => $item_name,
+                            ]);
                             ?>
                             <li class="mygls-cart-popup__item">
-                                <div class="mygls-cart-popup__item-name"><?php echo esc_html($item_name); ?></div>
-                                <div class="mygls-cart-popup__item-meta">
-                                    <span class="mygls-cart-popup__item-qty"><?php echo esc_html(sprintf(__('Mennyiség: %d', 'mygls-woocommerce'), $quantity)); ?></span>
-                                    <span class="mygls-cart-popup__item-total"><?php echo wp_kses_post($item_total); ?></span>
+                                <div class="mygls-cart-popup__item-thumb"><?php echo wp_kses_post($item_thumbnail); ?></div>
+                                <div class="mygls-cart-popup__item-details">
+                                    <div class="mygls-cart-popup__item-name"><?php echo esc_html($item_name); ?></div>
+                                    <div class="mygls-cart-popup__item-meta">
+                                        <span class="mygls-cart-popup__item-qty"><?php echo esc_html(sprintf(__('Mennyiség: %d', 'mygls-woocommerce'), $quantity)); ?></span>
+                                        <span class="mygls-cart-popup__item-total"><?php echo wp_kses_post($item_total); ?></span>
+                                    </div>
+                                    <?php
+                                    $item_data = wc_get_formatted_cart_item_data($cart_item);
+                                    if ($item_data) :
+                                    ?>
+                                        <div class="mygls-cart-popup__item-data"><?php echo wp_kses_post($item_data); ?></div>
+                                    <?php endif; ?>
                                 </div>
                                 <?php
-                                $item_data = wc_get_formatted_cart_item_data($cart_item);
-                                if ($item_data) :
                                 ?>
-                                    <div class="mygls-cart-popup__item-data"><?php echo wp_kses_post($item_data); ?></div>
-                                <?php endif; ?>
                             </li>
                         <?php endforeach; ?>
                     </ul>
@@ -783,6 +794,14 @@ class Controller {
                 margin-bottom: 12px;
             }
 
+            .mygls-mobile-order-summary-actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                flex-wrap: wrap;
+            }
+
             .mygls-mobile-order-summary-title {
                 font-weight: 700;
                 font-size: 15px;
@@ -896,9 +915,32 @@ class Controller {
             }
 
             .mygls-cart-popup__item {
+                display: grid;
+                grid-template-columns: 56px 1fr;
+                gap: 12px;
                 border: 1px solid #e5e7eb;
                 border-radius: 8px;
                 padding: 12px;
+            }
+
+            .mygls-cart-popup__thumb {
+                width: 56px;
+                height: 56px;
+                border-radius: 8px;
+                object-fit: cover;
+                background: #f3f4f6;
+            }
+
+            .mygls-cart-popup__item-thumb {
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+
+            .mygls-cart-popup__item-details {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
             }
 
             .mygls-cart-popup__item-name {
@@ -1258,6 +1300,13 @@ class Controller {
 
                 .mygls-mobile-order-summary {
                     display: block;
+                }
+
+                .mygls-cart-popup__content {
+                    width: 100vw;
+                    max-width: 100vw;
+                    max-height: 85vh;
+                    border-radius: 0;
                 }
             }
 
