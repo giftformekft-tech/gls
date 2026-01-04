@@ -40,6 +40,10 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
             <!-- Right Column: Order Review -->
             <div class="mygls-order-review-sidebar">
+                <div class="mygls-payment-review">
+                    <?php $controller->render_checkout_section('payment'); ?>
+                </div>
+
                 <div class="mygls-order-review">
                     <h3 class="mygls-order-review-title">
                         <span class="dashicons dashicons-cart"></span>
