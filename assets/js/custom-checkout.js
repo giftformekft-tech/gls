@@ -439,18 +439,11 @@
         }
     }
 
-    var mobileOrderSummaryObserver = null;
-    var isMovingMobileSummary = false;
+    var mobileOrderSummaryMoveTimer = null;
 
     function moveMobileOrderSummary() {
-        if (isMovingMobileSummary) {
-            return;
-        }
-
-        isMovingMobileSummary = true;
         var $summaries = $('.mygls-mobile-order-summary');
         if (!$summaries.length) {
-            isMovingMobileSummary = false;
             return;
         }
 
@@ -547,6 +540,17 @@
         });
     }
 
+    function scheduleMobileOrderSummaryMove() {
+        if (mobileOrderSummaryMoveTimer) {
+            window.clearTimeout(mobileOrderSummaryMoveTimer);
+        }
+
+        mobileOrderSummaryMoveTimer = window.setTimeout(function() {
+            moveMobileOrderSummary();
+            mobileOrderSummaryMoveTimer = null;
+        }, 150);
+    }
+
     function openCartPopup($popup) {
         if (!$popup.length) {
             return;
@@ -600,8 +604,7 @@
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
-        moveMobileOrderSummary();
-        attachMobileOrderSummaryObserver();
+        scheduleMobileOrderSummaryMove();
         bindMobileCartPopup();
 
         // Initialize checkbox state - multiple attempts to ensure it works
@@ -625,14 +628,14 @@
             handleSameAsBillingCheckbox();
             cancelScheduledCheckoutRefresh();
             requestCheckoutRefresh();
+            scheduleMobileOrderSummaryMove();
         });
 
         $(document.body).on('updated_checkout', function() {
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
-            moveMobileOrderSummary();
-            attachMobileOrderSummaryObserver();
+            scheduleMobileOrderSummaryMove();
             handleSameAsBillingCheckbox();
         });
 
@@ -648,8 +651,7 @@
 
         $(window).on('resize', function() {
             movePrivacyCheckboxBeforeOrderButton();
-            moveMobileOrderSummary();
-            attachMobileOrderSummaryObserver();
+            scheduleMobileOrderSummaryMove();
         });
     });
 })(jQuery);
