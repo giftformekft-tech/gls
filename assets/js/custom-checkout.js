@@ -442,21 +442,28 @@
     var mobileOrderSummaryObserver = null;
 
     function moveMobileOrderSummary() {
-        var $summary = $('.mygls-mobile-order-summary');
-        if (!$summary.length) {
+        var $summaries = $('.mygls-mobile-order-summary');
+        if (!$summaries.length) {
             return;
         }
 
+        if ($summaries.length > 1) {
+            $summaries.not(':last').remove();
+        }
+
+        var $summary = $('.mygls-mobile-order-summary').last();
         var isMobile = window.matchMedia('(max-width: 992px)').matches;
         var $anchor = $('.mygls-mobile-order-summary-anchor').first();
         var $payment = $('#payment');
 
         if (isMobile && $payment.length) {
+            var $privacyWrapper = $payment.find('.mygls-privacy-checkbox-wrapper').first();
+            var $termsWrapper = $payment.find('.woocommerce-terms-and-conditions-wrapper').first();
             var $placeOrder = $payment.find('.form-row.place-order').first();
-            if ($placeOrder.length) {
-                if (!$summary.nextAll('.form-row.place-order').first().is($placeOrder)) {
-                    $summary.insertBefore($placeOrder);
-                }
+            var $target = $privacyWrapper.length ? $privacyWrapper : ($termsWrapper.length ? $termsWrapper : $placeOrder);
+
+            if ($target.length) {
+                $summary.insertBefore($target);
             } else {
                 $summary.appendTo($payment);
             }
