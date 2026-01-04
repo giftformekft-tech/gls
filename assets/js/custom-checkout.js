@@ -442,6 +442,7 @@
     function reorderPaymentCheckboxes() {
         var $termsWrapper = $('.woocommerce-terms-and-conditions-wrapper');
         var $newsletter = $('.hostinger-reach-optin');
+        var $privacyWrapper = $('.mygls-privacy-checkbox-wrapper');
 
         if ($termsWrapper.length) {
             $termsWrapper.slice(1).remove();
@@ -449,8 +450,23 @@
         }
 
         if ($termsWrapper.length && $newsletter.length) {
-            $termsWrapper.insertAfter($newsletter);
+            $newsletter.insertAfter($termsWrapper);
         }
+
+        if ($newsletter.length && $privacyWrapper.length) {
+            $privacyWrapper.insertAfter($newsletter);
+        }
+
+        var $container = $('.mygls-payment-checkbox-container');
+        if (!$container.length) {
+            $container = $('<div class="mygls-payment-checkbox-container"></div>');
+            $container.insertBefore($privacyWrapper.length ? $privacyWrapper : $termsWrapper);
+        }
+
+        $container.append($termsWrapper);
+        $container.append($newsletter);
+        $container.append($privacyWrapper);
+    }
     }
 
     function moveMobileOrderSummary() {
