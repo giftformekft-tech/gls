@@ -335,6 +335,7 @@ class Controller {
         $subtotal = $totals['subtotal'] ?? 0;
         $shipping_total = ($totals['shipping_total'] ?? 0) + ($totals['shipping_tax'] ?? 0);
         $grand_total = $totals['total'] ?? 0;
+        $fees = $cart->get_fees();
 
         $popup_id = 'mygls-cart-popup';
 
@@ -361,6 +362,14 @@ class Controller {
                     <span><?php echo esc_html__('Szállítás', 'mygls-woocommerce'); ?></span>
                     <span><?php echo wp_kses_post(wc_price($shipping_total)); ?></span>
                 </div>
+                <?php if (!empty($fees)) : ?>
+                    <?php foreach ($fees as $fee) : ?>
+                        <div class="mygls-summary-line">
+                            <span><?php echo esc_html($fee->name); ?></span>
+                            <span><?php echo wp_kses_post(wc_price($fee->amount + $fee->tax)); ?></span>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
                 <div class="mygls-summary-line mygls-summary-total">
                     <span><?php echo esc_html__('Összesen', 'mygls-woocommerce'); ?></span>
                     <span><?php echo wp_kses_post(wc_price($grand_total)); ?></span>
@@ -389,6 +398,75 @@ class Controller {
                                 'class' => 'mygls-cart-popup__thumb',
                                 'alt' => $item_name,
                             ]);
+                            $attribute_values = [];
+                            $variation = $cart_item['variation'] ?? [];
+                            $attribute_groups = [
+                                [
+                                    'attribute_pa_termektipus',
+                                    'attribute_termektipus',
+                                    'pa_termektipus',
+                                    'termektipus',
+                                    'attribute_pa_type',
+                                    'attribute_type',
+                                    'pa_type',
+                                    'type',
+                                ],
+                                [
+                                    'attribute_pa_szin',
+                                    'attribute_szin',
+                                    'pa_szin',
+                                    'szin',
+                                    'attribute_pa_color',
+                                    'attribute_color',
+                                    'pa_color',
+                                    'color',
+                                ],
+                                [
+                                    'attribute_pa_meret',
+                                    'attribute_meret',
+                                    'pa_meret',
+                                    'meret',
+                                    'attribute_pa_size',
+                                    'attribute_size',
+                                    'pa_size',
+                                    'size',
+                                ],
+                            ];
+
+                            foreach ($attribute_groups as $attribute_keys) {
+                                $value = '';
+                                foreach ($attribute_keys as $attribute_key) {
+                                    if (!isset($variation[$attribute_key]) || $variation[$attribute_key] === '') {
+                                        continue;
+                                    }
+
+                                    $value = (string) $variation[$attribute_key];
+                                    $taxonomy = str_replace('attribute_', '', $attribute_key);
+                                    if (taxonomy_exists($taxonomy)) {
+                                        $term = get_term_by('slug', $value, $taxonomy);
+                                        if ($term && !is_wp_error($term)) {
+                                            $value = $term->name;
+                                        }
+                                    }
+                                    break;
+                                }
+
+                                if ($value !== '') {
+                                    $attribute_values[] = $value;
+                                }
+                            }
+
+                            $bonus_fee = '';
+                            $item_data = wc_get_formatted_cart_item_data($cart_item, false);
+                            if (is_array($item_data)) {
+                                foreach ($item_data as $data) {
+                                    $label = $data['key'] ?? '';
+                                    if ($label && (stripos($label, 'bónusz') !== false || stripos($label, 'bonus') !== false)) {
+                                        $bonus_fee = wp_strip_all_tags($data['display'] ?? '');
+                                        break;
+                                    }
+                                }
+                            }
                             ?>
                             <li class="mygls-cart-popup__item">
                                 <div class="mygls-cart-popup__item-thumb"><?php echo wp_kses_post($item_thumbnail); ?></div>
@@ -398,11 +476,15 @@ class Controller {
                                         <span class="mygls-cart-popup__item-qty"><?php echo esc_html(sprintf(__('Mennyiség: %d', 'mygls-woocommerce'), $quantity)); ?></span>
                                         <span class="mygls-cart-popup__item-total"><?php echo wp_kses_post($item_total); ?></span>
                                     </div>
-                                    <?php
-                                    $item_data = wc_get_formatted_cart_item_data($cart_item);
-                                    if ($item_data) :
-                                    ?>
-                                        <div class="mygls-cart-popup__item-data"><?php echo wp_kses_post($item_data); ?></div>
+                                    <?php if (!empty($attribute_values)) : ?>
+                                        <div class="mygls-cart-popup__item-attributes">
+                                            <?php echo esc_html(implode(', ', $attribute_values)); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($bonus_fee !== '') : ?>
+                                        <div class="mygls-cart-popup__item-bonus">
+                                            <?php echo esc_html($bonus_fee); ?>
+                                        </div>
                                     <?php endif; ?>
                                 </div>
                                 <?php
@@ -956,10 +1038,15 @@ class Controller {
                 color: #4b5563;
             }
 
-            .mygls-cart-popup__item-data {
-                margin-top: 6px;
+            .mygls-cart-popup__item-attributes {
                 font-size: 12px;
                 color: #6b7280;
+            }
+
+            .mygls-cart-popup__item-bonus {
+                font-size: 12px;
+                color: #111827;
+                font-weight: 600;
             }
 
             body.mygls-cart-popup-open {
