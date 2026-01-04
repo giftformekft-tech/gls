@@ -856,6 +856,15 @@ class Controller {
                 border: none;
             }
 
+            .mygls-section-payment .woocommerce-terms-and-conditions-wrapper,
+            .mygls-section-payment .hostinger-reach-optin {
+                margin-top: 20px;
+                padding: 15px;
+                background: #f0f4ff;
+                border: 1px solid #667eea;
+                border-radius: 6px;
+            }
+
             .mygls-privacy-policy-checkbox label {
                 font-size: 14px;
                 line-height: 1.6;
