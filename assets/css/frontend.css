@@ -648,6 +648,7 @@ gls-dpm-widget.mygls-inline-widget {
     gap: 16px;
     flex-wrap: nowrap;
     justify-content: flex-start;
+    text-align: center;
 }
 
 .mygls-login-prompt__divider {
@@ -659,6 +660,7 @@ gls-dpm-widget.mygls-inline-widget {
     font-weight: 600;
     font-size: 14px;
     white-space: nowrap;
+    text-align: center;
 }
 
 .mygls-login-prompt__button {
