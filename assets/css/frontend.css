@@ -638,8 +638,11 @@ gls-dpm-widget.mygls-inline-widget {
 /* Checkout login prompt */
 .mygls-login-prompt {
     margin: 0 0 24px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
     display: flex;
     align-items: center;
     gap: 16px;
@@ -656,14 +659,6 @@ gls-dpm-widget.mygls-inline-widget {
     font-weight: 600;
     font-size: 14px;
     white-space: nowrap;
-}
-
-.mygls-login-prompt__divider::after {
-    content: "";
-    flex: 0 0 120px;
-    width: 120px;
-    height: 1px;
-    background: #e5e7eb;
 }
 
 .mygls-login-prompt__button {
@@ -694,11 +689,6 @@ gls-dpm-widget.mygls-inline-widget {
 
     .mygls-login-prompt__divider {
         width: 100%;
-    }
-
-    .mygls-login-prompt__divider::after {
-        flex: 1 1 auto;
-        width: auto;
     }
 }
 
