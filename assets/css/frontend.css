@@ -635,6 +635,73 @@ gls-dpm-widget.mygls-inline-widget {
     }
 }
 
+/* Checkout login prompt */
+.mygls-login-prompt {
+    margin: 0 0 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+
+.mygls-login-prompt__divider {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #111827;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.mygls-login-prompt__divider::after {
+    content: "";
+    flex: 0 0 120px;
+    width: 120px;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.mygls-login-prompt__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    float: none !important;
+    margin-left: 0 !important;
+}
+
+.mygls-login-prompt__or {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+@media (max-width: 768px) {
+    .mygls-login-prompt {
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .mygls-login-prompt__divider {
+        width: 100%;
+    }
+
+    .mygls-login-prompt__divider::after {
+        flex: 1 1 auto;
+        width: auto;
+    }
+}
+
 /* Checkout order review styling */
 .woocommerce-checkout-review-order-table .cart_item {
     vertical-align: top;
@@ -776,4 +843,36 @@ gls-dpm-widget.mygls-inline-widget {
 .mygls-review-order-table .order-total td {
     font-weight: 700 !important;
     font-size: 14px !important;
+}
+
+/* Checkout field layout improvements */
+#billing_first_name_field,
+#billing_last_name_field {
+    width: 48% !important;
+}
+
+#billing_postcode_field,
+#billing_city_field,
+#billing_address_1_field,
+#billing_address_2_field,
+#billing_state_field {
+    width: 100% !important;
+}
+
+@media (max-width: 544px) {
+    .woocommerce-checkout .woocommerce form .form-row input.input-text,
+    .woocommerce-checkout .woocommerce form .form-row textarea,
+    .woocommerce-checkout .woocommerce form .form-row select,
+    .mygls-section-wrapper input.input-text,
+    .mygls-section-wrapper textarea,
+    .mygls-section-wrapper select {
+        font-size: 12px !important;
+        line-height: 1.2 !important;
+        padding: 10px 12px !important;
+    }
+
+    .woocommerce-checkout .woocommerce form .form-row label,
+    .mygls-section-wrapper label {
+        font-size: 12px !important;
+    }
 }

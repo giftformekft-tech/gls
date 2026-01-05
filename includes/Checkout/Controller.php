@@ -73,6 +73,9 @@ class Controller {
 
         // Ensure shipping name fields are enabled
         add_filter('woocommerce_checkout_fields', [$this, 'ensure_shipping_name_fields'], 9998);
+
+        // Ensure billing email appears first
+        add_filter('woocommerce_checkout_fields', [$this, 'ensure_billing_email_first'], 9997);
     }
 
     /**
@@ -107,6 +110,49 @@ class Controller {
                 'required' => false,
                 'priority' => 30,
             ];
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Ensure billing email field exists and is first in the billing section
+     */
+    public function ensure_billing_email_first($fields) {
+        if (!isset($fields['billing']['billing_email'])) {
+            $fields['billing']['billing_email'] = [
+                'label' => __('Email cím', 'mygls-woocommerce'),
+                'required' => true,
+                'type' => 'email',
+                'class' => ['form-row-wide'],
+                'priority' => 5,
+            ];
+        } else {
+            $fields['billing']['billing_email']['priority'] = 5;
+            $fields['billing']['billing_email']['class'] = array_values(array_unique(array_merge(
+                (array) ($fields['billing']['billing_email']['class'] ?? []),
+                ['form-row-wide']
+            )));
+        }
+
+        foreach ($fields['billing'] as $key => $field) {
+            $label = isset($field['label']) ? (string) $field['label'] : '';
+            $type = isset($field['type']) ? (string) $field['type'] : '';
+            if (
+                $label === 'Subscribe to our Newsletter'
+                || $label === __('Subscribe to our Newsletter', 'mygls-woocommerce')
+                || stripos($key, 'newsletter') !== false
+                || stripos($key, 'subscribe') !== false
+            ) {
+                $fields['billing'][$key]['priority'] = 6;
+                if ($type === 'checkbox') {
+                    $fields['billing'][$key]['class'] = array_values(array_unique(array_merge(
+                        (array) ($fields['billing'][$key]['class'] ?? []),
+                        ['form-row-wide']
+                    )));
+                }
+                break;
+            }
         }
 
         return $fields;
