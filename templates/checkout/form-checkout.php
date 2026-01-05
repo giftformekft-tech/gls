@@ -22,6 +22,22 @@ if (!$checkout->is_registration_enabled() && $checkout->is_registration_required
 
     <?php if ($checkout->get_checkout_fields()) : ?>
 
+        <?php if (!is_user_logged_in()) : ?>
+            <?php
+            $account_page = wc_get_page_permalink('myaccount');
+            $login_url = $account_page ? add_query_arg('redirect_to', wc_get_checkout_url(), $account_page) : wc_get_checkout_url();
+            ?>
+            <div class="mygls-login-prompt" aria-label="<?php esc_attr_e('Bejelentkezés', 'mygls-woocommerce'); ?>">
+                <div class="mygls-login-prompt__divider">
+                    <span><?php esc_html_e('Van már fiókod?', 'mygls-woocommerce'); ?></span>
+                </div>
+                <a class="mygls-btn mygls-btn-primary mygls-login-prompt__button" href="<?php echo esc_url($login_url); ?>">
+                    <?php esc_html_e('Jelentkezz be!', 'mygls-woocommerce'); ?>
+                </a>
+                <div class="mygls-login-prompt__or"><?php esc_html_e('Vagy', 'mygls-woocommerce'); ?></div>
+            </div>
+        <?php endif; ?>
+
         <?php do_action('woocommerce_checkout_before_customer_details'); ?>
 
         <div class="mygls-custom-checkout-container">
