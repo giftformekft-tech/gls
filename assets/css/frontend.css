@@ -643,7 +643,7 @@ gls-dpm-widget.mygls-inline-widget {
     display: flex;
     align-items: center;
     gap: 16px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: flex-start;
 }
 
@@ -667,9 +667,15 @@ gls-dpm-widget.mygls-inline-widget {
 }
 
 .mygls-login-prompt__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.5px;
+    white-space: nowrap;
+    float: none !important;
+    margin-left: 0 !important;
 }
 
 .mygls-login-prompt__or {
@@ -683,6 +689,7 @@ gls-dpm-widget.mygls-inline-widget {
 @media (max-width: 768px) {
     .mygls-login-prompt {
         gap: 12px;
+        flex-wrap: wrap;
     }
 
     .mygls-login-prompt__divider {
