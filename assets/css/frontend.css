@@ -644,10 +644,11 @@ gls-dpm-widget.mygls-inline-widget {
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    justify-content: flex-start;
 }
 
 .mygls-login-prompt__divider {
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -659,7 +660,8 @@ gls-dpm-widget.mygls-inline-widget {
 
 .mygls-login-prompt__divider::after {
     content: "";
-    flex: 1 1 auto;
+    flex: 0 0 120px;
+    width: 120px;
     height: 1px;
     background: #e5e7eb;
 }
@@ -685,6 +687,11 @@ gls-dpm-widget.mygls-inline-widget {
 
     .mygls-login-prompt__divider {
         width: 100%;
+    }
+
+    .mygls-login-prompt__divider::after {
+        flex: 1 1 auto;
+        width: auto;
     }
 }
 
