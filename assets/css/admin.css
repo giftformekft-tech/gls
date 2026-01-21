@@ -197,6 +197,41 @@
     background: #d63638;
 }
 
+/* Button preview (settings) */
+.mygls-button-preview-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.mygls-button-preview {
+    border: none !important;
+    color: #fff !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-weight: 600;
+    text-shadow: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.mygls-button-preview--large {
+    padding: 12px 22px !important;
+    font-size: 15px;
+}
+
+.mygls-button-preview--primary {
+    background: linear-gradient(135deg, #2271b1 0%, #1d5a8f 100%);
+}
+
+.mygls-button-preview--secondary {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+}
+
+.mygls-button-preview--success {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
 /* Admin Parcelshop Display */
 .mygls-admin-parcelshop {
     background: #f8f9fa;
