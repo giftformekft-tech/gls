@@ -7,6 +7,7 @@
     $(document).ready(function() {
         initTestConnection();
         initOrderListEnhancements();
+        initButtonPreview();
     });
     
     /**
@@ -88,6 +89,29 @@
         
         // This is a placeholder - in production, you'd check via AJAX or add data attributes
         // For now, we'll just add the UI structure
+    }
+
+    function initButtonPreview() {
+        const $styleSelect = $('#map_button_style');
+        const $previewPanel = $('[data-mygls-button-preview]');
+
+        if (!$styleSelect.length || !$previewPanel.length) {
+            return;
+        }
+
+        const allowedStyles = ['primary', 'secondary', 'success'];
+
+        const updatePreview = () => {
+            const style = $styleSelect.val();
+            const safeStyle = allowedStyles.includes(style) ? style : 'primary';
+            const $buttons = $previewPanel.find('.mygls-button-preview');
+
+            $buttons.removeClass('mygls-button-preview--primary mygls-button-preview--secondary mygls-button-preview--success');
+            $buttons.addClass('mygls-button-preview--' + safeStyle);
+        };
+
+        updatePreview();
+        $styleSelect.on('change', updatePreview);
     }
     
 })(jQuery);

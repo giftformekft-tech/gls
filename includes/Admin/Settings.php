@@ -476,12 +476,27 @@ class Settings {
                                         <label for="map_button_style"><?php _e('Button Style', 'mygls-woocommerce'); ?></label>
                                     </th>
                                     <td>
+                                        <?php
+                                        $button_preview_style = $settings['map_button_style'] ?? 'primary';
+                                        $allowed_preview_styles = ['primary', 'secondary', 'success'];
+                                        if (!in_array($button_preview_style, $allowed_preview_styles, true)) {
+                                            $button_preview_style = 'primary';
+                                        }
+                                        ?>
                                         <select name="mygls_settings[map_button_style]" id="map_button_style" class="regular-text">
                                             <option value="primary" <?php selected($settings['map_button_style'] ?? 'primary', 'primary'); ?>><?php _e('Primary (blue)', 'mygls-woocommerce'); ?></option>
                                             <option value="secondary" <?php selected($settings['map_button_style'] ?? 'primary', 'secondary'); ?>><?php _e('Secondary (gray)', 'mygls-woocommerce'); ?></option>
                                             <option value="success" <?php selected($settings['map_button_style'] ?? 'primary', 'success'); ?>><?php _e('Success (green)', 'mygls-woocommerce'); ?></option>
                                         </select>
                                         <p class="description"><?php _e('Color scheme for the "Select Parcelshop" button', 'mygls-woocommerce'); ?></p>
+                                        <div class="mygls-button-preview-panel" data-mygls-button-preview>
+                                            <button type="button" class="button mygls-button-preview mygls-button-preview--<?php echo esc_attr($button_preview_style); ?>">
+                                                <?php _e('Minta', 'mygls-woocommerce'); ?>
+                                            </button>
+                                            <button type="button" class="button mygls-button-preview mygls-button-preview--<?php echo esc_attr($button_preview_style); ?> mygls-button-preview--large">
+                                                <?php _e('Minta nagyban', 'mygls-woocommerce'); ?>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>
