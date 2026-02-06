@@ -19,6 +19,10 @@ class PaymentFee {
             return;
         }
 
+        if (function_exists('is_cart') && is_cart() && !is_checkout()) {
+            return;
+        }
+
         if (!$cart instanceof \WC_Cart) {
             return;
         }
