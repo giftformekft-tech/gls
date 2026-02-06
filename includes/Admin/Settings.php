@@ -117,6 +117,14 @@ class Settings {
             $sanitized['checkout_field_order'] = $this->default_checkout_fields;
         }
 
+        // Payment Surcharge Settings
+        $sanitized['cod_fee_enabled'] = isset($input['cod_fee_enabled']) ? '1' : '0';
+        $sanitized['cod_fee_amount'] = isset($input['cod_fee_amount'])
+            ? wc_format_decimal($input['cod_fee_amount'])
+            : '0';
+        $sanitized['cod_fee_label'] = sanitize_text_field($input['cod_fee_label'] ?? __('Cash on Delivery fee', 'mygls-woocommerce'));
+        $sanitized['cod_fee_taxable'] = isset($input['cod_fee_taxable']) ? '1' : '0';
+
         return $sanitized;
     }
     
@@ -427,6 +435,58 @@ class Settings {
                                 }
                             });
                             </script>
+                        </div>
+                    </div>
+
+                    <!-- Payment Surcharges -->
+                    <div class="mygls-card">
+                        <div class="mygls-card-header">
+                            <h2><span class="dashicons dashicons-money-alt"></span> <?php _e('Payment Surcharges', 'mygls-woocommerce'); ?></h2>
+                        </div>
+                        <div class="mygls-card-body">
+                            <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="cod_fee_enabled"><?php _e('Enable COD surcharge', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label class="mygls-toggle">
+                                            <input type="checkbox" name="mygls_settings[cod_fee_enabled]" id="cod_fee_enabled" value="1" <?php checked($settings['cod_fee_enabled'] ?? '0', '1'); ?>>
+                                            <span class="mygls-toggle-slider"></span>
+                                        </label>
+                                        <p class="description"><?php _e('Add a surcharge when Cash on Delivery is selected.', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="cod_fee_amount"><?php _e('COD surcharge amount', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="mygls_settings[cod_fee_amount]" id="cod_fee_amount" value="<?php echo esc_attr($settings['cod_fee_amount'] ?? '0'); ?>" class="regular-text">
+                                        <p class="description"><?php _e('Surcharge amount added to the order total.', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="cod_fee_label"><?php _e('COD surcharge label', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <input type="text" name="mygls_settings[cod_fee_label]" id="cod_fee_label" value="<?php echo esc_attr($settings['cod_fee_label'] ?? __('Cash on Delivery fee', 'mygls-woocommerce')); ?>" class="regular-text">
+                                        <p class="description"><?php _e('Label displayed in the checkout order summary.', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">
+                                        <label for="cod_fee_taxable"><?php _e('COD surcharge taxable', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label>
+                                            <input type="checkbox" name="mygls_settings[cod_fee_taxable]" id="cod_fee_taxable" value="1" <?php checked($settings['cod_fee_taxable'] ?? '0', '1'); ?>>
+                                            <?php _e('Apply tax to the surcharge.', 'mygls-woocommerce'); ?>
+                                        </label>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
 
