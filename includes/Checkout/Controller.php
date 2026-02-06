@@ -566,8 +566,14 @@ class Controller {
 
         echo '<div id="mygls-shipping-methods">';
 
-        if (!$needs_shipping || !$show_shipping) {
+        if (!$needs_shipping) {
             echo '<p class="mygls-no-shipping">' . esc_html__('Ehhez a rendeléshez nincs szükség szállításra.', 'mygls-woocommerce') . '</p>';
+            echo '</div>';
+            return ob_get_clean();
+        }
+
+        if (!$show_shipping) {
+            echo '<p class="mygls-no-shipping">' . esc_html__('Add meg a szállítási címet, hogy elérhetőek legyenek a szállítási módok.', 'mygls-woocommerce') . '</p>';
             echo '</div>';
             return ob_get_clean();
         }

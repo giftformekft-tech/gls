@@ -12,6 +12,7 @@ if (!defined('ABSPATH')) {
 class PaymentFee {
     public function __construct() {
         add_action('woocommerce_cart_calculate_fees', [$this, 'add_cod_fee'], 20);
+        add_filter('woocommerce_gateway_title', [$this, 'append_cod_fee_to_label'], 10, 2);
     }
 
     public function add_cod_fee($cart): void {
@@ -44,5 +45,30 @@ class PaymentFee {
         $taxable = ($settings['cod_fee_taxable'] ?? '0') === '1';
 
         $cart->add_fee($label, $amount, $taxable);
+    }
+
+    public function append_cod_fee_to_label($title, $payment_id): string {
+        if ($payment_id !== 'cod') {
+            return $title;
+        }
+
+        if (function_exists('is_checkout') && !is_checkout()) {
+            return $title;
+        }
+
+        if (function_exists('is_order_received_page') && is_order_received_page()) {
+            return $title;
+        }
+
+        $settings = get_option('mygls_settings', []);
+        $enabled = ($settings['cod_fee_enabled'] ?? '0') === '1';
+        $amount = isset($settings['cod_fee_amount']) ? (float) $settings['cod_fee_amount'] : 0.0;
+
+        if (!$enabled || $amount <= 0) {
+            return $title;
+        }
+
+        $formatted = wc_price($amount);
+        return sprintf('%s <span class="mygls-cod-fee-label">+%s</span>', $title, $formatted);
     }
 }
