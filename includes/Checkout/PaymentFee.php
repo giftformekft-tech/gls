@@ -13,6 +13,25 @@ class PaymentFee {
     public function __construct() {
         add_action('woocommerce_cart_calculate_fees', [$this, 'add_cod_fee'], 20);
         add_filter('woocommerce_gateway_title', [$this, 'append_cod_fee_to_label'], 10, 2);
+        add_action('woocommerce_checkout_update_order_review', [$this, 'sync_payment_method_from_post']);
+    }
+
+    public function sync_payment_method_from_post($posted_data): void {
+        if (!WC()->session) {
+            return;
+        }
+
+        $data = [];
+        if (is_array($posted_data)) {
+            $data = $posted_data;
+        } elseif (is_string($posted_data)) {
+            parse_str($posted_data, $data);
+        }
+
+        if (!empty($data['payment_method'])) {
+            $payment_method = sanitize_text_field($data['payment_method']);
+            WC()->session->set('chosen_payment_method', $payment_method);
+        }
     }
 
     public function add_cod_fee($cart): void {

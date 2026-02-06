@@ -117,11 +117,22 @@
 
     function bindPaymentMethodRefresh() {
         $(document.body).on('change', 'input[name="payment_method"]', function() {
-            scheduleCheckoutRefresh();
+            cancelScheduledCheckoutRefresh();
+            requestCheckoutRefresh();
         });
 
         $(document.body).on('payment_method_selected', function() {
-            scheduleCheckoutRefresh();
+            cancelScheduledCheckoutRefresh();
+            requestCheckoutRefresh();
+        });
+
+        $(document.body).on('click', '.woocommerce-checkout-payment .wc_payment_methods label', function() {
+            var $input = $(this).closest('li').find('input[name="payment_method"]');
+            if ($input.length && !$input.prop('checked')) {
+                $input.prop('checked', true).trigger('change');
+            } else {
+                scheduleCheckoutRefresh();
+            }
         });
     }
 
