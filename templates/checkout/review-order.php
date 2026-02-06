@@ -44,23 +44,44 @@ defined( 'ABSPATH' ) || exit;
                                 </div>
                                 <?php
                                 $variation_values = wc_get_formatted_variation( $cart_item['variation'], true, false );
-
-                                $additional_data = [];
-
-                                foreach ( WC()->cart->get_item_data( $cart_item ) as $item_data_entry ) {
-                                        $display_value = $item_data_entry['display'] ?? $item_data_entry['value'] ?? '';
-
-                                        if ( $display_value ) {
-                                                $additional_data[] = wp_strip_all_tags( $display_value );
-                                        }
-                                }
-
                                 $meta_parts = array_filter(
                                         array_map( 'wc_clean', array_filter( [ $variation_values ] ) )
                                 );
 
-                                if ( $additional_data ) {
-                                        $meta_parts = array_merge( $meta_parts, array_map( 'wc_clean', $additional_data ) );
+                                $meta_value_map = [
+                                        'Terméktípus' => [ 'Terméktípus', 'mg_product_type', 'product_type' ],
+                                        'Szín' => [ 'Szín', 'mg_color', 'color' ],
+                                        'Méret' => [ 'Méret', 'mg_size', 'size' ],
+                                ];
+                                $meta_label_values = [];
+
+                                foreach ( $meta_value_map as $label => $keys ) {
+                                        foreach ( $keys as $meta_key ) {
+                                                $meta_value = $_product->get_meta( $meta_key, true );
+                                                if ( $meta_value ) {
+                                                        $meta_label_values[ $label ] = $meta_value;
+                                                        break;
+                                                }
+                                        }
+                                }
+
+                                foreach ( WC()->cart->get_item_data( $cart_item ) as $item_data_entry ) {
+                                        $display_value = $item_data_entry['display'] ?? $item_data_entry['value'] ?? '';
+                                        $entry_label = $item_data_entry['name'] ?? $item_data_entry['key'] ?? '';
+
+                                        if ( $display_value ) {
+                                                if ( $entry_label && array_key_exists( $entry_label, $meta_label_values ) ) {
+                                                        $meta_label_values[ $entry_label ] = $display_value;
+                                                } else {
+                                                        $meta_parts[] = wc_clean( wp_strip_all_tags( $display_value ) );
+                                                }
+                                        }
+                                }
+
+                                foreach ( $meta_label_values as $label => $value ) {
+                                        if ( $value ) {
+                                                $meta_parts[] = wc_clean( sprintf( '%s: %s', $label, $value ) );
+                                        }
                                 }
 
                                 if ( $meta_parts ) :
