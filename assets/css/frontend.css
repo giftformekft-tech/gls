@@ -868,3 +868,9 @@ gls-dpm-widget.mygls-inline-widget {
         font-size: 12px !important;
     }
 }
+
+/* Hide COD surcharge and shipping summary blocks on cart page */
+.woocommerce-cart .wc-block-components-totals-fees__utanvet,
+.woocommerce-cart .wp-block-woocommerce-cart-order-summary-shipping-block {
+    display: none !important;
+}
