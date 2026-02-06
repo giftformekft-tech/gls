@@ -119,6 +119,10 @@
         $(document.body).on('change', 'input[name="payment_method"]', function() {
             scheduleCheckoutRefresh();
         });
+
+        $(document.body).on('payment_method_selected', function() {
+            scheduleCheckoutRefresh();
+        });
     }
 
     function syncHiddenClone($field) {
