@@ -53,7 +53,7 @@ defined( 'ABSPATH' ) || exit;
                                         'Szín' => [ 'Szín', 'mg_color', 'color' ],
                                         'Méret' => [ 'Méret', 'mg_size', 'size' ],
                                 ];
-                                $meta_label_values = [];
+                                $meta_label_values = array_fill_keys( array_keys( $meta_value_map ), '' );
 
                                 foreach ( $meta_value_map as $label => $keys ) {
                                         foreach ( $keys as $meta_key ) {
