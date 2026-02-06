@@ -37,8 +37,11 @@ class PaymentFee {
         }
 
         $payment_method = WC()->session ? WC()->session->get('chosen_payment_method') : null;
-        if (!$payment_method && isset($_POST['payment_method'])) {
+        if (isset($_POST['payment_method'])) {
             $payment_method = sanitize_text_field(wp_unslash($_POST['payment_method']));
+            if (WC()->session) {
+                WC()->session->set('chosen_payment_method', $payment_method);
+            }
         }
         if ($payment_method !== 'cod') {
             return;
