@@ -115,6 +115,16 @@
         }, 180);
     }
 
+    function bindPaymentMethodRefresh() {
+        $(document.body).on('change', 'input[name="payment_method"]', function() {
+            scheduleCheckoutRefresh();
+        });
+
+        $(document.body).on('payment_method_selected', function() {
+            scheduleCheckoutRefresh();
+        });
+    }
+
     function syncHiddenClone($field) {
         if (!$field.length) {
             return;
@@ -617,6 +627,7 @@
         movePrivacyCheckboxBeforeOrderButton();
         scheduleMobileOrderSummaryMove();
         bindMobileCartPopup();
+        bindPaymentMethodRefresh();
 
         // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();
