@@ -57,7 +57,20 @@ defined( 'ABSPATH' ) || exit;
 
                                 foreach ( $meta_value_map as $label => $keys ) {
                                         foreach ( $keys as $meta_key ) {
-                                                $meta_value = $_product->get_meta( $meta_key, true );
+                                                $meta_value = '';
+
+                                                if ( isset( $cart_item[ $meta_key ] ) ) {
+                                                        $meta_value = $cart_item[ $meta_key ];
+                                                }
+
+                                                if ( ! $meta_value && isset( $cart_item['data'] ) && is_callable( [ $cart_item['data'], 'get_meta' ] ) ) {
+                                                        $meta_value = $cart_item['data']->get_meta( $meta_key, true );
+                                                }
+
+                                                if ( ! $meta_value ) {
+                                                        $meta_value = $_product->get_meta( $meta_key, true );
+                                                }
+
                                                 if ( $meta_value ) {
                                                         $meta_label_values[ $label ] = $meta_value;
                                                         break;

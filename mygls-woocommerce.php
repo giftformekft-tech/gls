@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/giftformekft-tech/gls
  * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
- * Version: 1.1.39
+ * Version: 1.1.40
  * Author: GiftForMe Kft
  * Author URI: https://giftforme.hu
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.1.39');
+define('MYGLS_VERSION', '1.1.40');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
