@@ -253,7 +253,7 @@ class Controller {
                 return ob_get_clean();
 
             case 'shipping_method':
-                if (!WC()->cart || !WC()->cart->needs_shipping() || !WC()->cart->show_shipping()) {
+                if (!WC()->cart || !WC()->cart->needs_shipping()) {
                     return '';
                 }
 
