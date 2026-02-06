@@ -115,6 +115,27 @@
         }, 180);
     }
 
+    function bindPaymentMethodRefresh() {
+        $(document.body).on('change', 'input[name="payment_method"]', function() {
+            cancelScheduledCheckoutRefresh();
+            requestCheckoutRefresh();
+        });
+
+        $(document.body).on('payment_method_selected', function() {
+            cancelScheduledCheckoutRefresh();
+            requestCheckoutRefresh();
+        });
+
+        $(document.body).on('click', '.woocommerce-checkout-payment .wc_payment_methods label', function() {
+            var $input = $(this).closest('li').find('input[name="payment_method"]');
+            if ($input.length && !$input.prop('checked')) {
+                $input.prop('checked', true).trigger('change');
+            } else {
+                scheduleCheckoutRefresh();
+            }
+        });
+    }
+
     function syncHiddenClone($field) {
         if (!$field.length) {
             return;
@@ -617,6 +638,7 @@
         movePrivacyCheckboxBeforeOrderButton();
         scheduleMobileOrderSummaryMove();
         bindMobileCartPopup();
+        bindPaymentMethodRefresh();
 
         // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();

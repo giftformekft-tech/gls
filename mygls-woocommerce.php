@@ -3,7 +3,7 @@
  * Plugin Name: MyGLS WooCommerce Integration
  * Plugin URI: https://github.com/giftformekft-tech/gls
  * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
- * Version: 1.1.37
+ * Version: 1.1.38
  * Author: GiftForMe Kft
  * Author URI: https://giftforme.hu
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('MYGLS_VERSION', '1.1.37');
+define('MYGLS_VERSION', '1.1.38');
 define('MYGLS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MYGLS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('MYGLS_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -108,6 +108,11 @@ function mygls_init() {
     if (class_exists('MyGLS\\Checkout\\Controller')) {
         MyGLS\Checkout\Controller::get_instance();
     }
+
+    // Initialize Payment Surcharge handler
+    if (class_exists('MyGLS\\Checkout\\PaymentFee')) {
+        new MyGLS\Checkout\PaymentFee();
+    }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
 add_action('woocommerce_loaded', 'mygls_init');
@@ -179,7 +184,11 @@ function mygls_activate() {
             'map_display_mode' => 'modal',
             'map_button_style' => 'primary',
             'map_position' => 'after_shipping',
-            'enable_custom_checkout' => '1'
+            'enable_custom_checkout' => '1',
+            'cod_fee_enabled' => '0',
+            'cod_fee_amount' => '0',
+            'cod_fee_label' => __('Cash on Delivery fee', 'mygls-woocommerce'),
+            'cod_fee_taxable' => '0'
         ));
     }
 }
