@@ -108,6 +108,11 @@ function mygls_init() {
     if (class_exists('MyGLS\\Checkout\\Controller')) {
         MyGLS\Checkout\Controller::get_instance();
     }
+
+    // Initialize Payment Surcharge handler
+    if (class_exists('MyGLS\\Checkout\\PaymentFee')) {
+        new MyGLS\Checkout\PaymentFee();
+    }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
 add_action('woocommerce_loaded', 'mygls_init');
@@ -179,7 +184,11 @@ function mygls_activate() {
             'map_display_mode' => 'modal',
             'map_button_style' => 'primary',
             'map_position' => 'after_shipping',
-            'enable_custom_checkout' => '1'
+            'enable_custom_checkout' => '1',
+            'cod_fee_enabled' => '0',
+            'cod_fee_amount' => '0',
+            'cod_fee_label' => __('Cash on Delivery fee', 'mygls-woocommerce'),
+            'cod_fee_taxable' => '0'
         ));
     }
 }
