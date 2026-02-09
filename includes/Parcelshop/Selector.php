@@ -23,6 +23,9 @@ class Selector {
         // Shortcode for manual placement
         add_shortcode('mygls_parcelshop_selector', [$this, 'parcelshop_selector_shortcode']);
 
+        // Validate parcelshop selection
+        add_action('woocommerce_checkout_process', [$this, 'validate_parcelshop_selection']);
+
         // Save parcelshop selection
         add_action('woocommerce_checkout_update_order_meta', [$this, 'save_parcelshop_selection']);
 
@@ -164,6 +167,62 @@ class Selector {
     }
     
     /**
+     * Validate that a parcelshop is selected when parcelshop shipping method is chosen
+     */
+    public function validate_parcelshop_selection() {
+        // Safety check: Ensure WooCommerce is available
+        if (!function_exists('WC') || !WC()->session) {
+            return;
+        }
+
+        // Get plugin settings
+        $settings = get_option('mygls_settings', []);
+        $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+
+        if (empty($enabled_methods)) {
+            return;
+        }
+
+        // Get chosen shipping methods
+        $chosen_methods = WC()->session->get('chosen_shipping_methods', []);
+
+        if (empty($chosen_methods)) {
+            return;
+        }
+
+        // Check if any chosen method requires parcelshop selection
+        $requires_parcelshop = false;
+        foreach ($chosen_methods as $chosen_method) {
+            // Direct match
+            if (in_array($chosen_method, $enabled_methods)) {
+                $requires_parcelshop = true;
+                break;
+            }
+            
+            // Partial match (e.g., "mygls_shipping:1" matches "mygls_shipping")
+            foreach ($enabled_methods as $enabled_method) {
+                if (strpos($chosen_method, $enabled_method) === 0) {
+                    $requires_parcelshop = true;
+                    break 2;
+                }
+            }
+        }
+
+        // If parcelshop is required, check if one is selected
+        if ($requires_parcelshop) {
+            $parcelshop_id = isset($_POST['mygls_parcelshop_id']) ? sanitize_text_field($_POST['mygls_parcelshop_id']) : '';
+            
+            if (empty($parcelshop_id)) {
+                wc_add_notice(
+                    __('Kérjük, válasszon egy GLS csomagpontot a szállításhoz.', 'mygls-woocommerce'),
+                    'error'
+                );
+            }
+        }
+    }
+    
+    
+    /**
      * Save parcelshop selection to order
      */
     public function save_parcelshop_selection($order_id) {
@@ -174,15 +233,40 @@ class Selector {
             update_post_meta($order_id, '_mygls_parcelshop_id', $parcelshop_id);
             update_post_meta($order_id, '_mygls_parcelshop_data', $parcelshop_data);
             
-            // Add order note
+            // Get order object
             $order = wc_get_order($order_id);
-            $order->add_order_note(
-                sprintf(
-                    __('GLS Csomagpont kiválasztva: %s - %s', 'mygls-woocommerce'),
-                    $parcelshop_data['name'] ?? '',
-                    $parcelshop_data['address'] ?? ''
-                )
-            );
+            
+            if ($order && !empty($parcelshop_data)) {
+                // Save original shipping address before overwriting
+                update_post_meta($order_id, '_mygls_original_shipping_address_1', $order->get_shipping_address_1());
+                update_post_meta($order_id, '_mygls_original_shipping_address_2', $order->get_shipping_address_2());
+                update_post_meta($order_id, '_mygls_original_shipping_city', $order->get_shipping_city());
+                update_post_meta($order_id, '_mygls_original_shipping_postcode', $order->get_shipping_postcode());
+                update_post_meta($order_id, '_mygls_original_shipping_company', $order->get_shipping_company());
+                
+                // Update shipping address with pickup point data
+                $order->set_shipping_company(sprintf('GLS Csomagpont: %s', $parcelshop_data['name'] ?? ''));
+                $order->set_shipping_address_1($parcelshop_data['address'] ?? '');
+                $order->set_shipping_address_2('');
+                $order->set_shipping_city($parcelshop_data['city'] ?? '');
+                $order->set_shipping_postcode($parcelshop_data['zip'] ?? '');
+                
+                // Keep country as is or set from settings
+                $settings = get_option('mygls_settings', []);
+                $country = strtoupper($settings['country'] ?? 'HU');
+                $order->set_shipping_country($country);
+                
+                $order->save();
+                
+                // Add order note
+                $order->add_order_note(
+                    sprintf(
+                        __('GLS Csomagpont kiválasztva: %s - %s', 'mygls-woocommerce'),
+                        $parcelshop_data['name'] ?? '',
+                        $parcelshop_data['address'] ?? ''
+                    )
+                );
+            }
         }
     }
     
