@@ -91,6 +91,11 @@ class Settings {
             ? array_map('sanitize_text_field', $input['parcelshop_enabled_methods'])
             : [];
 
+        // Shipping Methods - Hide if free
+        $sanitized['hide_if_free_methods'] = isset($input['hide_if_free_methods']) && is_array($input['hide_if_free_methods'])
+            ? array_map('sanitize_text_field', $input['hide_if_free_methods'])
+            : [];
+
         // Shipping Method Logos
         $sanitized['shipping_method_logos'] = [];
         if (isset($input['shipping_method_logos']) && is_array($input['shipping_method_logos'])) {
@@ -584,6 +589,7 @@ class Settings {
                                 // Get all available shipping methods
                                 $shipping_zones = \WC_Shipping_Zones::get_zones();
                                 $enabled_methods = $settings['parcelshop_enabled_methods'] ?? [];
+                                $hide_if_free_methods = $settings['hide_if_free_methods'] ?? [];
                                 $method_logos = $settings['shipping_method_logos'] ?? [];
 
                                 foreach ($shipping_zones as $zone) {
@@ -593,7 +599,7 @@ class Settings {
                                     if (!empty($shipping_methods)) {
                                         ?>
                                         <tr>
-                                            <td colspan="3">
+                                            <td colspan="4">
                                                 <h4 style="margin-top: 10px; margin-bottom: 5px;"><?php echo esc_html($zone['zone_name']); ?></h4>
                                             </td>
                                         </tr>
@@ -617,7 +623,17 @@ class Settings {
                                                     </label>
                                                     <p class="description"><?php _e('Enable parcelshop selector', 'mygls-woocommerce'); ?></p>
                                                 </td>
-                                                <td style="width: 60%;">
+                                                <td style="width: 15%;">
+                                                    <label class="mygls-toggle">
+                                                        <input type="checkbox"
+                                                               name="mygls_settings[hide_if_free_methods][]"
+                                                               value="<?php echo esc_attr($method_id); ?>"
+                                                               <?php checked(in_array($method_id, $hide_if_free_methods), true); ?>>
+                                                        <span class="mygls-toggle-slider"></span>
+                                                    </label>
+                                                    <p class="description"><?php _e('Hide if free shipping is available', 'mygls-woocommerce'); ?></p>
+                                                </td>
+                                                <td style="width: 45%;">
                                                     <input type="url"
                                                            name="mygls_settings[shipping_method_logos][<?php echo esc_attr($method_id); ?>]"
                                                            value="<?php echo esc_attr($logo_url); ?>"

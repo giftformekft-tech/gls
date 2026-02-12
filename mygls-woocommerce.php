@@ -146,21 +146,16 @@ function mygls_hide_shipping_methods($rates, $package) {
 
     // If free shipping is available, check if any methods should be hidden
     if ($free_shipping_available) {
+        $settings = mygls_get_settings();
+        $hide_if_free_methods = $settings['hide_if_free_methods'] ?? [];
+
         foreach ($rates as $rate_id => $rate) {
             // Check if it's our method AND it is a paid method
             if (strpos($rate_id, 'mygls') !== false && $rate->cost > 0) {
-                // Get the instance ID from the rate ID (format: method_id:instance_id)
-                $parts = explode(':', $rate_id);
-                if (count($parts) >= 2) {
-                    $instance_id = $parts[1];
-                    
-                    // Get the method settings
-                    $option_key = 'woocommerce_mygls_' . $instance_id . '_settings';
-                    $settings = get_option($option_key);
-                    
-                    if ($settings && isset($settings['hide_if_free']) && $settings['hide_if_free'] === 'yes') {
-                        unset($rates[$rate_id]);
-                    }
+                // Check if this method is configured to be hidden
+                // Rate ID format matches the value saved in settings (method_id:instance_id)
+                if (in_array($rate_id, $hide_if_free_methods)) {
+                    unset($rates[$rate_id]);
                 }
             }
         }
