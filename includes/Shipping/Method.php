@@ -75,6 +75,13 @@ class Method extends \WC_Shipping_Method {
                 'default' => '',
                 'desc_tip' => true
             ],
+            'hide_if_free' => [
+                'title' => __('Hide if free', 'mygls-woocommerce'),
+                'type' => 'checkbox',
+                'label' => __('Hide this method if free shipping is available', 'mygls-woocommerce'),
+                'default' => 'no',
+                'desc_tip' => true
+            ],
             'tax_status' => [
                 'title' => __('Tax Status', 'mygls-woocommerce'),
                 'type' => 'select',

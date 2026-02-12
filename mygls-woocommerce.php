@@ -128,6 +128,49 @@ function mygls_register_shipping_method($methods) {
 add_filter('woocommerce_shipping_methods', 'mygls_register_shipping_method');
 
 /**
+ * Hide shipping methods if free shipping is available
+ */
+function mygls_hide_shipping_methods($rates, $package) {
+    if (is_admin() && !defined('DOING_AJAX')) {
+        return $rates;
+    }
+
+    // Check if free shipping is available
+    $free_shipping_available = false;
+    foreach ($rates as $rate_id => $rate) {
+        if ($rate->cost == 0) {
+            $free_shipping_available = true;
+            break;
+        }
+    }
+
+    // If free shipping is available, check if any methods should be hidden
+    if ($free_shipping_available) {
+        foreach ($rates as $rate_id => $rate) {
+            // Check if it's our method AND it is a paid method
+            if (strpos($rate_id, 'mygls') !== false && $rate->cost > 0) {
+                // Get the instance ID from the rate ID (format: method_id:instance_id)
+                $parts = explode(':', $rate_id);
+                if (count($parts) >= 2) {
+                    $instance_id = $parts[1];
+                    
+                    // Get the method settings
+                    $option_key = 'woocommerce_mygls_' . $instance_id . '_settings';
+                    $settings = get_option($option_key);
+                    
+                    if ($settings && isset($settings['hide_if_free']) && $settings['hide_if_free'] === 'yes') {
+                        unset($rates[$rate_id]);
+                    }
+                }
+            }
+        }
+    }
+
+    return $rates;
+}
+add_filter('woocommerce_package_rates', 'mygls_hide_shipping_methods', 100, 2);
+
+/**
  * Get API Client instance
  */
 function mygls_get_api_client() {
