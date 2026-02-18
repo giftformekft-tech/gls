@@ -179,6 +179,21 @@ add_filter('woocommerce_cart_ready_to_calc_shipping', function($show_shipping) {
 });
 
 /**
+ * Zero out shipping totals on cart page when cart shipping is disabled.
+ * This ensures Google tracking (gtag) and other scripts see the correct
+ * cart value without shipping cost included.
+ */
+add_action('woocommerce_after_calculate_totals', function($cart) {
+    if (is_cart() && !is_checkout()) {
+        $settings = mygls_get_settings();
+        if (!empty($settings['disable_cart_shipping'])) {
+            $cart->set_shipping_total(0);
+            $cart->set_shipping_tax(0);
+        }
+    }
+});
+
+/**
  * Get API Client instance
  */
 function mygls_get_api_client() {
