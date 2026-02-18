@@ -180,15 +180,26 @@ add_filter('woocommerce_cart_ready_to_calc_shipping', function($show_shipping) {
 
 /**
  * Zero out shipping totals on cart page when cart shipping is disabled.
+ * Uses template_redirect because is_cart() is not available during
+ * woocommerce_after_calculate_totals (fires at wp_loaded before main query).
  * This ensures Google tracking (gtag) and other scripts see the correct
  * cart value without shipping cost included.
  */
-add_action('woocommerce_after_calculate_totals', function($cart) {
+add_action('template_redirect', function() {
     if (is_cart() && !is_checkout()) {
         $settings = mygls_get_settings();
         if (!empty($settings['disable_cart_shipping'])) {
-            $cart->set_shipping_total(0);
-            $cart->set_shipping_tax(0);
+            $cart = WC()->cart;
+            if ($cart) {
+                $shipping_total = floatval($cart->get_shipping_total());
+                $shipping_tax = floatval($cart->get_shipping_tax());
+                $cart->set_shipping_total(0);
+                $cart->set_shipping_tax(0);
+                // Recalculate total without shipping
+                $current_total = floatval($cart->get_total('edit'));
+                $new_total = max(0, $current_total - $shipping_total - $shipping_tax);
+                $cart->set_total($new_total);
+            }
         }
     }
 });
