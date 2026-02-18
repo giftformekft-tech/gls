@@ -113,7 +113,8 @@ class Settings {
             $sanitized['shipping_logo_size'] = 100;
         }
 
-        // Custom Checkout Settings
+        // Custom Checkout & Cart Settings
+        $sanitized['disable_cart_shipping'] = isset($input['disable_cart_shipping']) ? '1' : '0';
         $sanitized['enable_custom_checkout'] = isset($input['enable_custom_checkout']) ? '1' : '0';
         if (isset($input['checkout_field_order']) && is_array($input['checkout_field_order'])) {
             $order = array_map('sanitize_text_field', $input['checkout_field_order']);
@@ -366,13 +367,25 @@ class Settings {
                         </div>
                     </div>
 
-                    <!-- Custom Checkout Settings -->
+                    <!-- Custom Checkout & Cart Settings -->
                     <div class="mygls-card">
                         <div class="mygls-card-header">
-                            <h2><span class="dashicons dashicons-cart"></span> <?php _e('Custom Checkout Settings', 'mygls-woocommerce'); ?></h2>
+                            <h2><span class="dashicons dashicons-cart"></span> <?php _e('Checkout & Cart Settings', 'mygls-woocommerce'); ?></h2>
                         </div>
                         <div class="mygls-card-body">
                             <table class="form-table">
+                                <tr>
+                                    <th scope="row">
+                                        <label for="disable_cart_shipping"><?php _e('Disable Cart Shipping Metrics', 'mygls-woocommerce'); ?></label>
+                                    </th>
+                                    <td>
+                                        <label class="mygls-toggle">
+                                            <input type="checkbox" name="mygls_settings[disable_cart_shipping]" id="disable_cart_shipping" value="1" <?php checked($settings['disable_cart_shipping'] ?? '0', '1'); ?>>
+                                            <span class="mygls-toggle-slider"></span>
+                                        </label>
+                                        <p class="description"><?php _e('Hide shipping costs and calculator on the cart page. Shipping will only be calculated at checkout.', 'mygls-woocommerce'); ?></p>
+                                    </td>
+                                </tr>
                                 <tr>
                                     <th scope="row">
                                         <label for="enable_custom_checkout"><?php _e('Enable GLS Custom Checkout', 'mygls-woocommerce'); ?></label>

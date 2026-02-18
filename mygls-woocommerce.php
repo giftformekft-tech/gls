@@ -166,6 +166,19 @@ function mygls_hide_shipping_methods($rates, $package) {
 add_filter('woocommerce_package_rates', 'mygls_hide_shipping_methods', 100, 2);
 
 /**
+ * Disable shipping calculation on cart page if enabled in settings
+ */
+add_filter('woocommerce_cart_ready_to_calc_shipping', function($show_shipping) {
+    if (is_cart()) {
+        $settings = mygls_get_settings();
+        if (!empty($settings['disable_cart_shipping'])) {
+            return false;
+        }
+    }
+    return $show_shipping;
+});
+
+/**
  * Get API Client instance
  */
 function mygls_get_api_client() {
