@@ -179,6 +179,16 @@ function mygls_hide_shipping_methods($rates, $package) {
 add_filter('woocommerce_package_rates', 'mygls_hide_shipping_methods', 100, 2);
 
 /**
+ * Add "Free" text to shipping methods with 0 cost
+ */
+add_filter('woocommerce_cart_shipping_method_full_label', function($label, $method) {
+    if ($method->cost == 0) {
+        $label .= ': <span class="woocommerce-Price-amount amount">' . __('Ingyenes', 'mygls-woocommerce') . '</span>';
+    }
+    return $label;
+}, 10, 2);
+
+/**
  * Disable shipping calculation on cart page if enabled in settings
  */
 add_filter('woocommerce_cart_ready_to_calc_shipping', function($show_shipping) {
