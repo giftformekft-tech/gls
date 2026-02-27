@@ -491,47 +491,45 @@ class OrderMetaBox {
                     wp_send_json_error(['message' => __('Missing label data from Express One API', 'mygls-woocommerce')]);
                 }
 
-            } else {
                 $api = mygls_get_api_client();
-            $parcel = $api->buildParcelFromOrder($order_id);
-            
-            if (!$parcel) {
-                wp_send_json_error(['message' => __('Failed to build parcel data', 'mygls-woocommerce')]);
-            }
-            
-            $settings = mygls_get_settings();
-            $printer_type = $settings['printer_type'] ?? 'A4_2x2';
-            
-            $result = $api->printLabels([$parcel], $printer_type);
-            
-            if (isset($result['error'])) {
-                wp_send_json_error(['message' => $result['error']]);
-            }
-            
-            if (!empty($result['PrintLabelsErrorList'])) {
-                $error = $result['PrintLabelsErrorList'][0];
-                wp_send_json_error(['message' => $error['ErrorDescription'] ?? 'Unknown error']);
-            }
-            
-            if (empty($result['PrintLabelsInfoList']) || empty($result['Labels'])) {
-                wp_send_json_error(['message' => __('No label data received', 'mygls-woocommerce')]);
-            }
-            
-            $label_info = $result['PrintLabelsInfoList'][0];
+                $parcel = $api->buildParcelFromOrder($order_id);
+                
+                if (!$parcel) {
+                    wp_send_json_error(['message' => __('Failed to build parcel data', 'mygls-woocommerce')]);
+                }
+                
+                $settings = mygls_get_settings();
+                $printer_type = $settings['printer_type'] ?? 'A4_2x2';
+                
+                $result = $api->printLabels([$parcel], $printer_type);
+                
+                if (isset($result['error'])) {
+                    wp_send_json_error(['message' => $result['error']]);
+                }
+                
+                if (!empty($result['PrintLabelsErrorList'])) {
+                    $error = $result['PrintLabelsErrorList'][0];
+                    wp_send_json_error(['message' => $error['ErrorDescription'] ?? 'Unknown error']);
+                }
+                
+                if (empty($result['PrintLabelsInfoList']) || empty($result['Labels'])) {
+                    wp_send_json_error(['message' => __('No label data received', 'mygls-woocommerce')]);
+                }
+                
+                $label_info = $result['PrintLabelsInfoList'][0];
+                $parcel_number = $label_info['ParcelNumber'] ?? '';
+                $parcel_id = $label_info['ParcelId'] ?? 0;
 
-            // Convert byte array to PDF binary
-            // GLS API returns Labels as byte array in JSON format
-            $label_bytes = $result['Labels'];
-            if (is_array($label_bytes)) {
-                // Convert byte array to binary PDF: array_map('chr', ...) converts each byte to character
-                $label_pdf_binary = implode('', array_map('chr', $label_bytes));
-            } else {
-                // If already a string (shouldn't happen with JSON API), use as-is
-                $label_pdf_binary = $label_bytes;
-            }
+                // Convert byte array to PDF binary
+                $label_bytes = $result['Labels'];
+                if (is_array($label_bytes)) {
+                    $label_pdf_binary = implode('', array_map('chr', $label_bytes));
+                } else {
+                    $label_pdf_binary = $label_bytes;
+                }
 
-            $label_base64 = base64_encode($label_pdf_binary);
-            } // end if GLS
+                $label_base64 = base64_encode($label_pdf_binary);
+            } // end if carrier
             
             // Save to database
             global $wpdb;
