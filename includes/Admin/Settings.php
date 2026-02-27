@@ -50,6 +50,17 @@ class Settings {
         register_setting('mygls_settings_group', 'mygls_settings', [
             'sanitize_callback' => [$this, 'sanitize_settings']
         ]);
+        register_setting('mygls_settings_group', 'expressone_settings', [
+            'sanitize_callback' => [$this, 'sanitize_expressone_settings']
+        ]);
+    }
+
+    public function sanitize_expressone_settings($input) {
+        $sanitized = [];
+        $sanitized['company_id'] = sanitize_text_field($input['company_id'] ?? '');
+        $sanitized['user_name'] = sanitize_text_field($input['user_name'] ?? '');
+        $sanitized['password'] = sanitize_text_field($input['password'] ?? '');
+        return $sanitized;
     }
     
     public function sanitize_settings($input) {
@@ -136,17 +147,27 @@ class Settings {
     
     public function render_settings_page() {
         $settings = get_option('mygls_settings', []);
+        $eo_settings = get_option('expressone_settings', []);
         ?>
         <div class="wrap mygls-settings-wrap">
             <h1>
                 <span class="dashicons dashicons-location-alt"></span>
-                <?php _e('MyGLS Settings', 'mygls-woocommerce'); ?>
+                <?php _e('GLS & Express One Beállítások', 'mygls-woocommerce'); ?>
             </h1>
             
             <div class="mygls-settings-container">
                 <form method="post" action="options.php" class="mygls-settings-form">
                     <?php settings_fields('mygls_settings_group'); ?>
                     
+                    <h2 class="nav-tab-wrapper mygls-tabs" style="margin-bottom: 20px;">
+                        <a href="#tab-general" class="nav-tab nav-tab-active" data-tab="#tab-general"><?php _e('Általános Beállítások', 'mygls-woocommerce'); ?></a>
+                        <a href="#tab-gls" class="nav-tab" data-tab="#tab-gls"><?php _e('GLS Integráció', 'mygls-woocommerce'); ?></a>
+                        <a href="#tab-expressone" class="nav-tab" data-tab="#tab-expressone"><?php _e('Express One Integráció', 'mygls-woocommerce'); ?></a>
+                    </h2>
+
+                    <!-- GLS TAB START -->
+                    <div id="tab-gls" class="mygls-tab-content" style="display:none;">
+
                     <!-- API Settings Tab -->
                     <div class="mygls-card">
                         <div class="mygls-card-header">
@@ -366,6 +387,10 @@ class Settings {
                             </table>
                         </div>
                     </div>
+                    </div> <!-- GLS TAB END -->
+
+                    <!-- GENERAL TAB START -->
+                    <div id="tab-general" class="mygls-tab-content" style="display:block;">
 
                     <!-- Custom Checkout & Cart Settings -->
                     <div class="mygls-card">
@@ -507,6 +532,62 @@ class Settings {
                             </table>
                         </div>
                     </div>
+                    </div> <!-- GENERAL TAB END -->
+
+                    <script>
+                    jQuery(document).ready(function($) {
+                        $('.mygls-tabs .nav-tab').on('click', function(e) {
+                            e.preventDefault();
+                            $('.mygls-tabs .nav-tab').removeClass('nav-tab-active');
+                            $(this).addClass('nav-tab-active');
+                            $('.mygls-tab-content').hide();
+                            $($(this).data('tab')).show();
+                            localStorage.setItem('mygls_active_tab', $(this).data('tab'));
+                        });
+                        
+                        var activeTab = localStorage.getItem('mygls_active_tab');
+                        if (activeTab && $(activeTab).length) {
+                            $('.mygls-tabs .nav-tab[data-tab="' + activeTab + '"]').click();
+                        }
+                    });
+                    </script>
+
+                    <!-- EXPRESS ONE TAB START -->
+                    <div id="tab-expressone" class="mygls-tab-content" style="display:none;">
+                        <div class="mygls-card">
+                            <div class="mygls-card-header">
+                                <h2><span class="dashicons dashicons-admin-network"></span> <?php _e('Express One API Kapcsolat', 'mygls-woocommerce'); ?></h2>
+                            </div>
+                            <div class="mygls-card-body">
+                                <table class="form-table">
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="eo_company_id"><?php _e('Company ID', 'mygls-woocommerce'); ?></label>
+                                        </th>
+                                        <td>
+                                            <input type="text" name="expressone_settings[company_id]" id="eo_company_id" value="<?php echo esc_attr($eo_settings['company_id'] ?? ''); ?>" class="regular-text">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="eo_user_name"><?php _e('Felhasználónév', 'mygls-woocommerce'); ?></label>
+                                        </th>
+                                        <td>
+                                            <input type="text" name="expressone_settings[user_name]" id="eo_user_name" value="<?php echo esc_attr($eo_settings['user_name'] ?? ''); ?>" class="regular-text">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="eo_password"><?php _e('Jelszó', 'mygls-woocommerce'); ?></label>
+                                        </th>
+                                        <td>
+                                            <input type="password" name="expressone_settings[password]" id="eo_password" value="<?php echo esc_attr($eo_settings['password'] ?? ''); ?>" class="regular-text">
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div> <!-- EXPRESS ONE TAB END -->
 
                     <!-- Shipping Methods - Parcelshop Selector -->
                     <div class="mygls-card">

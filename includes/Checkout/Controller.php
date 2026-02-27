@@ -313,7 +313,14 @@ class Controller {
                 echo esc_html__('Csomagpont kiválasztása', 'mygls-woocommerce');
                 echo '</h3>';
                 echo '<div class="mygls-section-content">';
-                echo do_shortcode('[mygls_parcelshop_selector]');
+                
+                $selected_method = $this->get_selected_parcelshop_method();
+                if ($selected_method && strpos($selected_method, 'expressone') !== false) {
+                    echo do_shortcode('[expressone_parcelshop_selector]');
+                } else {
+                    echo do_shortcode('[mygls_parcelshop_selector]');
+                }
+                
                 echo '</div>';
                 echo '</div>';
                 return ob_get_clean();
@@ -1525,7 +1532,7 @@ class Controller {
         return $normalised_order;
     }
 
-    private function is_parcelshop_delivery_selected(): bool {
+    private function get_selected_parcelshop_method() {
         if (!function_exists('WC') || !WC()->session) {
             return false;
         }
@@ -1548,7 +1555,7 @@ class Controller {
 
         foreach ($chosen_methods as $chosen_method) {
             if ($this->is_parcelshop_method($chosen_method, $enabled_methods)) {
-                return true;
+                return $chosen_method;
             }
         }
 
@@ -1562,12 +1569,16 @@ class Controller {
             $method = reset($available_methods);
             if (is_object($method) && method_exists($method, 'get_id')) {
                 if ($this->is_parcelshop_method($method->get_id(), $enabled_methods)) {
-                    return true;
+                    return $method->get_id();
                 }
             }
         }
 
         return false;
+    }
+
+    private function is_parcelshop_delivery_selected(): bool {
+        return $this->get_selected_parcelshop_method() !== false;
     }
 
     private function is_parcelshop_method(string $method_id, array $enabled_methods): bool {

@@ -21,9 +21,9 @@ class BulkActions {
      * Add bulk actions to orders list
      */
     public function add_bulk_actions($actions) {
-        $actions['mygls_generate_labels'] = __('Generate GLS Labels', 'mygls-woocommerce');
-        $actions['mygls_download_labels'] = __('Download GLS Labels', 'mygls-woocommerce');
-        $actions['mygls_delete_labels'] = __('Delete GLS Labels', 'mygls-woocommerce');
+        $actions['mygls_generate_labels'] = __('Szállítási címkék (GLS/EO) generálása', 'mygls-woocommerce');
+        $actions['mygls_download_labels'] = __('Szállítási címkék letöltése', 'mygls-woocommerce');
+        $actions['mygls_delete_labels'] = __('Szállítási címkék törlése', 'mygls-woocommerce');
         
         return $actions;
     }
@@ -77,7 +77,6 @@ class BulkActions {
         $success = 0;
         $errors = [];
         
-        $api = mygls_get_api_client();
         $settings = mygls_get_settings();
         $printer_type = $settings['printer_type'] ?? 'A4_2x2';
         
@@ -92,54 +91,132 @@ class BulkActions {
                 ));
                 
                 if ($existing > 0) {
-                    $errors[] = sprintf(__('Order #%d already has a label', 'mygls-woocommerce'), $order_id);
+                    $errors[] = sprintf(__('Rendelés #%d már rendelkezik címkével', 'mygls-woocommerce'), $order_id);
                     continue;
                 }
                 
-                $parcel = $api->buildParcelFromOrder($order_id);
+                $order = wc_get_order($order_id);
+                if (!$order) continue;
                 
-                if (!$parcel) {
-                    $errors[] = sprintf(__('Failed to build parcel for order #%d', 'mygls-woocommerce'), $order_id);
-                    continue;
-                }
+                $carrier = $this->get_carrier_for_order($order);
                 
-                $result = $api->printLabels([$parcel], $printer_type);
-                
-                if (isset($result['error']) || !empty($result['PrintLabelsErrorList'])) {
-                    $error_msg = $result['error'] ?? $result['PrintLabelsErrorList'][0]['ErrorDescription'] ?? 'Unknown error';
-                    $errors[] = sprintf(__('Order #%d: %s', 'mygls-woocommerce'), $order_id, $error_msg);
-                    continue;
-                }
-                
-                if (!empty($result['PrintLabelsInfoList'])) {
-                    $label_info = $result['PrintLabelsInfoList'][0];
-
-                    // Convert byte array to PDF binary
-                    $label_bytes = $result['Labels'];
-                    if (is_array($label_bytes)) {
-                        $label_pdf_binary = implode('', array_map('chr', $label_bytes));
-                    } else {
-                        $label_pdf_binary = $label_bytes;
+                if ($carrier === 'expressone') {
+                    if (!function_exists('expressone_get_api_client')) {
+                        function expressone_get_api_client() {
+                            if (!class_exists('ExpressOne\\API\\Client')) { return null; }
+                            return new \ExpressOne\API\Client();
+                        }
                     }
-                    $label_pdf_base64 = base64_encode($label_pdf_binary);
+                    $api = expressone_get_api_client();
+                    if (!$api) {
+                        $errors[] = sprintf(__('Rendelés #%d: Express One API nem elérhető', 'mygls-woocommerce'), $order_id);
+                        continue;
+                    }
+                    
+                    $parcel = $api->buildParcelFromOrder($order_id);
+                    if (!$parcel) {
+                        $errors[] = sprintf(__('Nem sikerült összeállítani az adatokat. Rendelés: #%d', 'mygls-woocommerce'), $order_id);
+                        continue;
+                    }
 
-                    $wpdb->insert(
-                        $wpdb->prefix . 'mygls_labels',
-                        [
-                            'order_id' => $order_id,
-                            'parcel_id' => $label_info['ParcelId'],
-                            'parcel_number' => $label_info['ParcelNumber'],
-                            'tracking_url' => 'https://gls-group.eu/HU/hu/csomagkovetes?match=' . $label_info['ParcelNumber'],
-                            'label_pdf' => $label_pdf_base64,
-                            'status' => 'pending'
-                        ],
-                        ['%d', '%d', '%d', '%s', '%s', '%s']
-                    );
+                    $result = $api->createLabels([$parcel]);
                     
-                    $order = wc_get_order($order_id);
-                    $order->add_order_note(sprintf(__('GLS label generated (bulk): %s', 'mygls-woocommerce'), $label_info['ParcelNumber']));
+                    if (isset($result['error'])) {
+                        $errors[] = sprintf(__('Rendelés #%d: %s', 'mygls-woocommerce'), $order_id, $result['error']);
+                        continue;
+                    }
                     
-                    $success++;
+                    $response = $result['response'] ?? [];
+                    $deliveries = $response['deliveries'] ?? [];
+                    if (!empty($deliveries)) {
+                        $delivery_result = $deliveries[0];
+                        if (($delivery_result['code'] ?? '') === '0') {
+                            $data = $delivery_result['data'] ?? [];
+                            $parcel_numbers = $data['parcel_numbers'] ?? [];
+                            $parcel_number = $parcel_numbers[0] ?? '';
+                            $parcel_id = 0;
+                            
+                            $labels = $response['labels'] ?? ($data['labels'] ?? []);
+                            $label_base64 = '';
+                            if (!empty($labels) && is_array($labels)) {
+                                if (isset($labels[0]['data'])) {
+                                    $label_base64 = $labels[0]['data'];
+                                } elseif (isset($labels['data'])) {
+                                    $label_base64 = $labels['data'];
+                                }
+                            }
+
+                            if (!empty($label_base64) && !empty($parcel_number)) {
+                                $wpdb->insert(
+                                    $wpdb->prefix . 'mygls_labels',
+                                    [
+                                        'order_id' => $order_id,
+                                        'parcel_id' => $parcel_id,
+                                        'parcel_number' => $parcel_number,
+                                        'carrier' => $carrier,
+                                        'tracking_url' => 'https://tracking.expressone.hu/?tracking_id=' . $parcel_number,
+                                        'label_pdf' => $label_base64,
+                                        'status' => 'pending'
+                                    ],
+                                    ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+                                );
+                                
+                                $order->add_order_note(sprintf(__('Express One címke generálva (bulk): %s', 'mygls-woocommerce'), $parcel_number));
+                                $success++;
+                            } else {
+                                $errors[] = sprintf(__('Rendelés #%d: Hiányzó PDF adat', 'mygls-woocommerce'), $order_id);
+                            }
+                        } else {
+                            $errors[] = sprintf(__('Rendelés #%d: %s', 'mygls-woocommerce'), $order_id, $delivery_result['message'] ?? 'Unknown error');
+                        }
+                    } else {
+                        $errors[] = sprintf(__('Rendelés #%d: Üres válasz', 'mygls-woocommerce'), $order_id);
+                    }
+                } else {
+                    $api = mygls_get_api_client();
+                    $parcel = $api->buildParcelFromOrder($order_id);
+                    
+                    if (!$parcel) {
+                        $errors[] = sprintf(__('Failed to build parcel for order #%d', 'mygls-woocommerce'), $order_id);
+                        continue;
+                    }
+                    
+                    $result = $api->printLabels([$parcel], $printer_type);
+                    
+                    if (isset($result['error']) || !empty($result['PrintLabelsErrorList'])) {
+                        $error_msg = $result['error'] ?? ($result['PrintLabelsErrorList'][0]['ErrorDescription'] ?? 'Unknown error');
+                        $errors[] = sprintf(__('Order #%d: %s', 'mygls-woocommerce'), $order_id, $error_msg);
+                        continue;
+                    }
+                    
+                    if (!empty($result['PrintLabelsInfoList'])) {
+                        $label_info = $result['PrintLabelsInfoList'][0];
+
+                        $label_bytes = $result['Labels'];
+                        if (is_array($label_bytes)) {
+                            $label_pdf_binary = implode('', array_map('chr', $label_bytes));
+                        } else {
+                            $label_pdf_binary = $label_bytes;
+                        }
+                        $label_pdf_base64 = base64_encode($label_pdf_binary);
+
+                        $wpdb->insert(
+                            $wpdb->prefix . 'mygls_labels',
+                            [
+                                'order_id' => $order_id,
+                                'parcel_id' => $label_info['ParcelId'],
+                                'parcel_number' => $label_info['ParcelNumber'],
+                                'carrier' => 'gls',
+                                'tracking_url' => 'https://gls-group.eu/HU/hu/csomagkovetes?match=' . $label_info['ParcelNumber'],
+                                'label_pdf' => $label_pdf_base64,
+                                'status' => 'pending'
+                            ],
+                            ['%d', '%d', '%d', '%s', '%s', '%s', '%s']
+                        );
+                        
+                        $order->add_order_note(sprintf(__('GLS label generated (bulk): %s', 'mygls-woocommerce'), $label_info['ParcelNumber']));
+                        $success++;
+                    }
                 }
                 
             } catch (\Exception $e) {
@@ -164,8 +241,7 @@ class BulkActions {
             wp_die(__('No labels found for selected orders', 'mygls-woocommerce'));
         }
         
-        // Create ZIP file
-        $zip_filename = 'gls-labels-' . date('Y-m-d-His') . '.zip';
+        $zip_filename = 'shipping-labels-' . date('Y-m-d-His') . '.zip';
         $zip_path = sys_get_temp_dir() . '/' . $zip_filename;
         
         $zip = new \ZipArchive();
@@ -174,8 +250,9 @@ class BulkActions {
         }
         
         foreach ($labels as $label) {
-            $filename = 'label-' . $label->parcel_number . '.pdf';
-            $zip->addFromString($filename, $label->label_pdf);
+            $carrier_prefix = $label->carrier === 'expressone' ? 'expressone' : 'gls';
+            $filename = 'label-' . $carrier_prefix . '-' . $label->parcel_number . '.pdf';
+            $zip->addFromString($filename, base64_decode($label->label_pdf));
         }
         
         $zip->close();
@@ -199,7 +276,6 @@ class BulkActions {
         $errors = [];
         
         global $wpdb;
-        $api = mygls_get_api_client();
         
         foreach ($order_ids as $order_id) {
             try {
@@ -212,8 +288,19 @@ class BulkActions {
                     continue;
                 }
                 
-                // Delete from GLS
-                $result = $api->deleteLabels([$label->parcel_id]);
+                if ($label->carrier === 'expressone') {
+                    if (!function_exists('expressone_get_api_client')) {
+                        function expressone_get_api_client() {
+                            if (!class_exists('ExpressOne\\API\\Client')) { return null; }
+                            return new \ExpressOne\API\Client();
+                        }
+                    }
+                    $api = expressone_get_api_client();
+                    $result = $api->deleteLabels([$label->parcel_number]);
+                } else {
+                    $api = mygls_get_api_client();
+                    $result = $api->deleteLabels([$label->parcel_id]);
+                }
                 
                 if (isset($result['error'])) {
                     $errors[] = sprintf(__('Order #%d: %s', 'mygls-woocommerce'), $order_id, $result['error']);
@@ -228,7 +315,7 @@ class BulkActions {
                 );
                 
                 $order = wc_get_order($order_id);
-                $order->add_order_note(__('GLS label deleted (bulk)', 'mygls-woocommerce'));
+                $order->add_order_note(sprintf(__('%s címke törölve (bulk)', 'mygls-woocommerce'), strtoupper($label->carrier)));
                 
                 $success++;
                 
@@ -280,7 +367,24 @@ class BulkActions {
                 }
             }
             
+            
             echo '</p></div>';
         }
+    }
+
+    /**
+     * Get carrier based on shipping method
+     */
+    private function get_carrier_for_order($order) {
+        if (!$order) return 'gls';
+        
+        $shipping_methods = $order->get_shipping_methods();
+        foreach ($shipping_methods as $method) {
+            $method_id = $method->get_method_id();
+            if (strpos($method_id, 'expressone') !== false) {
+                return 'expressone';
+            }
+        }
+        return 'gls';
     }
 }

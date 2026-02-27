@@ -1,0 +1,1628 @@
+Hungarian English
+Express One W eb API 2.00
+Express One Online W ebservice ismertetése
+Dokumentum történet
+Dátum Módosították Változások Verzió
+2019-08-16 Kovács Attila Api létrehozás 2.00
+2022-02-19 Kovács Attila 4.14. Átvételi pontok lekérése 2.00
+2022-06-30 Kovács Attila Csomag címke méret változás és címke adatok bővítése 2.01
+2023-02-17 Kovács Attila 4.4.5. Kiválasztott csomagok címkéjének nyomtatása 2.01
+2024-05-29 Kovács Attila Visszatérő paraméterek bővítése 'error_num' mezővel. 2.01
+2024-09-22 Kovács Attila 4.10. pont bővítése 'last_updated' szűrő mezővel. 2.01
+2024-09-30 Kovács Attila 5.1. Utánvét riport 2.01
+Tartalomjegyzék
+1. Bevezető
+1.1. Összefoglaló
+1.2. Dokumentumok
+1.3. W ebAPI bevezetés
+2. Kommunikáció
+3. Autentikáció
+4. Szolgáltatások
+4.0. Ping - kapcsolat tesztelése
+4.1. Csomag feladás és címke nyomtatás
+4.1.1. ConsigData osztály
+4.1.2. PickupData osztály
+4.1.3. ParcelsData osztály
+4.1.4. ServicesData osztály
+4.1.5. LabelData osztály
+4.2. Csomagok módosítás és címke nyomtatás
+4.3. Csomagok törlése
+4.4. Csomag címke nyomtatás
+4.4.1. Napi csomagok összes címkéjének nyomtatása
+4.4.2. Csomag címkéjének nyomtatása
+4.4.3. Küldemény összes címkéjének nyomtatása
+4.4.4. Küldemény összes címkéjének nyomtatása sajátazonosító alapján
+4.4.5. Kiválasztott csomagok címkéjének nyomtatása
+4.5. Gyűjtőlista nyomtatás
+4.6. Csomag adatok lekérése
+4.7. Csomag állapotának lekérése
+4.8. Csomag történet lekérése
+4.9. Routing információ lekérése
+4.10. Összes routing információ lekérése
+4.11. Helységek lekérése
+4.12. Futár kérés
+4.13. Aktuális árufelvételi információ
+4.14. Átvételi pontok lekérése
+5. Riportok
+5.1. Utánvét riport
+1. Bevezető
+1.1. Összefoglaló
+A dokumentum által leírt interface célja, hogy az Express One csomagfeladás beépíthetőlegyen más külső alkalmazásokba. A dokumentum részletesen leírja
+a funkciók használatát és beépítését.
+1.2. Dokumentumok
+Online annyagok: https://webservice.expressone.hu/docs
+Tesztelési lehetőség: https://webservice.expressone.hu/docs/request
+Hiba kódok: https://webservice.expressone.hu/media/errors/error_messages.json
+1.3. W ebAPI bevezetés
+A dokumentum által leírt interface célja, hogy az Express One csomagfeladás beépíthetőlegyen más külső alkalmazásokba. A dokumentum részletesen leírja
+a funkciók használatát és beépítését.
+Amennyiben élni szeretnének ezzel a lehetőséggel és szívesen fejlesztik le cégüknél az ehhezszükséges módosításokat, nincs más teendőjük, mint:
+1. Kapcsolatfelvétel céljából jelezni igényüket kollégáinknak az it@expressone.hu elérhetőségen
+2. A kapott információk alapján elvégezni a szükséges módosításokat a saját rendszerükben, valamint tesztelni őket a kizárólag teszteléshez megadott
+belépési adatok segítségével
+3. Végül átküldeni a teszthez szükséges információkat informatikus kollégáinknak az it@expressone.hu elérhetőségre, akik egy végső tesztet követően
+visszajelzést és véglegesbelépési adatokat küldenek, és élesítik a kapcsolatot.
+További információért és kérdés esetén forduljon bizalommal +36 1 8 777 440-es telefonoselérhetőségen kollégáinkhoz.
+2. Kommunikáció
+A kommunikáció HTTP  protokollon keresztül történik, UTF-8 kódolással. Egy tranzakciót a kliens egy HTTP  request küldésével indít, melyre a válasz a HTTP
+response-ban megy vissza. A POST -ban küldött adatokat JSON kódolásba várjuk. A válasz adatok kódolása választható JSON vagy XML, ezt a kérés GET
+paraméterében tudjuk állítani. Alapértelmezett érték: JSON. Pl.: /response_format/xml
+URL felépítése: https://HOST/GROUP_NAME/METHOD/OPTIONS
+HOST  - api elérés, ez változhat érdemes állíthatóvá tenni
+GROUP_NAME - ez jelöli mire vonatkozik a kérés (pl. routing információk lekérése esetén "routing", csomagokkal kapcsolatos műveletek esetén "parcel")
+METHOD - művelet jelölése (pl: csomag feladás esetében "create_labels")
+OPTIONS - egyéb beállítások, itt adjuk meg a válasz formátumát
+URL minta:
+https://webservice.expressone.hu/routing/get_routing_info_by_zip_code/response_format/json
+3. Autentikáció
+Minden kérésnek tartalmaznia kell az "auth" adat tömböt, melyben az Express One által megadott belépési adatokat kell elküldeni.
+Auth osztály
+Mező név Típus Megnevezés Leírás
+company_id numeric Cég azonosító Express One adja meg!
+user_name text Felhasználó azonosító Express One adja meg!
+password text Jelszó Express One adja meg!
+JSON minta:
+"auth":{
+"company_id":"****", 
+"user_name":"****",
+"password":"****"
+}
+4. Metódusok
+4.0. Ping - kapcsolat tesztelése
+A funkció fejlesztésnél a kapcsolat tesztelésére használható.
+Kérés URL:
+https://webservice.expressone.hu/ping/get_request/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"message":"őúéáűöüóŐÚÉÁÍí"
+}
+
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+message text Teszt szöveg megadása Megadása kötelező!
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response Visszatérési érték Visszaadja az elküldött kérést
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"auth":{
+"company_id":"xxx",
+"user_name":"xxx",
+"password":"xxx"
+},
+"message":"őúéáűöüóŐÚÉÁÍí"
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<auth>
+<company_id>xxx</company_id>
+<user_name>xxx</user_name>
+<password>xxx</password>
+</auth>
+<message>őúéáűöüóŐÚÉÁÍí</message>
+</response>
+</response>
+4.1. Csomag feladás és címke nyomtatás
+A funkció segítségével létrehozhatunk csomagfeladásokat a kiválasztott szolgáltatások beállításaival.
+Kérés URL:
+https://webservice.expressone.hu/parcel/create_labels/response_format/xml
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+"post_date":"xxxx-xx-xx",
+"consig":{...},
+"pickup":{...},
+"parcels":{...},
+"services":{...},
+"note":"",
+"ref_number":"",
+"invoice_number":""
+}
+],
+"labels":{...}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+Mező név Típus Megnevezés Leírás
+deliveries array Küldemények listája Legalább egy küldemény megadása kötelező!
+post_date date Feladás dátuma Megadása kötelező!
+consig ConsigData Címzett adatok Címzett információk, mindig kötelező megadni, kikvéve ARU szállítási mód esetében!
+pickup PickupData Árufelételi adatok Árufelvételi információk, ARU és AR3 estében használható és kötelező megadni!
+parcels ParcelsData Csomag adatok Csomag információk, megadása kötelező!
+services ServicesData Szolgáltatások Megadása kötelező!
+note text Megjegyzés Megjegyzés a küldeményhez. Max. 255 karakter
+ref_number text Sajátazonosító A feladó sajátazonosítója. Max. 50 karakter
+invoice_number text Számlaszám Küldeményhez tartozó számlaszám. Max. 15 karakter
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response oject Kérés eredménye
+deliveries array Küldemények listája A küldemények feldolgozásának eredményei
+index integer Küldemény sorszáma A beküldött küldemények sorszáma, 0-tól
+code text Hiba kód. Sikeres feldolgozás esetében 0, ellenkező esetben a hiba kódja.
+error_num text Hiba kód. Sikeres feldolgozás esetében 0, ellenkező esetben a hiba kódja.
+message text Hiba üzenet. Sikeres feldolgozás esetében "OK", ellenkező esetben a hiba leírása.
+data object Küldemény adatok A sikeresen létrehozott küldemények adatai
+parcel_numbers array Csomag azonosítók A sikeresen létrehozott küldeményhez tartozó csomagok fuvarszámai.
+labels_data array Címke adatok A címkén szereplő adatok
+ref_number text Sajátazonosító
+parcel_number text Fuvarlevélszám A csomag egyedi fuvarlevélszáma
+sender/name text Feladó Feladó cég megnevezése
+routing/country_code text Ország kód Címzett ország kódja
+routing/depo_code text Depó kód A címkén lévő depó kód
+routing/courier_id text Futár azon. A címkén lévő futár azon.
+delivery_type text Szállítási típus A címkén lévő szállítási típus
+qty integer Darabszám A küldeményhez tartozó összes csomag száma
+current integer Aktuális darab Adott küldeményen belül hanyadik csomag
+cod decimal Utánvét A küldemény utánvét értéke
+consignee/name text Címzett megnevezése Címzett megnevezése
+consignee/contact_name text Kapcsolattartó Kapcsolattartó megnevezése amenyiben a címzett egy cég.
+consignee/city text Város Címzett város
+consignee/street text Utca,házszám Címzett utca és házszám
+consignee/zip_code text Irányítószám Címzett irányítószáma
+consignee/country text Ország kód Címzett ország kódja
+consignee/phone text Telefonszám Címzett telefonszáma
+pickup_point/type text Típus Átvételipont típusa
+pickup_point/name text Megnevezés Átvételipont neve
+pickup_point/zip_code text Irányítószám Átvételipont irányítószáma
+pickup_point/city text Város Átvételipont város
+pickup_point/street text Utca,házszám Átvételipont utca és házszám
+export/type text Típus Nemzetközi szállítás tipusa
+export/barcode_type text Vonalkód típus Vonalkód típus, lehetséges értékek: CODE_128, INT_2_OF_5
+
+
+
+Mező név Típus Megnevezés Leírás
+export/barcode_number text Csomagszám Nemzetközi szállítás csomagszáma (minden esetben az Express One adja meg)
+labels oject Címkék
+type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"deliveries":[
+{
+"index":0,
+"code":"0",
+"error_num":"0",
+"message":"OK",
+"data":{
+"parcel_numbers":["xxxxxxxxxxxxxxxxx"],
+"labels_data":[
+{
+"ref_number":"fdsfdsf",
+"parcel_number":"xxxxxxxxxxxxxxxxx",
+"sender":{
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<deliveries>
+<item>
+<index>0</index>
+<code>0</code>
+<error_num>0</error_num>
+<message>OK</message>
+<data>
+<parcel_numbers>
+<item>xxxxxxxxxxxxxxxxx</item>
+</parcel_numbers>
+<labels_data>
+<item>
+Válasz minta, hibás dátum esetében (JSON):
+{
+"successfull":true,
+"response":{
+"deliveries":[
+{
+"index":0,
+"code":"20002",
+"error_num":"PARCEL_0005",
+"message":"A megadott napra nem lehet szállítást kérni!",
+"data":null
+}
+]
+}
+}
+Válasz minta, hibás dátum esetében (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<deliveries>
+<item>
+<index>0</index>
+<code>20002</code>
+<error_num>P ARCEL_0005</error_num>
+<message>A  megadott napra nem lehet szállítást kérni!</message>
+<data/>
+</item>
+</deliveries>
+
+
+
+</response>
+</response>
+4.1.1. ConsigData osztály
+Címzett információk, mindig kötelező megadni, kikvéve ARU szállítási mód esetében!
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+...
+"consig":{
+"code":"",
+"name":"xxxx",
+"contact_name":"xxxx",
+"city":"xxxx",
+"street":"xxxx",
+"country":"xxxx",
+"post_code":"xxxx",
+"phone":"xxxx"
+},
+...
+ConsigData osztály paraméterek
+Mező név Típus Méret Megnevezés Leírás
+code text 10 karakter Egyedi azon. Címzett egyedi azon. Nem kötelező, amennyiben nem kap értéket, automatikusan
+generálódik
+name text 100 karakter Címzett
+megnevezéseCímzett megnevezése(cég vagy magánszemély neve). Kötelező megadni!
+contact_name text 100 karakter Kapcsolattartó. Kapcsolattartó megnevezése cég esetében. Nem kötelező.
+city text 25 karakter Város Kötelező megadni!
+street text 100 karakter Utca és házszám Kötelező megadni!
+country text 2 karakter Országkód. Kötelező megadni!
+post_code text 6 karakter (HU esetében csak 4
+karakter)Irányítószám. Kötelező megadni!
+phone text 20 karakter Telefonszám Címzett egyedi azon. Nem kötelező.
+4.1.2. PickupData osztály
+Árufelvételi információk, ARU, AR3 és IPU (nemzetközi árufelvétel) estében használható és kötelező megadni!
+- ARU esetében a megadott címről a feladó címére (Express One által beállított cím) történik a küldemény szállítása
+- AR3 esetében a megadott címről a címzett címére (ConsigData osztályba megadott cím) történik a küldemény szállítása
+- IPU esetében a megadott címről a feladó címére (Express One által beállított cím) történik a küldemény szállítása
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+...
+"pickup":{
+"code":"",
+"name":"xxxx",
+"contact_name":"xxxx",
+"city":"xxxx",
+"street":"xxxx",
+"country":"xxxx",
+"post_code":"xxxx",
+"phone":"xxxx"
+},
+...
+PickupData osztály paraméterek
+Mező név Típus Méret Megnevezés Leírás
+code text 10 karakter Egyedi azon. Címzett egyedi azon. Nem kötelező, amennyiben nem kap értéket, automatikusan
+generálódik
+
+Mező név Típus Méret Megnevezés Leírás
+name text 100 karakter Címzett
+megnevezéseCímzett megnevezése(cég vagy magánszemély neve). Kötelező megadni!
+contact_name text 100 karakter Kapcsolattartó. Kapcsolattartó megnevezése cég esetében. Nem kötelező. IPU esetében kötelező
+megadni.
+city text 25 karakter Város Kötelező megadni!
+street text 100 karakter Utca és házszám Kötelező megadni!
+country text 2 karakter Országkód. Kötelező megadni!
+post_code text 6 karakter (HU esetében csak 4
+karakter)Irányítószám. Kötelező megadni!
+phone text 20 karakter Telefonszám Címzett egyedi azon. Nem kötelező. IPU esetében kötelező megadni.
+4.1.3. ParcelsData osztály
+Csomag információk!
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+...
+"parcels":{
+"type":"0",
+"qty":"1",
+"weight":"1",
+"weight_in_gramm":"0.125",
+"parcel_name":"",
+"parcel_numbers":[]
+},
+...
+}
+],
+ParcelsData osztály paraméterek
+Mező név Típus Méret Megnevezés Leírás
+type integer 0 vagy 1 Küldemény típus Küldemény típusa, csomag vagy raklap.Lehetséges értékek:
+0 - csomag
+1 - raklap
+Kötelező megadni!
+qty integer Darabszám A küldeményhez tartozó csomagolási egységek (csomagok vagy raklapok) összes darabszáma. A mező
+értéke csak egész szám lehet.
+Kötelező megadni!
+weight integer Súly A küldeményhez tartozó csomagolási egységek (csomagok vagy raklapok) egyenként mért, majd
+összegzett súlya egész kg-ban megadva. A Express One a feldolgozás során minden csomagolási
+egységet mérlegel, amely során egész kg-ra kerekít.
+Kötelező megadni!
+weight_in_gramm decimal 8,3 Súly, grammba
+megadvaA küldeményhez tartozó csomagolási egységek (csomagok vagy raklapok) egyenként mért, majd
+összegzett súlya grammban megadva. A Express One a feldolgozás során minden csomagolási egységet
+mérlegel, amely során egész kg-ra kerekít.
+Nem kötelező megadni!
+parcel_name text 100 karakter Áruk megnevezése Nem kötelező!
+parcel_numbers list 24 karakteres
+string listaFuvarlevélszámok Nem kötelező. Amennyiben nem szeretnénk, hogy a rendszer automatikusan generálja a
+fuvarlevélszámokat, a megfelelő szabályok szerint felépítet saját fuvarlevélszámokat adhatóak meg. A
+fuvarlevélszámok száma meg kell, hogy egyezen a megadott darabszámal.
+Fuvarlevélszám csak egész számot tartalmazhat, összeállítása:
+235267030556300013607623
+AAAAABBBBBBBCCCCCDDEEEEE
+A - Cégazonosító, 1-5 karakter (  több telephely esetében, mindig az aktuális telephelyazonosító )
+B - Egyedi azonosító 6-12 karakter
+C - Csomag azonosító, többcsomag esetén pl.: 00001,00002, 00003.. 13-17 karakter
+D - Ország kód 18-19 karakter
+E - Irányítószám 20-24 karakter
+Irányítószám meghatározása (E):
+
+- minden magyarosrzági irányítószám el kell egy 0. Pl.: 01222
+- minden nemzetközi irányítószám elé kell egy 0 amelyek 4 karakteres számból állnak
+- minden nemzetközi irányítószámnak csak az első 5 karakterét kell megadni, abban az esetben ha az irányítószám számokból áll
+- minden nemzetközi irányítószámnak amelybe szerepelnek számokon kivül más karakterek is, az értéke a fuvarlevélszámba 00000 lesz
+4.1.4. ServicesData osztály
+Szolgáltatások beállítása.
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+...
+"services":{
+"delivery_type":"24H",
+"eone_shop":"544478",
+"insurance":{
+"enable":"false",
+"parcel_price":""
+},
+"documents_management":{
+"enable":"false",
+"documents":""
+},
+ServicesData osztály paraméterek
+Mező név Típus Méret Megnevezés Leírás
+delivery_type text 3 karakter Szállítási mód Kötelező megadni!
+Lehetséges értékek:
+24H - Standard kézbesítés következőmunkanapon
+12H - Expressz kézbesítés 12 óráig
+N48 - Nagyáruházi beszállítás
+ARU  - Árufelvétel következő munkanapon
+AR3 - Árufelvétel - harmadik fél fizet
+N24 - Nagyáruházi 24H beszállítás
+EXP - Express One Export
+D2S - Kiszállítás tofShop-ba
+EST - Esti kiszállítás
+K24 - Központi nagyáruházi beszállítás
+08H - Expressz kézbesítés 8 óráig
+10H - Expressz kézbesítés 10 óráig
+IPU - Nemzetközi árufelvétel
+eone_shop text 20 karakter Átvételi pont
+azonosítóMegadása kötelező ha a szállítási mód D2S.
+insurance object Biztosítás Osztály paraméterei:
+enable  - Biztosítás beállítás. Értéke: TRUE vagy F ALSE, Alapértelmezetten F ALSE értéket kap.
+parcel_price  - Nettó csomag értéke. Egész szám, kötelező, ha biztosítást kérünk.
+documents_management object Okmánykezelés Osztály paraméterei:
+enable  - Okmánykezelés beállítás. Értéke: TRUE vagy F ALSE, Alapértelmezetten F ALSE
+értéket kap.
+documents  - Okmányok azonosítói. Kötelező, ha okmánykezelést kérünk.
+K24 esetében kötelező megadni.
+time_window object Időkapu megadása Osztály paraméterei:
+start_time  - Időkapu -tól. N24 esetén adható meg. Értéke 7..15 óra lehet.
+end_time  - Időkapu -ig. N24 esetén adható meg. Értéke 9..17 óra lehet.
+K24 esetében kötelező megadni.
+cod object Utánvét beszedés Osztály paraméterei:
+amount  - Utánvét összege, egész szám kivéve EXP  szállítási mód esetén
+itemized bool TRUE vagy
+FALSETételes átadás Értéke: TRUE vagy F ALSE, Alapértelmezetten F ALSE értéket kap.
+K24 esetében kötelező megadni.
+return bool TRUE vagy
+FALSEVisszáru Értéke: TRUE vagy F ALSE, Alapértelmezetten F ALSE értéket kap.
+ekaer text EKARE azonosító
+notification object címzett értesítése Osztály paraméterei:
+sms - Címzett sms értesítés. Értéke a címzett telefonszáma.
+email  - Címzett e-mail értesítés. Értéke a címzett e-mail címe.
+Mező név Típus Méret Megnevezés Leírás
+adr object Veszélyes áru Osztály paraméterei:
+enable  - Veszélyes áru beállítás. Értéke: TRUE vagy F ALSE, Alapértelmezetten F ALSE értéket
+kap.
+scores  - ADR pontérték. Kötelező, ha veszélyes áru kezelést kérünk!
+data - ADR adatok megadás. Kötelező, ha veszélyes áru kezelést kérünk!
+un_number  - UN szám. Kötelező, ha veszélyes áru kezelést kérünk!
+name  - Megnezvés. Kötelező, ha veszélyes áru kezelést kérünk!
+docket_number  - Bárcaszám. Kötelező, ha veszélyes áru kezelést kérünk!
+packing_group  - Csomagolási csoport. Kötelező, ha veszélyes áru kezelést kérünk!
+tunnel_restrictions_code  - Alagútkorlátozási kód. Kötelező, ha veszélyes áru kezelést kérünk!
+delivery_category  - Szállítási kategória. Kötelező, ha veszélyes áru kezelést kérünk!
+quantity  - Mennyiség. Kötelező, ha veszélyes áru kezelést kérünk!
+quantity_unit  - Mennyiség egység. Kötelező, ha veszélyes áru kezelést kérünk!
+4.1.5. LabelData osztály
+Visszatérési címke formátumának beállítása.
+Kérés felépítése:
+{
+"auth":{...},
+"deliveries":[
+{
+...
+}
+],
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+LabelData osztály paraméterek
+Mező név Típus Méret Megnevezés Leírás
+data_type teszt 10
+karakterCímke típusa Visszatérési címke formátuma. Lehetséges értékek:
+PDF - pdf fájl
+ZPL - címke nyomtatókhoz zpl programnyelvben generált kód.
+EPL - régi típusú címke nyomtatókhoz epl programnyelvben generált kód.
+NONE  - ne küldjön vissza címkét
+size text 10
+karakterCímke
+méretePDF típus esetén állítható be. Lehetséges értékek:
+A4 - A4 méretű lapra kerülnek a címkék egymást követően (4 darab)
+100x150  - 10x15cm méretű lapra kerül egy címke, több csomag esetén egy pdf fájl lesz és a minden oldalon egy
+címke.
+100x100  - 10x10cm méretű lapra kerül egy címke, több csomag esetén egy pdf fájl lesz és a minden oldalon egy
+címke.  már nem használható, 100x150 mm-es címek kerül vissza adásra
+100x75  - 10x7.5cm méretű lapra kerül egy címke, több csomag esetén egy pdf fájl lesz és a minden oldalon egy
+címke.  már nem használható, 100x150 mm-es címek kerül vissza adásra
+dpi integer 200,300 DPI ZPL típus esetén használható. Lehetséges értékek:200,300
+pdf_etiket_position integer 0-3 Pozició A4-es méret esetében, itt meghatározható, hogy melyik pozicióba kezdje a nyomtatást, értékei (0-3)
+4.2. Csomagok módosítás és címke nyomtatás
+A funkció segítségével a már létrehozott csomagok adatatait módosthatjuk. A kérés és a válasz adatstruktúra megegyezik a 4.1. pontba lévő csomag
+feladással.
+Módosítás esetén, a fuvarlevélszám megadása kütelező a 'parcels/parcel_numbers' mezőben. A módosítani kivánt küldemény egyik csomag fuvarlevélszámát
+kell, hogy tartalmaza.
+FONT OS! Csak küldemény szintű módosítás lehetséges. Darabszámot és szálítási típust nem lehet módosítani. Ha ezt szeretnénk módosítani, akkor töröljük
+a küldeményt és hozzunk létre egy újat a megfelelő adatokkal.
+Kérés URL:
+https://webservice.expressone.hu/parcel/modify_labels/response_format/xml
+Kérés felépítése:
+
+{
+"auth":{...},
+"deliveries":[
+{
+"post_date":"xxxx-xx-xx",
+"consig":{...},
+"pickup":{...},
+"parcels":{...},
+"services":{...},
+"note":"",
+"ref_number":"",
+"invoice_number":""
+}
+],
+"labels":{...}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+deliveries array Küldemények
+listájaLegalább egy küldemény megadása kötelező!
+deliveries/post_date date Feladás dátuma Megadása kötelező!
+deliveries/consig ConsigData Címzett adatok Címzett információk, nem kötelező megadni, csak ha itt történik a módosítás!
+deliveries/pickup PickupData Árufelételi adatok Árufelvételi információk, ARU és AR3 estében használható, nem kötelező megadni, csak ha itt történik a
+módosítás!
+deliveries/parcels ParcelsData Csomag adatok Csomag információk, a módosítani kívánt fuvarlevészám megadása kötelező!
+deliveries/services ServicesData Szolgáltatások Nem kötelező megadni, csak ha itt történik a módosítás!
+deliveries/note text Megjegyzés Megjegyzés a küldeményhez. Nem kötelező megadni, csak ha itt történik a módosítás!
+deliveries/ref_number text Sajátazonosító A feladó sajátazonosítója. Nem kötelező megadni, csak ha itt történik a módosítás!
+deliveries/invoice_number text Számlaszám Küldeményhez tartozó számlaszám. Nem kötelező megadni, csak ha itt történik a módosítás!
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response oject Kérés eredménye
+deliveries array Küldemények listája A küldemények feldolgozásának eredményei
+index integer Küldemény sorszáma A beküldött küldemények sorszáma, 0-tól
+code text Hiba kód. Sikeres feldolgozás esetében 0, ellenkező esetben a hiba kódja.
+error_num text Hiba kód. Sikeres feldolgozás esetében 0, ellenkező esetben a hiba kódja.
+message text Hiba üzenet. Sikeres feldolgozás esetében "OK", ellenkező esetben a hiba leírása.
+data object Küldemény adatok A sikeresen létrehozott küldemények adatai
+parcel_numbers array Csomag azonosítók A sikeresen létrehozott küldeményhez tartozó csomagok fuvarszámai.
+labels_data array Címke adatok A címkén szereplő adatok
+ref_number text Sajátazonosító
+parcel_number text Fuvarlevélszám A csomag egyedi fuvarlevélszáma
+sender/name text Feladó Feladó cég megnevezése
+routing/country_code text Ország kód Címzett ország kódja
+routing/depo_code text Depó kód A címkén lévő depó kód
+routing/courier_id text Futár azon. A címkén lévő futár azon.
+delivery_type text Szállítási típus A címkén lévő szállítási típus
+qty integer Darabszám A küldeményhez tartozó összes csomag száma
+current integer Aktuális darab Adott küldeményen belül hanyadik csomag
+cod decimal Utánvét A küldemény utánvét értéke
+consignee/name text Címzett megnevezése Címzett megnevezése
+
+Mező név Típus Megnevezés Leírás
+consignee/contact_name text Kapcsolattartó Kapcsolattartó megnevezése amenyiben a címzett egy cég.
+consignee/city text Város Címzett város
+consignee/street text Utca,házszám Címzett utca és házszám
+consignee/zip_code text Irányítószám Címzett irányítószáma
+consignee/country text Ország kód Címzett ország kódja
+consignee/phone text Telefonszám Címzett telefonszáma
+pickup_point/type text Típus Átvételipont típusa
+pickup_point/name text Megnevezés Átvételipont neve
+pickup_point/zip_code text Irányítószám Átvételipont irányítószáma
+pickup_point/city text Város Átvételipont város
+pickup_point/street text Utca,házszám Átvételipont utca és házszám
+export/type text Típus Nemzetközi szállítás tipusa
+export/barcode_type text Vonalkód típus Vonalkód típus, lehetséges értékek: CODE_128, INT_2_OF_5
+export/barcode_number text Csomagszám Nemzetközi szállítás csomagszáma (minden esetben az Express One adja meg)
+labels oject Címkék
+type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+data text Címke adatok Címke adatok base64 kódolásban.
+Kérés minta, feladás dátum és megjegyzés módosítása:
+{
+"auth":{
+"company_id":"xxxxx",
+"user_name":"xxx@xxx.xx", 
+"password":"xxxxxxx"
+},
+"deliveries":[
+{
+"post_date":"2021-03-26",
+"parcels":{
+"parcel_numbers":["xxxxxxxxxxxxxxxxxxxxxxxx"]
+},
+"note":"TESZT::TESZT::TESZT::TESZT Módosít"
+}
+],
+"labels":{
+A válasz minták megegyeznek a 4.1. pontnál megadott mintákkal:
+4.3. Csomagok törlése
+A funkció segítségével a már létrehozott küldeményeket tudjuk törölni fuvarlevélszám alapján. Csak küldemények törlése lehetséges, csomag szintű törlés
+nem.
+Kérés URL:
+https://webservice.expressone.hu/parcel/delete_labels/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxxxxxxxx"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Fuvarlevélszám A törölni kivánt küldemény egyik csomagjának fuvarlevélszáma.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response oject Kérés eredménye
+response/code text Hiba kód. Sikeres törlés esetében 0, ellenkező esetben a hiba kódja.
+response/error_num text Hiba kód. Sikeres törlés esetében 0, ellenkező esetben a hiba kódja.
+response/message text Hiba üzenet. Sikeres törlés esetében "OK", ellenkező esetben a hiba leírása.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"code":"0",
+"error_num":"0",
+"message":"OK"
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<code>0</code>
+<error_num>0</error_num>
+<message>OK</message>
+</response>
+</response>
+Válasz minta hiba esetén (JSON):
+{
+"successfull":false,
+"error_code":"20304",
+"error_num":"PARCEL_0087",
+"error_messages":"A küldemény már törölve lett!"
+}
+Válasz minta hiba esetén (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull/>
+<error_code>20304</error_code>
+<error_num>P ARCEL_0087</error_num>
+<error_messages>A  küldemény már törölve lett!</error_messages>
+</response>
+4.4. Csomag címke nyomtatás
+A csomag címke nyomtatási funkciókkal a még le nem zárt csomag címkéjét kérhetjük le a megadott formátumokban.
+4.4.1 Napi csomagok összes címkéjének nyomtatása
+A funkció segítségével az aznap rögzített összes csomag címkéje lekérhető a megadott címkeformátumba.
+Kérés URL:
+https://webservice.expressone.hu/parcel_label/get_all_daily_labels/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/labels/type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+response/labels/data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"labels":{
+"type":"PDF",
+"data":"..."
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<labels>
+<type>PDF</type>
+<data>...</data>
+</labels>
+</response>
+</response>
+4.4.2. Csomag címkéjének nyomtatása
+A funkció segítségével megadott csomagszám alapján lekérhető egy csomag címkéje a megadott címkeformátumba.
+Kérés URL:
+https://webservice.expressone.hu/parcel_label/get_parcel_label/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxx",
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Fuvarlevélszám
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/labels/type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+response/labels/data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"labels":{
+"type":"PDF",
+"data":"..."
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<labels>
+<type>PDF</type>
+<data>...</data>
+</labels>
+</response>
+</response>
+4.4.3. Küldemény összes címkéjének nyomtatása
+A funkció segítségével megadott csomagszám alapján lekérhető a küldemény összes csomagjának címkéje a megadott címkeformátumba.
+Kérés URL:
+https://webservice.expressone.hu/parcel_label/get_shipment_labels/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxx",
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Fuvarlevélszám
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/labels/type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+response/labels/data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"labels":{
+"type":"PDF",
+"data":"..."
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<labels>
+<type>PDF</type>
+<data>...</data>
+</labels>
+</response>
+</response>
+4.4.4. Küldemény összes címkéjének nyomtatása sajátazonosító alapján
+A funkció segítségével megadott sajátazonosító alapján lekérhető a küldemény összes csomagjának címkéje a megadott címkeformátumba.
+Kérés URL:
+https://webservice.expressone.hu/parcel_label/get_shipment_labels_by_ref_number/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"ref_number":"xxxxxxxxxxxxxxxxxx",
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+ref_number text Sajátazonosító A küldemény létrehozásakor , a 'ref_number' mezőben megadott érték
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/labels/type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+response/labels/data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"labels":{
+"type":"PDF",
+"data":"..."
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<labels>
+<type>PDF</type>
+<data>...</data>
+</labels>
+</response>
+</response>
+4.4.5. Kiválasztott csomagok címkéjének nyomtatása
+A funkció segítségével a megadott fuvarlevélszámok alapján lekérhető a csomagok címkéje a megadott címkeformátumba.
+Kérés URL:
+https://webservice.expressone.hu/parcel_label/get_selected_parcel_labels/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_numbers":["xxxxxxxxxxxxxxxxxx","xxxxxxxxxxxxxxxxxx","xxxxxxxxxxxxxxxxxx"],
+"labels":{
+"data_type":"PDF",
+"size":"A4",
+"dpi":"300",
+"pdf_etiket_position": "0"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_numbers array fuvarlevélszámok A kiválasztott fuvarlevélszámok tömbje
+labels LabelData Címke adatok Visszatérési címke formátumának beállítása.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/labels/type text Címkék típusa A vissza kapott címke típusa(PDF ,ZPL...)
+response/labels/data text Címke adatok Címke adatok base64 kódolásban.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"labels":{
+"type":"PDF",
+"data":"..."
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<labels>
+<type>PDF</type>
+<data>...</data>
+</labels>
+</response>
+</response>
+4.5. Gyűjtőlista nyomtatás
+Ideiglenes és végleges gyűjtőlista letöltése pdf formátumba. A gyűjtőlisták arhciválássát az online felületre belépve lehet áttekinteni, ill. újra
+nyomtatni(https://webcas.expressone.hu/). V alamint a webes felületen beállítható a gyűjtőlista típusa,egyszerű vagy részletes listát adjon vissza funkció.
+Kérés URL:
+https://webservice.expressone.hu/parcel_list/create_list/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"date":"YYYY-MM-DD",
+"options":{
+"closing":"false",
+"simplified":"false",
+"merge":"true"
+}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+date date Feladás dátuma (ÉÉÉÉ-HH-NN) Amennyiben nincs megadva az aktuális nap lesz az értéke.
+options/closing boolean Napizárás Kötelező megadni!
+FALSE - ideiglenes gyűjtőlista
+TRUE - végleges gyűjtőlista
+options/simplified boolean Egyszerűsítet lista Amennyiben nincs megadva a WEBCAS oldalon beállított értéket használjuk!
+FALSE - nem, részletes lista lekérése
+TRUE - igen, egyszerűsítet lista lekérése
+options/merge boolean Napi egy gyűjtőlista, többszöri zárás esetén tételek hozzáadása Amennyiben nincs megadva a WEBCAS oldalon beállított értéket használjuk!
+FALSE - napi egy zárás
+TRUE - napi többszöri zárás
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/pdf text Pdf lista A lista pdf formátumba és base64 kódolásban
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"pdf":"..."
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<pdf>....</pdf>
+</response>
+</response>
+4.6. Csomag adatok lekérése
+A feladott csomag adatok lekérése fuvarlevélszám alapján.
+Kérés URL:
+https://webservice.expressone.hu/tracking/get_parcel_details/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxx"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Küldemény fuvarlevélszáma Megadása kötelező!
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/delivery/first_date date Első szállítási dátum
+response/delivery/date date Szállítási dátum
+response/delivery/state int Küldemény szállítási
+állapotaLehetséges értékek:
+-2: törölt adat
+-1: a küldeményről csak előzetes adatva, nem került át az éles rendszerbe
+0: élő küldemény
+1: élővissza küldemény
+2: véglegvissza küldemény
+3: véglegvissza küldemény
+4: a küldemény leadva
+response/delivery/received_at datetime Leadás ideje Véglegvissza esetében a véglegvissza állapot időpontja
+response/delivery/recipient text Átvevő Véglegvissza esetében a VV jelőlést kap
+response/consig/name text Címzett megnevezése
+response/consig/country text Címzett ország
+response/consig/zip_code text Címzett irányítószám
+response/consig/city text Címzett város
+response/consig/street text Címzett utca, házszám
+response/pickup/name text Árufelvételi hely
+megnevezéseARU és AR3 szállítási típus esetében erre a címre megy a futár ,más szállítási
+típus esetében a futárkérés esetén erre a címre megy a futár .
+response/pickup/country text Árufelvételi hely ország ARU és AR3 szállítási típus esetében erre a címre megy a futár ,más szállítási
+típus esetében a futárkérés esetén erre a címre megy a futár .
+response/pickup/zip_code text Árufelvételi hely
+irányítószámARU és AR3 szállítási típus esetében erre a címre megy a futár ,más szállítási
+típus esetében a futárkérés esetén erre a címre megy a futár .
+response/pickup/city text Árufelvételi hely város ARU és AR3 szállítási típus esetében erre a címre megy a futár ,más szállítási
+típus esetében a futárkérés esetén erre a címre megy a futár .
+response/pickup/street text Árufelvételi hely utca,
+házszámARU és AR3 szállítási típus esetében erre a címre megy a futár ,más szállítási
+típus esetében a futárkérés esetén erre a címre megy a futár .
+response/sender/id int Feladó azonosító A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/sender/name text Feladó megnevezése A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/sender/country text Feladó ország A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/sender/zip_code text Feladó irányítószám A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/sender/city text Feladó város A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/sender/street text Feladó utca, házszám A feladó adatok, minden esetben az Express One rendszerében rögzített adatok.
+response/parcels/type int Küldemény típusa 0 - csomag
+1 - raklap
+response/parcels/qty int Csomagok száma
+response/parcels/weight int Küldemény össz súly
+
+
+
+Mező név Típus Megnevezés Leírás
+response/parcels/parcel_name text Csomagok
+megnevezése
+response/parcels/parcel_numbers array Csomagok
+fuverlevélszámai
+response/services/delivery_type text Szállítási mód
+response/services/eone_shop text Átvételipont azonosító D2S esetében
+response/services/insurance/enable bool Küldemény biztosítást
+response/services/insurance/parcel_price decimal Küldemény értéke
+response/services/documents_management/enable bool Okmánykezelés
+response/services/documents_management/documents text Okmányok
+response/services/time_window/start_time int Időkapu kezdése
+response/services/time_window/end_time int Időkapu vége
+response/services/cod/amount decimal Utánvét összeg
+response/services/itemized bool Tételes küldemény
+kezelés
+response/services/return bool Visszáru felvétel
+response/services/ekaer bool Ekaer
+response/services/adr/enable bool Veszélyes áru
+response/services/adr/scores int Veszélyes pontértéke
+response/services/notification/sms text Értesítési sms szám
+response/services/notification/email text Értesítési e-mail cím
+response/note text Megjegyzés
+response/ref_num text Sajátazonosító
+response/invoice_number text Számlaszám
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"delivery":{
+"first_date":"2020-09-23",
+"date":"2020-09-24",
+"state":"0",
+"received_at":null,
+"recipient":null
+},
+"consig":{
+"name":"Teszt",
+"country":"HU",
+"zip_code":"2370",
+"city":"Dabas",
+"street":"Teszt u. 22."
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<delivery>
+<first_date>2020-09-23</first_date>
+<date>2020-09-24</date>
+<state>0</state>
+<received_at/>
+<recipient/>
+</delivery>
+<consig>
+<name>T eszt</name>
+<country>HU</country>
+<zip_code>2370</zip_code>
+<city>Dabas</city>
+4.7. Csomag állapotának lekérése
+A feladott küldemény/csomag aktuális állapotának lekérése fuvarlevélszám alapján.
+Kérés URL:
+https://webservice.expressone.hu/tracking/get_parcel_status/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxx"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Küldemény fuvarlevélszáma Megadása kötelező!
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/parcel_number text Küldemény fuvarlevélszáma
+response/created_at datetime Az esemény ideje
+response/event_code text Esemény kód
+response/event_name text Esemény megnevezése
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"parcel_number":"xxxxxxxxxxxxxxxxxxxxxxxx",
+"created_at":"2020-09-21 11:37:18",
+"event_code":"OFD",
+"event_name":"Kiadva futárnak"
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<parcel_number>xxxxxxxxxxxxxxxxxxxxxxxx</parcel_number>
+<created_at>2020-09-21 1 1:37:18</created_at>
+<event_code>OFD</event_code>
+<event_name>Kiadva futárnak</event_name>
+</response>
+</response>
+4.8. Csomag történet lekérése
+A funkció vissza adja egy XML-ben vagy JSON-ban az adott csomag teljes történetét.
+Kérés URL:
+https://webservice.expressone.hu/tracking/get_parcel_history/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"parcel_number":"xxxxxxxxxxxxxxxxxx"
+}
+Kérés paraméterei:
+
+
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+parcel_number text Küldemény fuvarlevélszáma Megadása kötelező!
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response ParcelHistoryResponse Küldemény történet osztály Küldemény adatait tartalmozó osztály
+ParcelHistoryResponse osztály
+Mező név Típus Megnevezés Leírás
+parcel_number text Küldemény fuvarlevélszáma Minden eseteben az eredeti küldemény fuvarlevélszáma, akkor is ha az inverzét kérjük le.
+Pl. árufelvétel esetén, mindig a felvételi megízás fuvarlevélszáma.
+delivery_type text Szállítási mód Minden eseteben az eredeti küldemény szállítási módja.
+state numeric Küldemény szállítási állapota Lehetséges értékek:
+-1: a küldeményről csak előzetes adatva, nem került át az éles rendszerbe
+ 0: élő küldemény
+ 1: élővissza küldemény
+ 2: véglegvissza küldemény
+ 3: véglegvissza küldemény
+ 4: a küldemény leadva
+history ParcelHistoryItemResponse Küldemény történet esemény
+osztályKüldemény eseményeit tartalmozó tömb
+return ParcelHistoryResponse Küldemény történet osztály Küldemény inverzeinek adatait tartalmazó tömb.
+Pl. ha egy ARU megbízás esetén 5 darab csomagot adunk meg, akkor az árufelvétel után itt 5
+csomag adatait fogjuk visszakapni.
+ParcelHistoryItemResponse osztály
+Mező név Típus Megnevezés Leírás
+created_at datetime Esemény ideje
+event_code text Esemény kód
+event_name text Esemény megnevezése
+event_data text Esemény megjegyzés Pl.: Csomag leadás esetén az átvevő.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"parcel_number":"xxxx",
+"delivery_type":"ARU",
+"state":"4",
+"history":[
+{
+"created_at":"2019-08-07 15:49:00",
+"event_code":"DLS",
+"event_name":"Adat bekerült a rendszerbe",
+"event_data":null
+},
+{
+"created_at":"2019-08-08 07:26:13",
+"event_code":"OFD",
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<parcel_number>xxxx</parcel_number>
+<delivery_type>ARU</delivery_type>
+<state>4</state>
+<history>
+<event>
+<created_at>2019-08-07 15:49:00</created_at>
+<event_code>DLS</event_code>
+<event_name>Adat bekerült a rendszerbe</event_name>
+
+
+<event_data></event_data>
+</event>
+<event>
+<created at>2019 080807:26:13</created at>
+4.9. Routing információ lekérése
+A funkció vissza adja egy XML-ben vagy JSON-ban az összes szállítási információt. Ezek az információk szükségesek egyedi címke nyomtatás esetén, ha
+nem a vissza kapott adatok alapján készítjük a címkét.
+Kérés URL:
+https://webservice.expressone.hu/routing/get_routing_info_by_zip_code/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"country":"HU",
+"zip_code":"1224"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+country text Országkód Kötelező megadni.
+zip_code text Irányítószám Kötelező megadni.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response/country text Országkód
+response/num_country integer Ország azonosító
+response/zip_code text Irányítószám
+response/routing_depot integer Depó azonosító
+response/routing_courier integer Futár azonosító
+response/city_code text Város kód
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"country":"HU",
+"num_country":"36",
+"zip_code":"1224",
+"routing_depot":"22",
+"routing_courier":"9",
+"city_code":"TOR"
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<row>
+<country>HU</country>
+<num_country>36</num_country>
+<zip_code>1224</zip_code>
+<routing_depot>22</routing_depot>
+<routing_courier>9</routing_courier>
+<city_code>T OR</city_code>
+</row>
+
+
+
+
+</response>
+</response>
+4.10. Összes routing információ lekérése
+A funkció vissza adja egy XML-ben vagy JSON-ban az összes szállítási információt. Ezek az információk szükségesek egyedi címke nyomtatás esetén, ha
+nem a vissza kapott adatok alapján készítjük a címkét.
+Kérés URL:
+https://webservice.expressone.hu/routing/get_all_routing_info/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"last_updated": "2024-09-22 08:00:00"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+last_updated datetime Utoljára módosítva A megadott idő után módosult tételeket listáza. Nem kötelező, amenyiben nincs megadva, a teljes listát hozza.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response RoutingItemResponse Szállítási információ osztály Szállítási információkat tartalmozó tömb
+RoutingItemResponse osztály
+Mező név Típus Megnevezés Leírás
+country text Országkód
+num_country integer Ország azonosító
+zip_code text Irányítószám
+routing_depot integer Depó azonosító
+routing_courier integer Futár azonosító
+city_code text Város kód
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":[
+{
+"country":"HU",
+"num_country":"36",
+"zip_code":"1007",
+"routing_depot":"20",
+"routing_courier":"7",
+"city_code":"DUN"
+},
+...
+{
+"country":"HU",
+"num_country":"36",
+"zip_code":"8317",
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<rows>
+<row>
+<country>HU</country>
+<num_country>36</num_country>
+<zip_code>1007</zip_code>
+
+
+
+<routing_depot>20</routing_depot>
+<routing_courier>7</routing_courier>
+<city_code>DUN</city_code>
+</row>
+...
+<row>
+<country>HU</country>
+4.11. Helységek lekérése
+A funkció vissza adja egy XML-ben vagy JSON-ban a magyarországi helységek adatait.
+Kérés URL:
+https://webservice.expressone.hu/locality/get_localities/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"country_code":"xx",
+"zip_code":"xxxx"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+country_code text Országkód Nem kötelező. 2 karakteres országkód. Megadása esetén az adot országhoz tartozó helységekete kapjuk vissza.
+zip_code text Irányítószám Nem kötelező. Megadása esetén az adot irányítószámhoz tartozó helységeket kapjuk vissza.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response LocalityItemResponse Helység osztály Helységek adatait tartalmozó tömb
+LocalityItemResponse osztály
+Mező név Típus Megnevezés Leírás
+zip_code_id integer Irányítószám egyedi azonosító
+zip_code text Irányítószám
+locality_id integer Helység egyedi azonosító
+locality text Helység megnevezése
+county_id integer Megye egyedi azonosító
+county text Megye megnevezése
+country_id integer Ország egyedi azonosító
+code text Országkód
+country text Ország megnevezése
+prefix_num text Ország előtag
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+[
+{
+"zip_code_id":"1",
+"zip_code":"6000",
+"city_id":"1",
+"locality":"KECSKEMÉT",
+"county_id":"1",
+"county":"Bács-Kiskun",
+"country_id":"112",
+"code":"HU",
+"country":"Magyarország",
+"prefix_num":"36"
+},
+
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<item>
+<zip_code_id>1</zip_code_id>
+<zip_code>6000</zip_code>
+<locality_id>1</locality_id>
+<locality>KECSKEMÉT</locality>
+<county_id>1</county_id>
+<county>Bács-Kiskun</county>
+<country_id>1 12</country_id>
+<code>HU</code>
+<country>Magyarország</country>
+<prefix_num>36</prefix_num>
+</item>
+4.12. Futár kérés
+A funkcióval lehetőségünk van jelezni az Express One felé egy futárkérési igényt.
+Kérés URL:
+https://webservice.expressone.hu/pickup/courier_request/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"pickup_date":"Y-m-d",
+"time_from":"H:i",
+"time_to":"H:i",
+"contact_email":"xxx@xxxx.hu",
+"contact_phone":"+36xxxxxxx",
+"package_qty":"1",
+"pallet_qty":"0"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+pickup_date date Árufelvétel dátuma Kötelező megadni. Aznapi felvétel igénylése 12:00-ig lehetséges! (Formátum: ÉÉÉÉ.HH.NN.)
+time_from text Legkorábbi felvételi
+időpontKötelező megadni. Mikortól tudják átadni a küldeményt / nyitvatartási idő kezdete. (Formátum: ÓÓ:PP)
+time_to time Legkésőbbi felvételi
+időpontKötelező megadni. Meddig tudják átadni a küldeményt / nyitvatartási idő vége. (Formátum: ÓÓ:PP)
+contact_email text Válasz email cím Kötelező megadni. Erre az e-mail címre érkezik a megbízás visszaigazolása.
+contact_phone text Kapcsolattartó
+telefonszámNem kötelező megadni.
+package_qty integer Csomag darab Kötelező megadni. 0-99-ig kitöltendő mezők! (Pontos mennyiség ismeretének hiányában nagyságrendi információ. V egyes
+raklap, mixelt paletta esetében a csomag darabszámához „0” rögzítendő).
+pallet_qty integer Raklap darab Kötelező megadni. 0-99-ig kitöltendő mezők! (Pontos mennyiség ismeretének hiányában nagyságrendi információ.)
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response CourierRequestResponse Futár kérés osztály Vissza adja a kérésel kapcsolatos információkat.
+CourierRequestResponse osztály
+Mező név Típus Megnevezés Leírás
+request_id integer A kérés egyedi azonosító Sikeres kérés esetében vissza kapott kérés azonosító, melyre később lehet hivatkozni.
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"request_id":209568
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<request_id>209568</request_id>
+</response>
+</response>
+4.13. Aktuális árufelvételi információ
+A funkció az aktuális napra kért árufelvételel kapcsolatos információkat ad vissza.
+Kérés URL:
+https://webservice.expressone.hu/pickup/get_current_pickup_info/response_format/json
+Kérés felépítése:
+{
+"auth":{...}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response PickupInfoResponse Árufevételi információs osztály Vissza adja az árufelvételel kapcsolatos információkat.
+PickupInfoResponse osztály
+Mező név Típus Megnevezés Leírás
+pickup_date date Árufelvétel napja
+status integer Árufelvétel állapota Lehtséges értékek:
+0 - Kérés rögzítve
+1 - Kérés befogadva
+2 - Kiadva futárnak
+3 - Felvételi megbízás visszavonva, új futárra még nem került kiosztásra
+4 - Felvételi megbízást a futár visszautasította, az új futárra még nem került újra kiosztásra
+5 - Felvételi megbízás teljesítve
+6 - Következő munkanapra rakva
+7 - Felvételi megbízás nem teljesült
+status_name text Árufelvétel állapotának megnevezése
+courier CourierClass Futár adatok A mező csak akkor tartalmaz értéket, ha az állapot 2 vagy 5. Felépítése:
+"name" - futár nev
+"phone" - futár telefonszáma
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":{
+"pickup_date":"2020-04-30",
+"status":"2",
+"status_name":"Kiadva futárnak",
+"courier":{
+"name":"YYYY",
+"phone":"+36XXXXX"
+}
+}
+}
+}
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<pickup_date>2020-04-30</pickup_date>
+<status>2</status>
+<status_name>Kiadva futárnak</status_name>
+<courier>
+<name>YYYY</name>
+<phone>+36XXXX</phone>
+</courier>
+</response>
+</response>
+4.14. Átvételi pontok lekérése
+A funkció vissza adja egy XML-ben vagy JSON-ban az összes átvételi pont információit. A 'code' mező értékét kell átadni D2S feladás estén az 'eone_shop'
+mezőben.
+Kérés URL:
+https://webservice.expressone.hu/eoneshop/get_list/response_format/json
+Kérés felépítése:
+{
+"auth":{...}
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response EoneShopItemResponse Átvételi pont információ osztály Átvételi pont információkat tartalmozó tömb
+EoneShopItemResponse osztály
+Mező név Típus Megnevezés Leírás
+code int Átvételi pont azonosító Csak az átvételi pont azonosítót kell átadni csomag feladáskor .
+name text Átvételi pont neve
+country text Országkód
+county text Megye
+zip_code text Irányítószám
+city text Város
+street text Utca, házszám
+phone1 text Telefonszám
+phone2 text Telefonszám
+fax text Fax
+opening text Nyitvatartás
+latitude text Földrajzi szélesség
+longitude text Földrajzi hosszúság
+
+
+
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":[
+{
+"code":"92039",
+"name":"OMV Alsónémedi",
+"country":"HU",
+"county":"Pest",
+"zip_code":"2351",
+"city":"Alsónémedi",
+"street":"5. sz. főút 2553 hrsz.",
+"phone1":"",
+"phone2":"+36 (30) 298-43-33",
+"fax":" +36 (29) 337-164",
+"opening":"0-24",
+"latitude":"47,30228734598386",
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<rows>
+<row>
+<code>92039</code>
+<name><![CDA TA[OMV Alsónémedi]]></name>
+<country>HU</country>
+<county><![CDA TA[Pest]]></county>
+<zip_code><![CDA TA[2351]]></zip_code>
+<city><![CDA TA[Alsónémedi]]></city>
+<street><![CDA TA[5. sz. főút 2553 hrsz.]]></street>
+<phone1><![CDA TA[]]></phone1>
+<phone2><![CDA TA[+36 (30) 298-43-33]]></phone2>
+<fax><![CDA TA[ +36 (29) 337-164]]></fax>
+5. Riportok
+5.1. Utánvét riport
+A funkció segítségével adott időszakra lekérhetők azon utánvétes küldemények listája, amelyeknek összege el lett utalva. A dátum mezők segítségével
+vizsgálandó időszak, maximum 30 napos időintervallum lehet!
+Az adatok óránként frissülnek!
+Kérés URL:
+https://webservice.expressone.hu/report/get_cod_report_transfered_list/response_format/json
+Kérés felépítése:
+{
+"auth":{...},
+"date_from":"xxxx-xx-xx",
+"date_to":"xxxx-xx-xx"
+}
+Kérés paraméterei:
+Mező név Típus Megnevezés Leírás
+auth Auth Autentikációs rész részletek
+date_from date Utánvét utalásának dátumától Nem kötelező. Amenyiben nincs megadva, az utolsó 30 napot adja
+vissza a riport.
+date_to date Nem kötelező. Ha nincs kitöltve, akkor automatikusan a 'date_from' mező értéke + 30
+nap kerül beállításra.
+Visszatérő paraméterek:
+Mező név Típus Megnevezés Leírás
+successfull bool Sikeres kérés Amennyiben a kérés sikeres volt TRUE értéket kap, ellenkező esetben F ALSE
+response bool Eredmény A küldemény lista
+response/parcel_number text Fuvarlevélszám
+
+Mező név Típus Megnevezés Leírás
+response/invoice_number text Számlaszám/Bizonylatszám
+response/ref_number text Sajátazonosító
+response/consignee_name text Címzett
+response/first_date date Első szállítási dátum
+response/delivery_date date Szállítási dátum
+response/delivery_type text Szállítási típus
+response/received_at date Átvételi dátum és idő
+response/received_cod_amount decimal Átvett utánvét összege
+response/cod_planned_date date Utánvét utalásának tervezett dátuma
+response/cod_transfer_date date Utánvét utalásának dátuma
+response/cod_comp date Utánvét kompenzáció engedély 1 - igen, 0 - nem
+response/cod_comp_ammount date Utánvét kompenzáció összege
+response/cod_comp_invoice date Utánvét kompenzáció bizonylatszáma
+response/cod_bankcard date Utánvét fizetése bankkártyával 1 - igen, 0 - nem
+response/cod_day date Utánvét utalásának gyakorisága
+Válasz minta (JSON):
+{
+"successfull":true,
+"response":[
+{
+"parcel_number":"xxxxxxxxxxxxxxxxxxxxxxxx",
+"invoice_number":"xxxxxxxx",
+"ref_number":"123456789",
+"consignee_name":"XX YY",
+"first_date":"2024-09-11",
+"delivery_date":"2024-09-13",
+"delivery_type":"24H",
+"received_at":"2024-09-13 10:43:00",
+"received_cod_amount":457080,
+"cod_planned_date":"2024-09-20",
+"cod_transfer_date":"2024-09-20",
+"cod_comp":0,
+Válasz minta (XML):
+<?xml version="1.0" encoding="UTF-8"?>
+<response>
+<successfull>1</successfull>
+<response>
+<item>
+<parcel_number>xxxxxxxxxxxxxxxxxxxxxxxx</parcel_number>
+<invoice_number>xxxxxxxx</invoice_number>
+<ref_number>123456789</ref_number>
+...
+</item>
+<item>
+...
+</item>
+</response>
+</response>

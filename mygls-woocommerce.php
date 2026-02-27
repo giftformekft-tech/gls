@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: MyGLS WooCommerce Integration
+ * Plugin Name: GLS & Express One WooCommerce Integration
  * Plugin URI: https://github.com/giftformekft-tech/gls
- * Description: GLS szallitasi cimkek es csomagpont valaszto WooCommerce-hez
- * Version: 1.1.40
+ * Description: GLS és Express One szállítási címkék és csomagpont választó WooCommerce-hez
+ * Version: 1.2.0
  * Author: GiftForMe Kft
  * Author URI: https://giftforme.hu
  * License: GPL v2 or later
@@ -43,21 +43,18 @@ if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get
  * Autoloader for plugin classes
  */
 spl_autoload_register(function($class) {
-    // Check if the class belongs to our plugin
-    if (strpos($class, 'MyGLS\\') !== 0) {
+    // Keresés a MyGLS és az ExpressOne névterekben
+    if (strpos($class, 'MyGLS\\') === 0) {
+        $class_path = str_replace('MyGLS\\', '', $class);
+        $file = MYGLS_PLUGIN_DIR . 'includes/' . str_replace('\\', '/', $class_path) . '.php';
+    } elseif (strpos($class, 'ExpressOne\\') === 0) {
+        $class_path = str_replace('ExpressOne\\', '', $class);
+        $file = MYGLS_PLUGIN_DIR . 'includes/ExpressOne/' . str_replace('\\', '/', $class_path) . '.php';
+    } else {
         return;
     }
 
-    // Remove namespace prefix
-    $class = str_replace('MyGLS\\', '', $class);
-
-    // Convert namespace separators to directory separators
-    $class = str_replace('\\', '/', $class);
-
-    // Build the file path
-    $file = MYGLS_PLUGIN_DIR . 'includes/' . $class . '.php';
-
-    // If the file exists, load it
+    // Ha a fájl létezik, töltsük be
     if (file_exists($file)) {
         require_once $file;
     }
@@ -109,9 +106,19 @@ function mygls_init() {
         MyGLS\Checkout\Controller::get_instance();
     }
 
+    // Initialize Parcelshop Selector for Express One
+    if (class_exists('ExpressOne\\Parcelshop\\Selector')) {
+        new ExpressOne\Parcelshop\Selector();
+    }
+
     // Initialize Payment Surcharge handler
     if (class_exists('MyGLS\\Checkout\\PaymentFee')) {
         new MyGLS\Checkout\PaymentFee();
+    }
+    
+    // Initialize Checkout Controller for Express One (ha létezik)
+    if (class_exists('ExpressOne\\Checkout\\Controller')) {
+        ExpressOne\Checkout\Controller::get_instance();
     }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
@@ -123,6 +130,12 @@ add_action('woocommerce_loaded', 'mygls_init');
 function mygls_register_shipping_method($methods) {
     require_once MYGLS_PLUGIN_DIR . 'includes/Shipping/Method.php';
     $methods['mygls_shipping'] = 'MyGLS\\Shipping\\Method';
+
+    if (file_exists(MYGLS_PLUGIN_DIR . 'includes/ExpressOne/Shipping/Method.php')) {
+        require_once MYGLS_PLUGIN_DIR . 'includes/ExpressOne/Shipping/Method.php';
+        $methods['expressone_shipping'] = 'ExpressOne\\Shipping\\Method';
+    }
+    
     return $methods;
 }
 add_filter('woocommerce_shipping_methods', 'mygls_register_shipping_method');
@@ -234,7 +247,8 @@ function mygls_activate() {
         id bigint(20) NOT NULL AUTO_INCREMENT,
         order_id bigint(20) NOT NULL,
         parcel_id bigint(20) NOT NULL,
-        parcel_number bigint(20) NOT NULL,
+        parcel_number varchar(100) NOT NULL,
+        carrier varchar(50) DEFAULT 'gls',
         tracking_url varchar(255) DEFAULT NULL,
         label_pdf longblob,
         status varchar(50) DEFAULT 'pending',
@@ -247,6 +261,14 @@ function mygls_activate() {
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
+
+    // Biztosítjuk, hogy meglévő tábla esetén is módosuljanak az oszlopok
+    $wpdb->query("ALTER TABLE $table_name MODIFY parcel_number VARCHAR(100) NOT NULL");
+    
+    $carrier_column = $wpdb->get_results("SHOW COLUMNS FROM $table_name LIKE 'carrier'");
+    if (empty($carrier_column)) {
+        $wpdb->query("ALTER TABLE $table_name ADD carrier VARCHAR(50) DEFAULT 'gls' AFTER parcel_number");
+    }
 
     // Set default options
     if (!get_option('mygls_settings')) {
