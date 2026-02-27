@@ -1,4 +1,4 @@
-(function($) {
+(function ($) {
     'use strict';
 
     var settings = window.myglsCustomCheckout || {};
@@ -27,7 +27,7 @@
             return;
         }
 
-        $lists.each(function() {
+        $lists.each(function () {
             var $list = $(this);
             $list.find('li').removeClass('woocommerce-shipping-method-selected');
             $list.find('input[type="radio"]:checked').closest('li').addClass('woocommerce-shipping-method-selected');
@@ -109,24 +109,24 @@
     function scheduleCheckoutRefresh() {
         cancelScheduledCheckoutRefresh();
 
-        checkoutRefreshTimeout = window.setTimeout(function() {
+        checkoutRefreshTimeout = window.setTimeout(function () {
             requestCheckoutRefresh();
             checkoutRefreshTimeout = null;
         }, 180);
     }
 
     function bindPaymentMethodRefresh() {
-        $(document.body).on('change', 'input[name="payment_method"]', function() {
+        $(document.body).on('change', 'input[name="payment_method"]', function () {
             cancelScheduledCheckoutRefresh();
             requestCheckoutRefresh();
         });
 
-        $(document.body).on('payment_method_selected', function() {
+        $(document.body).on('payment_method_selected', function () {
             cancelScheduledCheckoutRefresh();
             requestCheckoutRefresh();
         });
 
-        $(document.body).on('click', '.woocommerce-checkout-payment .wc_payment_methods label', function() {
+        $(document.body).on('click', '.woocommerce-checkout-payment .wc_payment_methods label', function () {
             var $input = $(this).closest('li').find('input[name="payment_method"]');
             if ($input.length && !$input.prop('checked')) {
                 $input.prop('checked', true).trigger('change');
@@ -187,7 +187,7 @@
         var snapshot = {};
         var hasValues = false;
 
-        $.each(sameAsBillingFieldMap, function(_, shippingField) {
+        $.each(sameAsBillingFieldMap, function (_, shippingField) {
             var $shippingInput = $('#' + shippingField);
             if ($shippingInput.length) {
                 snapshot[shippingField] = $shippingInput.val();
@@ -217,7 +217,7 @@
 
         var restored = false;
 
-        $.each(shippingFieldSnapshot, function(fieldId, value) {
+        $.each(shippingFieldSnapshot, function (fieldId, value) {
             var $field;
 
             if (fieldId === 'shipping_country') {
@@ -249,7 +249,7 @@
     function syncShippingFieldsWithBilling() {
         var pendingRefresh = false;
 
-        $.each(sameAsBillingFieldMap, function(billingField, shippingField) {
+        $.each(sameAsBillingFieldMap, function (billingField, shippingField) {
             var $billingInput = $('#' + billingField);
             var $shippingInput = $('#' + shippingField);
 
@@ -291,7 +291,7 @@
                 pendingRefresh = true;
             }
 
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 var deferredStateChange = setFieldValue($shippingState, billingStateValue);
 
                 if (deferredStateChange || immediateStateChange || countryChanged || pendingRefresh) {
@@ -317,7 +317,7 @@
         $shippingWrap.attr('aria-disabled', disable ? 'true' : 'false');
 
         var $textInputs = $shippingWrap.find('input, textarea').not(':button, :submit, :reset, [type=hidden]');
-        $textInputs.each(function() {
+        $textInputs.each(function () {
             var $field = $(this);
 
             if (disable) {
@@ -352,7 +352,7 @@
         });
 
         var $selects = $shippingWrap.find('select');
-        $selects.each(function() {
+        $selects.each(function () {
             var $field = $(this);
             var $select2Container = $field.next('.select2');
 
@@ -514,14 +514,14 @@
             return;
         }
 
-        mobileOrderSummaryObserver = new MutationObserver(function() {
+        mobileOrderSummaryObserver = new MutationObserver(function () {
             if (isMovingMobileSummary) {
                 return;
             }
 
             mobileOrderSummaryObserver.disconnect();
             moveMobileOrderSummary();
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 attachMobileOrderSummaryObserver();
             }, 50);
         });
@@ -551,7 +551,7 @@
             return;
         }
 
-        mobileOrderSummaryObserver = new MutationObserver(function() {
+        mobileOrderSummaryObserver = new MutationObserver(function () {
             moveMobileOrderSummary();
         });
 
@@ -566,7 +566,7 @@
             window.clearTimeout(mobileOrderSummaryMoveTimer);
         }
 
-        mobileOrderSummaryMoveTimer = window.setTimeout(function() {
+        mobileOrderSummaryMoveTimer = window.setTimeout(function () {
             moveMobileOrderSummary();
             mobileOrderSummaryMoveTimer = null;
         }, 150);
@@ -577,7 +577,7 @@
             window.clearTimeout(mobileOrderSummaryMoveTimer);
         }
 
-        mobileOrderSummaryMoveTimer = window.setTimeout(function() {
+        mobileOrderSummaryMoveTimer = window.setTimeout(function () {
             moveMobileOrderSummary();
             mobileOrderSummaryMoveTimer = null;
         }, 150);
@@ -602,7 +602,7 @@
     }
 
     function bindMobileCartPopup() {
-        $(document).on('click', '.mygls-mobile-cart-link', function(event) {
+        $(document).on('click', '.mygls-mobile-cart-link', function (event) {
             event.preventDefault();
             var targetId = $(this).data('myglsCartPopup');
             var $popup = targetId ? $('#' + targetId) : $();
@@ -614,12 +614,12 @@
             openCartPopup($popup);
         });
 
-        $(document).on('click', '[data-mygls-cart-popup-close]', function() {
+        $(document).on('click', '[data-mygls-cart-popup-close]', function () {
             var $popup = $(this).closest('.mygls-cart-popup');
             closeCartPopup($popup);
         });
 
-        $(document).on('keydown', function(event) {
+        $(document).on('keydown', function (event) {
             if (event.key === 'Escape') {
                 closeCartPopup($('.mygls-cart-popup.is-active'));
             }
@@ -632,7 +632,7 @@
         }
     }
 
-    $(function() {
+    $(function () {
         highlightSelectedShippingMethod();
         setSectionVisibility();
         movePrivacyCheckboxBeforeOrderButton();
@@ -643,19 +643,19 @@
         // Initialize checkbox state - multiple attempts to ensure it works
         handleSameAsBillingCheckbox();
 
-        setTimeout(function() {
+        setTimeout(function () {
             handleSameAsBillingCheckbox();
         }, 100);
 
-        setTimeout(function() {
+        setTimeout(function () {
             handleSameAsBillingCheckbox();
         }, 500);
 
-        setTimeout(function() {
+        setTimeout(function () {
             handleSameAsBillingCheckbox();
         }, 1000);
 
-        $(document.body).on('change', 'input[name^="shipping_method"]', function() {
+        $(document.body).on('change', 'input[name^="shipping_method"]', function () {
             highlightSelectedShippingMethod();
             setSectionVisibility();
             handleSameAsBillingCheckbox();
@@ -664,7 +664,7 @@
             scheduleMobileOrderSummaryMove();
         });
 
-        $(document.body).on('updated_checkout', function() {
+        $(document.body).on('updated_checkout', function () {
             highlightSelectedShippingMethod();
             setSectionVisibility();
             movePrivacyCheckboxBeforeOrderButton();
@@ -672,7 +672,7 @@
             handleSameAsBillingCheckbox();
         });
 
-        $(document).on('change', '#mygls_same_as_billing', function() {
+        $(document).on('change', '#mygls_same_as_billing', function () {
             handleSameAsBillingCheckbox();
         });
 
@@ -682,15 +682,15 @@
             maybeSyncBillingFields
         );
 
-        $(window).on('resize', function() {
+        $(window).on('resize', function () {
             movePrivacyCheckboxBeforeOrderButton();
             scheduleMobileOrderSummaryMove();
         });
 
         // Checkout Validation for Parcelshops
-        $('form.checkout').on('checkout_place_order', function() {
+        $('form.checkout').on('checkout_place_order', function () {
             var $selectedShipping = $('.woocommerce-shipping-methods input[type="radio"]:checked');
-            
+
             if (!$selectedShipping.length) {
                 return true;
             }
@@ -710,23 +710,38 @@
             if (isParcelshopMethod) {
                 var eoId = $('#expressone_parcelshop_id').val();
                 var glsId = $('#mygls_parcelshop_id').val();
-                
-                // If both are empty, customer hasn't selected a parcelshop
-                if ((!eoId || eoId === '') && (!glsId || glsId === '')) {
+                var isExpressOne = methodVal.indexOf('expressone') !== -1;
+
+                var hasError = false;
+                var errorMsg = '';
+
+                if (isExpressOne) {
+                    if (!eoId || eoId === '') {
+                        hasError = true;
+                        errorMsg = 'Kérjük, válasszon egy Express One csomagpontot a szállításhoz!';
+                    }
+                } else {
+                    if (!glsId || glsId === '') {
+                        hasError = true;
+                        errorMsg = 'Kérjük, válasszon egy GLS csomagpontot a szállításhoz!';
+                    }
+                }
+
+                if (hasError) {
                     // Create error notice
-                    var errorHtml = '<ul class="woocommerce-error" role="alert"><li>Kérjük, válasszon egy csomagpontot a szállításhoz!</li></ul>';
-                    
+                    var errorHtml = '<ul class="woocommerce-error" role="alert"><li>' + errorMsg + '</li></ul>';
+
                     $('.woocommerce-error, .woocommerce-message').remove();
                     $('form.checkout').prepend(errorHtml);
-                    
+
                     $('html, body').animate({
                         scrollTop: ($('form.checkout').offset().top - 100)
                     }, 500);
-                    
+
                     return false; // Prevent form submission
                 }
             }
-            
+
             return true;
         });
     });

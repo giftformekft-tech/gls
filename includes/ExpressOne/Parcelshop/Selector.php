@@ -238,14 +238,6 @@ class Selector {
 
         $requires_parcelshop = false;
         foreach ($chosen_methods as $chosen_method) {
-            // Check global GLS settings
-            $global_settings = get_option('mygls_settings', []);
-            $enabled_methods = $global_settings['parcelshop_enabled_methods'] ?? [];
-            if (in_array($chosen_method, $enabled_methods)) {
-                $requires_parcelshop = true;
-                break;
-            }
-
             // Check if the shipping method is expressone and is a parcelshop type
             if (strpos($chosen_method, 'expressone') !== false) {
                 $parts = explode(':', $chosen_method);
