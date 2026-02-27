@@ -39,20 +39,61 @@ class Selector {
             return;
         }
         
-        // Add minimal CSS for the selector
+        // Modal CSS & minimal styling
         $css = "
             .expressone-parcelshop-wrapper { margin-top: 15px; }
-            .expressone-iframe-container { width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+            #open_expressone_modal { width: 100%; padding: 12px; font-weight: bold; background-color: #0073aa; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+            #open_expressone_modal:hover { background-color: #005177; }
+            
+            /* Modal Overlay */
+            .expressone-modal-overlay { 
+                display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.6); z-index: 999999; 
+                justify-content: center; align-items: center; 
+            }
+            .expressone-iframe-container { 
+                position: relative; width: 90%; max-width: 1000px; height: 80vh; 
+                background: #fff; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); overflow: hidden; 
+            }
             .expressone-iframe { width: 100%; height: 100%; border: none; }
-            #expressone_selected_shop_display { margin-top: 10px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
+            
+            /* Close Button */
+            .expressone-close-btn { 
+                position: absolute; top: 15px; right: 20px; 
+                background: white; border: 2px solid #333; color: #333; font-weight: bold; font-size: 16px; 
+                width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10;
+            }
+            .expressone-close-btn:hover { background: #333; color: white; }
+
+            /* Selected Shop Display */
+            #expressone_selected_shop_display { margin-top: 15px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
             .expressone-selected-title { font-weight: bold; margin-bottom: 5px; color: #2e7d32; display: flex; align-items: center; gap: 8px; }
             .expressone-selected-details { font-size: 14px; color: #333; line-height: 1.5; }
         ";
         wp_add_inline_style('woocommerce-inline', $css);
         
-        // Add JS logic for postMessage
+        // Add JS logic for modal and postMessage
         $js = "
         jQuery(document).ready(function($) {
+            
+            // Modal Toggles
+            $(document).on('click', '#open_expressone_modal', function(e) {
+                e.preventDefault();
+                $('.expressone-modal-overlay').css('display', 'flex').hide().fadeIn(300);
+            });
+            
+            $(document).on('click', '.expressone-close-btn', function(e) {
+                e.preventDefault();
+                $('.expressone-modal-overlay').fadeOut(300);
+            });
+            
+            // Close on outside click
+            $(document).on('click', '.expressone-modal-overlay', function(e) {
+                if ($(e.target).hasClass('expressone-modal-overlay')) {
+                    $(this).fadeOut(300);
+                }
+            });
+
             // Function to update the display
             function updateSelectedShopDisplay(data) {
                 if (!data || !data.id || !data.name) return;
@@ -69,6 +110,9 @@ class Selector {
                 html += '</div>';
                 
                 $('#expressone_selected_shop_display').html(html).slideDown();
+                
+                // Zárjuk be a pop-up ablakot sikeres kiválasztás után
+                $('.expressone-modal-overlay').fadeOut(300);
             }
 
             // Listen for iframe messages from Express One tracking map
@@ -98,15 +142,8 @@ class Selector {
                         },
                         success: function(response) {
                             if (response.success) {
-                                // Sikeres mentés után frissítsük a pénztárat, ez kulcsfontosságú!
+                                // Sikeres mentés után frissítsük a pénztárat!
                                 $('body').trigger('update_checkout');
-                                
-                                // Opcionálisan gördítsünk oda
-                                $('html, body').animate({
-                                    scrollTop: $('#expressone_selected_shop_display').offset().top - 100
-                                }, 500);
-                            } else {
-                                console.error('Hiba az Express One csomagpont mentésekor:', response);
                             }
                         }
                     });
@@ -119,7 +156,6 @@ class Selector {
                 try {
                     let presetData = JSON.parse($('#expressone_parcelshop_data').val() || '{}');
                     if (presetData.name) {
-                        // Re-map to match the expected format of updateSelectedShopDisplay
                         let mappedData = {
                             id: presetData.id,
                             name: presetData.name,
@@ -149,11 +185,22 @@ class Selector {
         ob_start();
         ?>
         <div class="expressone-parcelshop-wrapper">
-            <div class="expressone-iframe-container">
-                <iframe class="expressone-iframe" src="https://tracking.expressone.hu/pickup/points?lang=<?php echo esc_attr($iframe_lang); ?>&nearby=1" title="Express One Csomagpont Kereső"></iframe>
-            </div>
+            <!-- Selector Button -->
+            <button type="button" id="open_expressone_modal" class="button alt">
+                <span class="dashicons dashicons-location-alt"></span>
+                <?php _e('Express One Csomagpont Kiválasztása', 'mygls-woocommerce'); ?>
+            </button>
             
+            <!-- Result Display Container -->
             <div id="expressone_selected_shop_display"></div>
+            
+            <!-- Modal Overlay -->
+            <div class="expressone-modal-overlay">
+                <div class="expressone-iframe-container">
+                    <button type="button" class="expressone-close-btn" title="Bezárás">X</button>
+                    <iframe class="expressone-iframe" src="https://tracking.expressone.hu/pickup/points?lang=<?php echo esc_attr($iframe_lang); ?>&nearby=1" title="Express One Csomagpont Kereső"></iframe>
+                </div>
+            </div>
             
             <input type="hidden" name="expressone_parcelshop_id" id="expressone_parcelshop_id" value="<?php echo esc_attr($selected_parcelshop['id'] ?? ''); ?>">
             <input type="hidden" name="expressone_parcelshop_data" id="expressone_parcelshop_data" value="<?php echo esc_attr(json_encode($selected_parcelshop ?? [])); ?>">
