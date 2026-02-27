@@ -491,6 +491,7 @@ class OrderMetaBox {
                     wp_send_json_error(['message' => __('Missing label data from Express One API', 'mygls-woocommerce')]);
                 }
 
+            } else {
                 $api = mygls_get_api_client();
                 $parcel = $api->buildParcelFromOrder($order_id);
                 
