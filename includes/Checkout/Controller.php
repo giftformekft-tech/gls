@@ -1596,6 +1596,19 @@ class Controller {
                 return true;
             }
         }
+        
+        // Check if it's expressly an Express One parcelshop method
+        if (strpos($method_id, 'expressone') !== false) {
+            $parts = explode(':', $method_id);
+            $instance_id = isset($parts[1]) ? $parts[1] : '';
+            
+            if (!empty($instance_id)) {
+                $eo_method_settings = get_option('woocommerce_expressone_' . $instance_id . '_settings', []);
+                if (isset($eo_method_settings['shipping_type']) && $eo_method_settings['shipping_type'] === 'parcelshop') {
+                    return true;
+                }
+            }
+        }
 
         return false;
     }
