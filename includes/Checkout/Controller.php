@@ -1547,15 +1547,24 @@ class Controller {
         }
 
         $enabled_methods = $this->settings['parcelshop_enabled_methods'] ?? [];
-        if (empty($enabled_methods)) {
-            return false;
-        }
-
+        
         $chosen_methods = (array) WC()->session->get('chosen_shipping_methods', []);
 
         foreach ($chosen_methods as $chosen_method) {
             if ($this->is_parcelshop_method($chosen_method, $enabled_methods)) {
                 return $chosen_method;
+            }
+            // Check if it's expressly an Express One parcelshop method
+            if (strpos($chosen_method, 'expressone') !== false) {
+                $parts = explode(':', $chosen_method);
+                $instance_id = isset($parts[1]) ? $parts[1] : '';
+                
+                if (!empty($instance_id)) {
+                    $eo_method_settings = get_option('woocommerce_expressone_' . $instance_id . '_settings', []);
+                    if (isset($eo_method_settings['shipping_type']) && $eo_method_settings['shipping_type'] === 'parcelshop') {
+                        return $chosen_method;
+                    }
+                }
             }
         }
 
