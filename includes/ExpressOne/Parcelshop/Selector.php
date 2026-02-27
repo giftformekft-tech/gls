@@ -48,22 +48,23 @@ class Selector {
             /* Modal Overlay */
             .expressone-modal-overlay { 
                 display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                background: rgba(0,0,0,0.6); z-index: 999999; 
+                background: rgba(0,0,0,0.8); z-index: 999999; 
                 justify-content: center; align-items: center; 
             }
             .expressone-iframe-container { 
-                position: relative; width: 90%; max-width: 1000px; height: 80vh; 
-                background: #fff; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.3); overflow: hidden; 
+                position: relative; width: 100%; height: 100%; 
+                background: #fff; overflow: hidden; 
             }
             .expressone-iframe { width: 100%; height: 100%; border: none; }
             
             /* Close Button */
             .expressone-close-btn { 
-                position: absolute; top: 15px; right: 20px; 
-                background: white; border: 2px solid #333; color: #333; font-weight: bold; font-size: 16px; 
-                width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10;
+                position: fixed; top: 15px; right: 20px; 
+                background: #fff; border: 2px solid #333; color: #333; font-weight: bold; font-size: 20px; 
+                width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 9999999;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
             }
-            .expressone-close-btn:hover { background: #333; color: white; }
+            .expressone-close-btn:hover { background: #d9534f; color: white; border-color: #d9534f; }
 
             /* Selected Shop Display */
             #expressone_selected_shop_display { margin-top: 15px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
