@@ -88,13 +88,28 @@ class Selector {
                     
                     updateSelectedShopDisplay(shopData);
                     
-                    // Optionally scroll to selected shop display
-                    $('html, body').animate({
-                        scrollTop: $('#expressone_selected_shop_display').offset().top - 100
-                    }, 500);
-
-                    // Trigger WooCommerce checkout update so shipping gets recalculated (if needed)
-                    $('body').trigger('update_checkout');
+                    // Mentés WooCommerce session-be AJAX hívással
+                    $.ajax({
+                        url: wc_checkout_params.ajax_url,
+                        type: 'POST',
+                        data: {
+                            action: 'expressone_save_parcelshop',
+                            parcelshop: JSON.stringify(shopData)
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                // Sikeres mentés után frissítsük a pénztárat, ez kulcsfontosságú!
+                                $('body').trigger('update_checkout');
+                                
+                                // Opcionálisan gördítsünk oda
+                                $('html, body').animate({
+                                    scrollTop: $('#expressone_selected_shop_display').offset().top - 100
+                                }, 500);
+                            } else {
+                                console.error('Hiba az Express One csomagpont mentésekor:', response);
+                            }
+                        }
+                    });
                 }
             });
             
