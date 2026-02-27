@@ -59,10 +59,10 @@ class Selector {
             
             /* Close Button */
             .expressone-close-btn { 
-                position: fixed; top: 15px; right: 20px; 
-                background: #fff; border: 2px solid #333; color: #333; font-weight: bold; font-size: 20px; 
-                width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 9999999;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+                background: #fff; border: 2px solid #333; color: #333; font-weight: bold; font-size: 16px; 
+                width: auto; height: auto; padding: 10px 30px; border-radius: 25px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 9999999;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-transform: uppercase; letter-spacing: 1px;
             }
             .expressone-close-btn:hover { background: #d9534f; color: white; border-color: #d9534f; }
 
@@ -198,7 +198,7 @@ class Selector {
             <!-- Modal Overlay -->
             <div class="expressone-modal-overlay">
                 <div class="expressone-iframe-container">
-                    <button type="button" class="expressone-close-btn" title="Bezárás">X</button>
+                    <button type="button" class="expressone-close-btn" title="Bezárás"><?php _e('Bezárás', 'mygls-woocommerce'); ?></button>
                     <iframe class="expressone-iframe" src="https://tracking.expressone.hu/pickup/points?lang=<?php echo esc_attr($iframe_lang); ?>&nearby=1" title="Express One Csomagpont Kereső"></iframe>
                 </div>
             </div>
