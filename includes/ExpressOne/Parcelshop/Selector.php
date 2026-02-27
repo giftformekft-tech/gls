@@ -42,116 +42,100 @@ class Selector {
         // Add minimal CSS for the selector
         $css = "
             .expressone-parcelshop-wrapper { margin-top: 15px; }
-            .expressone-search-input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ddd; }
-            .expressone-shop-list { max-height: 300px; overflow-y: auto; border: 1px solid #eee; }
-            .expressone-shop-item { padding: 10px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.2s; }
-            .expressone-shop-item:hover, .expressone-shop-item.selected { background: #f0f4ff; }
-            .expressone-shop-name { font-weight: bold; display: block; }
-            .expressone-shop-address { font-size: 0.9em; color: #666; }
-            #expressone_selected_shop_display { margin-top: 10px; padding: 10px; background: #e8f5e9; border-radius: 4px; display: none; }
+            .expressone-iframe-container { width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; }
+            .expressone-iframe { width: 100%; height: 100%; border: none; }
+            #expressone_selected_shop_display { margin-top: 10px; padding: 15px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 4px; display: none; }
+            .expressone-selected-title { font-weight: bold; margin-bottom: 5px; color: #2e7d32; display: flex; align-items: center; gap: 8px; }
+            .expressone-selected-details { font-size: 14px; color: #333; line-height: 1.5; }
         ";
         wp_add_inline_style('woocommerce-inline', $css);
         
-        // Add JS logic
+        // Add JS logic for postMessage
         $js = "
         jQuery(document).ready(function($) {
-            let shops = [];
-            
-            function loadShops() {
-                $.ajax({
-                    url: wc_checkout_params.ajax_url,
-                    type: 'POST',
-                    data: {
-                        action: 'expressone_get_parcelshops',
-                        nonce: wc_checkout_params.update_order_review_nonce || ''
-                    },
-                    success: function(response) {
-                        if (response.success && response.data.shops) {
-                            shops = response.data.shops;
-                            renderShops(shops);
-                        }
-                    }
-                });
-            }
-            
-            function renderShops(shopsToRender) {
-                let html = '';
-                shopsToRender.forEach(function(shop) {
-                    html += '<div class=\"expressone-shop-item\" data-id=\"' + shop.id + '\" data-name=\"' + shop.name + '\" data-address=\"' + shop.address + '\" data-city=\"' + shop.city + '\" data-zip=\"' + shop.zip + '\">';
-                    html += '<span class=\"expressone-shop-name\">' + shop.name + '</span>';
-                    html += '<span class=\"expressone-shop-address\">' + shop.zip + ' ' + shop.city + ', ' + shop.address + '</span>';
-                    html += '</div>';
-                });
-                $('#expressone_shop_list').html(html);
-            }
-            
-            $(document).on('keyup', '#expressone_shop_search', function() {
-                let term = $(this).val().toLowerCase();
-                if (term.length < 2) {
-                    renderShops(shops);
-                    return;
-                }
-                let filtered = shops.filter(function(shop) {
-                    return shop.name.toLowerCase().indexOf(term) > -1 || 
-                           shop.city.toLowerCase().indexOf(term) > -1 || 
-                           shop.address.toLowerCase().indexOf(term) > -1;
-                });
-                renderShops(filtered);
-            });
-            
-            $(document).on('click', '.expressone-shop-item', function() {
-                $('.expressone-shop-item').removeClass('selected');
-                $(this).addClass('selected');
-                
-                let data = {
-                    id: $(this).data('id'),
-                    name: $(this).data('name'),
-                    address: $(this).data('address'),
-                    city: $(this).data('city'),
-                    zip: $(this).data('zip')
-                };
+            // Function to update the display
+            function updateSelectedShopDisplay(data) {
+                if (!data || !data.id || !data.name) return;
                 
                 $('#expressone_parcelshop_id').val(data.id);
                 $('#expressone_parcelshop_data').val(JSON.stringify(data));
                 
-                $('#expressone_selected_shop_display').html('<strong>Kiválasztva:</strong> ' + data.name + ' (' + data.address + ')').show();
+                let html = '<div class=\"expressone-selected-title\">';
+                html += '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg>';
+                html += 'Kiválasztott Express One Csomagpont:</div>';
+                html += '<div class=\"expressone-selected-details\">';
+                html += '<strong>' + data.name + '</strong><br>';
+                html += data.zip_code + ' ' + data.city + ', ' + data.street;
+                html += '</div>';
+                
+                $('#expressone_selected_shop_display').html(html).slideDown();
+            }
+
+            // Listen for iframe messages from Express One tracking map
+            window.addEventListener('message', function(e) {
+                // Ensure message contains necessary data properties
+                if (e.data && e.data.name && e.data.zip_code) {
+                    
+                    let shopData = {
+                        id: e.data.id || e.data.tof_shop_id || '',
+                        name: e.data.name,
+                        address: e.data.street,
+                        city: e.data.city,
+                        zip: e.data.zip_code,
+                        gis_x: e.data.gis_x || '',
+                        gis_y: e.data.gis_y || ''
+                    };
+                    
+                    updateSelectedShopDisplay(shopData);
+                    
+                    // Optionally scroll to selected shop display
+                    $('html, body').animate({
+                        scrollTop: $('#expressone_selected_shop_display').offset().top - 100
+                    }, 500);
+
+                    // Trigger WooCommerce checkout update so shipping gets recalculated (if needed)
+                    $('body').trigger('update_checkout');
+                }
             });
             
-            // Initiate load if selector is present
-            if ($('#expressone_shop_list').length > 0) {
-                // If we don't have shops yet, load them
-                loadShops();
-                
-                // Show previously selected if exists
-                let presetId = $('#expressone_parcelshop_id').val();
-                if (presetId) {
+            // Check for pre-selected shop on load
+            let presetId = $('#expressone_parcelshop_id').val();
+            if (presetId) {
+                try {
                     let presetData = JSON.parse($('#expressone_parcelshop_data').val() || '{}');
                     if (presetData.name) {
-                        $('#expressone_selected_shop_display').html('<strong>Kiválasztva:</strong> ' + presetData.name + ' (' + presetData.address + ')').show();
+                        // Re-map to match the expected format of updateSelectedShopDisplay
+                        let mappedData = {
+                            id: presetData.id,
+                            name: presetData.name,
+                            street: presetData.address,
+                            city: presetData.city,
+                            zip_code: presetData.zip
+                        };
+                        updateSelectedShopDisplay(mappedData);
                     }
-                }
+                } catch(e) {}
             }
         });
         ";
         wp_add_inline_script('wc-checkout', $js);
     }
 
-    /**
-     * Shortcode for parcelshop selector
-     */
     public function parcelshop_selector_shortcode($atts) {
         $selected_parcelshop = null;
         if (function_exists('WC') && WC()->session) {
             $selected_parcelshop = WC()->session->get('expressone_selected_parcelshop');
         }
 
+        // Get language setting (hu/en)
+        $lang = get_locale();
+        $iframe_lang = (strpos($lang, 'en_') === 0) ? 'en' : 'hu';
+
         ob_start();
         ?>
         <div class="expressone-parcelshop-wrapper">
-            <input type="text" id="expressone_shop_search" class="expressone-search-input" placeholder="<?php esc_attr_e('Keresés város, cím vagy név alapján...', 'mygls-woocommerce'); ?>">
-            <div id="expressone_shop_list" class="expressone-shop-list">
-                <!-- Populated via AJAX -->
-                <p style="padding: 10px;"><?php _e('Csomagpontok betöltése...', 'mygls-woocommerce'); ?></p>
+            <div class="expressone-iframe-container">
+                <iframe class="expressone-iframe" src="https://tracking.expressone.hu/pickup/points?lang=<?php echo esc_attr($iframe_lang); ?>&nearby=1" title="Express One Csomagpont Kereső"></iframe>
             </div>
             
             <div id="expressone_selected_shop_display"></div>
