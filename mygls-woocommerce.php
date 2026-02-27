@@ -245,6 +245,19 @@ function mygls_get_settings() {
 }
 
 /**
+ * Automatic database update check on admin init
+ * This ensures schema updates apply even if plugin is not deactivated/reactivated
+ */
+add_action('admin_init', 'mygls_update_db_check');
+function mygls_update_db_check() {
+    $current_version = get_option('mygls_db_version', '1.0');
+    if ($current_version !== '1.1') {
+        mygls_activate();
+        update_option('mygls_db_version', '1.1');
+    }
+}
+
+/**
  * Plugin activation hook
  */
 function mygls_activate() {
