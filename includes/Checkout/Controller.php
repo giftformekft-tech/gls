@@ -1557,11 +1557,11 @@ class Controller {
             // Check if it's expressly an Express One parcelshop method
             if (strpos($chosen_method, 'expressone') !== false) {
                 $parts = explode(':', $chosen_method);
-                $instance_id = isset($parts[1]) ? $parts[1] : '';
+                $instance_id = isset($parts[1]) ? intval($parts[1]) : 0;
                 
-                if (!empty($instance_id)) {
-                    $eo_method_settings = get_option('woocommerce_expressone_' . $instance_id . '_settings', []);
-                    if (isset($eo_method_settings['shipping_type']) && $eo_method_settings['shipping_type'] === 'parcelshop') {
+                if ($instance_id > 0 && class_exists('\ExpressOne\Shipping\Method')) {
+                    $eo_method = new \ExpressOne\Shipping\Method($instance_id);
+                    if (method_exists($eo_method, 'is_parcelshop_delivery') && $eo_method->is_parcelshop_delivery()) {
                         return $chosen_method;
                     }
                 }
@@ -1600,11 +1600,11 @@ class Controller {
         // Check if it's expressly an Express One parcelshop method
         if (strpos($method_id, 'expressone') !== false) {
             $parts = explode(':', $method_id);
-            $instance_id = isset($parts[1]) ? $parts[1] : '';
+            $instance_id = isset($parts[1]) ? intval($parts[1]) : 0;
             
-            if (!empty($instance_id)) {
-                $eo_method_settings = get_option('woocommerce_expressone_' . $instance_id . '_settings', []);
-                if (isset($eo_method_settings['shipping_type']) && $eo_method_settings['shipping_type'] === 'parcelshop') {
+            if ($instance_id > 0 && class_exists('\ExpressOne\Shipping\Method')) {
+                $eo_method = new \ExpressOne\Shipping\Method($instance_id);
+                if (method_exists($eo_method, 'is_parcelshop_delivery') && $eo_method->is_parcelshop_delivery()) {
                     return true;
                 }
             }
