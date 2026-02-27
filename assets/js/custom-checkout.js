@@ -686,5 +686,48 @@
             movePrivacyCheckboxBeforeOrderButton();
             scheduleMobileOrderSummaryMove();
         });
+
+        // Checkout Validation for Parcelshops
+        $('form.checkout').on('checkout_place_order', function() {
+            var $selectedShipping = $('.woocommerce-shipping-methods input[type="radio"]:checked');
+            
+            if (!$selectedShipping.length) {
+                return true;
+            }
+
+            var methodVal = $selectedShipping.val() || '';
+            var isParcelshopMethod = $selectedShipping.data('parcelshop') === 1 || $selectedShipping.data('parcelshop') === '1';
+
+            // Special check for Express One parcelshop if data attribute is somehow missing
+            if (methodVal.indexOf('expressone') !== -1) {
+                // If it has expressone in value, check if the parcelshop section is visible
+                var $eoWrapper = $('#mygls-section-wrapper-parcelshop');
+                if ($eoWrapper.length && $eoWrapper.attr('aria-hidden') !== 'true') {
+                    isParcelshopMethod = true;
+                }
+            }
+
+            if (isParcelshopMethod) {
+                var eoId = $('#expressone_parcelshop_id').val();
+                var glsId = $('#mygls_parcelshop_id').val();
+                
+                // If both are empty, customer hasn't selected a parcelshop
+                if ((!eoId || eoId === '') && (!glsId || glsId === '')) {
+                    // Create error notice
+                    var errorHtml = '<ul class="woocommerce-error" role="alert"><li>Kérjük, válasszon egy csomagpontot a szállításhoz!</li></ul>';
+                    
+                    $('.woocommerce-error, .woocommerce-message').remove();
+                    $('form.checkout').prepend(errorHtml);
+                    
+                    $('html, body').animate({
+                        scrollTop: ($('form.checkout').offset().top - 100)
+                    }, 500);
+                    
+                    return false; // Prevent form submission
+                }
+            }
+            
+            return true;
+        });
     });
 })(jQuery);

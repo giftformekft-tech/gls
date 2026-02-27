@@ -238,20 +238,25 @@ class Selector {
 
         $requires_parcelshop = false;
         foreach ($chosen_methods as $chosen_method) {
+            // Check global GLS settings
+            $global_settings = get_option('mygls_settings', []);
+            $enabled_methods = $global_settings['parcelshop_enabled_methods'] ?? [];
+            if (in_array($chosen_method, $enabled_methods)) {
+                $requires_parcelshop = true;
+                break;
+            }
+
             // Check if the shipping method is expressone and is a parcelshop type
             if (strpos($chosen_method, 'expressone') !== false) {
-                // Here we would ideally check if it's the parcelshop method.
-                // Assuming it might have a _parcelshop suffix or comparing against settings
-                $settings = get_option('expressone_settings', []);
-                $shipping_type = $settings['shipping_type'] ?? 'home';
+                $parts = explode(':', $chosen_method);
+                $instance_id = isset($parts[1]) ? intval($parts[1]) : 0;
                 
-                // Just as a generic check
-                $global_settings = get_option('mygls_settings', []);
-                $enabled_methods = $global_settings['parcelshop_enabled_methods'] ?? [];
-                
-                if (in_array($chosen_method, $enabled_methods) || strpos($chosen_method, 'expressone_parcelshop') !== false) {
-                    $requires_parcelshop = true;
-                    break;
+                if ($instance_id > 0 && class_exists('\ExpressOne\Shipping\Method')) {
+                    $eo_method = new \ExpressOne\Shipping\Method($instance_id);
+                    if (method_exists($eo_method, 'is_parcelshop_delivery') && $eo_method->is_parcelshop_delivery()) {
+                        $requires_parcelshop = true;
+                        break;
+                    }
                 }
             }
         }
