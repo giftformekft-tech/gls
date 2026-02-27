@@ -151,23 +151,33 @@ class Selector {
                 }
             });
             
-            // Check for pre-selected shop on load
-            let presetId = $('#expressone_parcelshop_id').val();
-            if (presetId) {
-                try {
-                    let presetData = JSON.parse($('#expressone_parcelshop_data').val() || '{}');
-                    if (presetData.name) {
-                        let mappedData = {
-                            id: presetData.id,
-                            name: presetData.name,
-                            street: presetData.address,
-                            city: presetData.city,
-                            zip_code: presetData.zip
-                        };
-                        updateSelectedShopDisplay(mappedData);
-                    }
-                } catch(e) {}
+            // Function to check and display pre-selected shop
+            function initExpressOneSelector() {
+                let presetId = $('#expressone_parcelshop_id').val();
+                if (presetId) {
+                    try {
+                        let presetData = JSON.parse($('#expressone_parcelshop_data').val() || '{}');
+                        if (presetData.name) {
+                            let mappedData = {
+                                id: presetData.id,
+                                name: presetData.name,
+                                street: presetData.address,
+                                city: presetData.city,
+                                zip_code: presetData.zip
+                            };
+                            updateSelectedShopDisplay(mappedData);
+                        }
+                    } catch(e) {}
+                }
             }
+            
+            // Inicializálás az első betöltésnél
+            initExpressOneSelector();
+            
+            // Újrainicializálás minden WooCommerce checkout darab frissítése után
+            $(document).on('updated_checkout', function() {
+                initExpressOneSelector();
+            });
         });
         ";
         wp_add_inline_script('wc-checkout', $js);
