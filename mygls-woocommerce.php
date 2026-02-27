@@ -129,11 +129,11 @@ add_action('woocommerce_loaded', 'mygls_init');
  */
 function mygls_register_shipping_method($methods) {
     require_once MYGLS_PLUGIN_DIR . 'includes/Shipping/Method.php';
-    $methods['mygls_shipping'] = 'MyGLS\\Shipping\\Method';
+    $methods['mygls'] = 'MyGLS\\Shipping\\Method';
 
     if (file_exists(MYGLS_PLUGIN_DIR . 'includes/ExpressOne/Shipping/Method.php')) {
         require_once MYGLS_PLUGIN_DIR . 'includes/ExpressOne/Shipping/Method.php';
-        $methods['expressone_shipping'] = 'ExpressOne\\Shipping\\Method';
+        $methods['expressone'] = 'ExpressOne\\Shipping\\Method';
     }
     
     return $methods;
@@ -164,7 +164,7 @@ function mygls_hide_shipping_methods($rates, $package) {
 
         foreach ($rates as $rate_id => $rate) {
             // Check if it's our method AND it is a paid method
-            if (strpos($rate_id, 'mygls') !== false && $rate->cost > 0) {
+            if ((strpos($rate_id, 'mygls') !== false || strpos($rate_id, 'expressone') !== false) && $rate->cost > 0) {
                 // Check if this method is configured to be hidden
                 // Rate ID format matches the value saved in settings (method_id:instance_id)
                 if (in_array($rate_id, $hide_if_free_methods)) {
