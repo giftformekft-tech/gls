@@ -14,6 +14,8 @@ class PaymentFee {
         add_action('woocommerce_cart_calculate_fees', [$this, 'add_cod_fee'], 20);
         add_filter('woocommerce_gateway_title', [$this, 'append_cod_fee_to_label'], 10, 2);
         add_action('woocommerce_checkout_update_order_review', [$this, 'sync_payment_method_from_post']);
+        add_action('woocommerce_checkout_create_order', [$this, 'clean_payment_method_title']);
+        add_filter('woocommerce_order_get_payment_method_title', [$this, 'clean_existing_payment_method_title'], 10, 2);
     }
 
     public function sync_payment_method_from_post($posted_data): void {
@@ -95,5 +97,32 @@ class PaymentFee {
 
         $formatted = wc_price($amount);
         return sprintf('%s <span class="mygls-cod-fee-label">+%s</span>', $title, $formatted);
+    }
+
+    public function clean_payment_method_title($order): void {
+        if (!is_a($order, 'WC_Order')) {
+            return;
+        }
+
+        if ($order->get_payment_method() === 'cod') {
+            $title = $order->get_payment_method_title();
+            $pos = strpos($title, ' <span class="mygls-cod-fee-label">');
+            if ($pos !== false) {
+                $order->set_payment_method_title(trim(substr($title, 0, $pos)));
+            }
+        }
+    }
+
+    public function clean_existing_payment_method_title($title, $order = null): string {
+        if (empty($title) || !is_string($title)) {
+            return (string) $title;
+        }
+
+        $pos = strpos($title, ' <span class="mygls-cod-fee-label">');
+        if ($pos !== false) {
+            return trim(substr($title, 0, $pos));
+        }
+
+        return $title;
     }
 }
