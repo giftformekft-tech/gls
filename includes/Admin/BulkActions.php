@@ -12,8 +12,14 @@ if (!defined('ABSPATH')) {
 
 class BulkActions {
     public function __construct() {
+        // Classic WP Posts Order Storage
         add_filter('bulk_actions-edit-shop_order', [$this, 'add_bulk_actions']);
         add_filter('handle_bulk_actions-edit-shop_order', [$this, 'handle_bulk_actions'], 10, 3);
+        
+        // HPOS (High-Performance Order Storage)
+        add_filter('bulk_actions-woocommerce_page_wc-orders', [$this, 'add_bulk_actions']);
+        add_filter('handle_bulk_actions-woocommerce_page_wc-orders', [$this, 'handle_bulk_actions'], 10, 3);
+        
         add_action('admin_notices', [$this, 'bulk_action_notices']);
     }
     
