@@ -10,6 +10,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Load FPDF and FPDI libraries needed for PDF merging
+$_mygls_fpdf_path = dirname(dirname(dirname(__FILE__))) . '/lib/fpdf/FPDF-master/fpdf.php';
+$_mygls_fpdi_path = dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
+
+if (file_exists($_mygls_fpdf_path) && !class_exists('FPDF')) {
+    require_once $_mygls_fpdf_path;
+}
+if (file_exists($_mygls_fpdi_path) && !class_exists('\setasign\Fpdi\Fpdi')) {
+    require_once $_mygls_fpdi_path;
+}
+
 class BulkActions {
     public function __construct() {
         // Classic WP Posts Order Storage
@@ -320,14 +331,7 @@ class BulkActions {
             wp_die(__('No labels found for selected orders', 'mygls-woocommerce'));
         }
         
-        // Load FPDF and FPDI libraries
-        if (!class_exists('FPDF')) {
-            require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdf/FPDF-master/fpdf.php';
-        }
-        if (!class_exists('\setasign\Fpdi\Fpdi')) {
-            require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
-        }
-        
+        // Load FPDF and FPDI libraries (already loaded at file top, but ensuring they are available)
         $pdf = new \MyGLS\Admin\MyGLS_FPDI();
         
         // A4 portrait = 210mm x 297mm, each quarter = 105mm x 148.5mm (A6)
