@@ -334,15 +334,6 @@ class BulkActions {
         // Load FPDF and FPDI libraries (already loaded at file top, but ensuring they are available)
         $pdf = new \MyGLS\Admin\MyGLS_FPDI();
         
-        // A4 portrait = 210mm x 297mm, each quarter = 105mm x 148.5mm (A6)
-        $label_count = 0;
-        $positions = [
-            0 => ['x' => 0,   'y' => 0],
-            1 => ['x' => 105, 'y' => 0],
-            2 => ['x' => 0,   'y' => 148.5],
-            3 => ['x' => 105, 'y' => 148.5],
-        ];
-        
         foreach ($labels as $label) {
             $pdf_data = base64_decode($label->label_pdf);
             
@@ -355,28 +346,19 @@ class BulkActions {
                     $templateId = $pdf->importPage($pageNo);
                     $size = $pdf->getTemplateSize($templateId);
                     
-                    $slot_index = $label_count % 4;
-                    if ($slot_index === 0) {
-                        $pdf->AddPage('P', 'A4');
-                    }
-                    
-                    $x = $positions[$slot_index]['x'];
-                    $y = $positions[$slot_index]['y'];
-                    
+                    // 1 label per A4 page, portrait; rotate if the label is landscape
+                    $pdf->AddPage('P', 'A4');
                     if ($size['width'] > $size['height']) {
-                        // Landscape label: rotate 90 degrees to fit portrait slot
-                        $pdf->Rotate(90, $x, $y);
-                        $pdf->useTemplate($templateId, $x - 148.5, $y, 148.5, 105);
+                        // Landscape label: rotate 90 degrees CCW so it reads upright on portrait A4
+                        $pdf->Rotate(90, 0, 0);
+                        $pdf->useTemplate($templateId, -$size['height'], 0, $size['height'], $size['width']);
                         $pdf->Rotate(0);
                     } else {
-                        // Portrait label: place directly
-                        $pdf->useTemplate($templateId, $x, $y, 105, 148.5);
+                        $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
                     }
-                    
-                    $label_count++;
                 }
             } catch (\Exception $e) {
-                // Ignore individual PDF errors, continue with others
+                // Ignore individual PDF errors
             }
             
             @unlink($tmp_file);
