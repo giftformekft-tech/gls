@@ -321,7 +321,44 @@ class BulkActions {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
         }
         
-        $pdf = new \setasign\Fpdi\Fpdi();
+        if (!class_exists('MyGLS_FPDI')) {
+            class MyGLS_FPDI extends \\setasign\\Fpdi\\Fpdi {
+                var $angle = 0;
+
+                function Rotate($angle, $x = -1, $y = -1) {
+                    if ($x == -1) $x = $this-\u003ex;
+                    if ($y == -1) $y = $this-\u003ey;
+                    if ($this-\u003eangle != 0) $this-\u003e_out('Q');
+                    $this-\u003eangle = $angle;
+                    if ($angle != 0) {
+                        $angle *= M_PI / 180;
+                        $c = cos($angle);
+                        $s = sin($angle);
+                        $cx = $x * $this-\u003ek;
+                        $cy = ($this-\u003eh - $y) * $this-\u003ek;
+                        $this-\u003e_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+                    }
+                }
+
+                function _endpage() {
+                    if ($this-\u003eangle != 0) {
+                        $this-\u003eangle = 0;
+                        $this-\u003e_out('Q');
+                    }
+                    parent::_endpage();
+                }
+            }
+        }
+        
+        $pdf = new \\MyGLS_FPDI();
+        
+        $label_count = 0;
+        $positions = [
+            0 =\u003e ['x' =\u003e 0, 'y' =\u003e 0],
+            1 =\u003e ['x' =\u003e 105, 'y' =\u003e 0],
+            2 =\u003e ['x' =\u003e 0, 'y' =\u003e 148.5],
+            3 =\u003e ['x' =\u003e 105, 'y' =\u003e 148.5]
+        ];
         
         foreach ($labels as $label) {
             $pdf_data = base64_decode($label->label_pdf);
@@ -331,19 +368,35 @@ class BulkActions {
             file_put_contents($tmp_file, $pdf_data);
             
             try {
-                $pageCount = $pdf->setSourceFile($tmp_file);
-                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
-                    $templateId = $pdf->importPage($pageNo);
-                    $size = $pdf->getTemplateSize($templateId);
+                $pageCount = $pdf-\u003esetSourceFile($tmp_file);
+                for ($pageNo = 1; $pageNo \u003c= $pageCount; $pageNo++) {
+                    $templateId = $pdf-\u003eimportPage($pageNo);
+                    $size = $pdf-\u003egetTemplateSize($templateId);
+                    
+                    $slot_index = $label_count % 4;
+                    if ($slot_index === 0) {
+                        // Always add an A4 portrait page
+                        $pdf-\u003eAddPage('P', 'A4');
+                    }
+                    
+                    $x = $positions[$slot_index]['x'];
+                    $y = $positions[$slot_index]['y'];
                     
                     if ($size['width'] > $size['height']) {
-                        $pdf->AddPage('L', [$size['width'], $size['height']]);
+                        // Landscape label: rotate 90 degrees CCW to fit in portrait slot
+                        // We rotate around the top-left of the slot (x, y)
+                        // To fall into the slot after 90 deg CCW, we draw the image so its top-right is at (x, y)
+                        $pdf->Rotate(90, $x, $y);
+                        $pdf->useTemplate($templateId, $x - 148.5, $y, 148.5, 105);
+                        $pdf->Rotate(0);
                     } else {
-                        $pdf->AddPage('P', [$size['width'], $size['height']]);
+                        // Portrait label: place directly
+                        $pdf-\u003euseTemplate($templateId, $x, $y, 105, 148.5);
                     }
-                    $pdf->useTemplate($templateId);
+                    
+                    $label_count++;
                 }
-            } catch (\Exception $e) {
+            } catch (\\Exception $e) {
                 // Ignore errors for individual PDFs to allow others to process
             }
             
