@@ -317,47 +317,47 @@ class BulkActions {
         if (!class_exists('FPDF')) {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdf/FPDF-master/fpdf.php';
         }
-        if (!class_exists('\\setasign\\Fpdi\\Fpdi')) {
+        if (!class_exists('\setasign\Fpdi\Fpdi')) {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
         }
         
         if (!class_exists('MyGLS_FPDI')) {
-            class MyGLS_FPDI extends \\setasign\\Fpdi\\Fpdi {
+            class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
                 var $angle = 0;
 
                 function Rotate($angle, $x = -1, $y = -1) {
-                    if ($x == -1) $x = $this-\u003ex;
-                    if ($y == -1) $y = $this-\u003ey;
-                    if ($this-\u003eangle != 0) $this-\u003e_out('Q');
-                    $this-\u003eangle = $angle;
+                    if ($x == -1) $x = $this->x;
+                    if ($y == -1) $y = $this->y;
+                    if ($this->angle != 0) $this->_out('Q');
+                    $this->angle = $angle;
                     if ($angle != 0) {
                         $angle *= M_PI / 180;
                         $c = cos($angle);
                         $s = sin($angle);
-                        $cx = $x * $this-\u003ek;
-                        $cy = ($this-\u003eh - $y) * $this-\u003ek;
-                        $this-\u003e_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+                        $cx = $x * $this->k;
+                        $cy = ($this->h - $y) * $this->k;
+                        $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
                     }
                 }
 
                 function _endpage() {
-                    if ($this-\u003eangle != 0) {
-                        $this-\u003eangle = 0;
-                        $this-\u003e_out('Q');
+                    if ($this->angle != 0) {
+                        $this->angle = 0;
+                        $this->_out('Q');
                     }
                     parent::_endpage();
                 }
             }
         }
         
-        $pdf = new \\MyGLS_FPDI();
+        $pdf = new MyGLS_FPDI();
         
         $label_count = 0;
         $positions = [
-            0 =\u003e ['x' =\u003e 0, 'y' =\u003e 0],
-            1 =\u003e ['x' =\u003e 105, 'y' =\u003e 0],
-            2 =\u003e ['x' =\u003e 0, 'y' =\u003e 148.5],
-            3 =\u003e ['x' =\u003e 105, 'y' =\u003e 148.5]
+            0 => ['x' => 0, 'y' => 0],
+            1 => ['x' => 105, 'y' => 0],
+            2 => ['x' => 0, 'y' => 148.5],
+            3 => ['x' => 105, 'y' => 148.5]
         ];
         
         foreach ($labels as $label) {
@@ -368,15 +368,15 @@ class BulkActions {
             file_put_contents($tmp_file, $pdf_data);
             
             try {
-                $pageCount = $pdf-\u003esetSourceFile($tmp_file);
-                for ($pageNo = 1; $pageNo \u003c= $pageCount; $pageNo++) {
-                    $templateId = $pdf-\u003eimportPage($pageNo);
-                    $size = $pdf-\u003egetTemplateSize($templateId);
+                $pageCount = $pdf->setSourceFile($tmp_file);
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $templateId = $pdf->importPage($pageNo);
+                    $size = $pdf->getTemplateSize($templateId);
                     
                     $slot_index = $label_count % 4;
                     if ($slot_index === 0) {
                         // Always add an A4 portrait page
-                        $pdf-\u003eAddPage('P', 'A4');
+                        $pdf->AddPage('P', 'A4');
                     }
                     
                     $x = $positions[$slot_index]['x'];
@@ -391,12 +391,12 @@ class BulkActions {
                         $pdf->Rotate(0);
                     } else {
                         // Portrait label: place directly
-                        $pdf-\u003euseTemplate($templateId, $x, $y, 105, 148.5);
+                        $pdf->useTemplate($templateId, $x, $y, 105, 148.5);
                     }
                     
                     $label_count++;
                 }
-            } catch (\\Exception $e) {
+            } catch (\Exception $e) {
                 // Ignore errors for individual PDFs to allow others to process
             }
             
