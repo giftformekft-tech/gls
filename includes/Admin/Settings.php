@@ -60,7 +60,7 @@ class Settings {
         $sanitized['company_id']   = sanitize_text_field($input['company_id'] ?? '');
         $sanitized['user_name']    = sanitize_text_field($input['user_name'] ?? '');
         $sanitized['password']     = sanitize_text_field($input['password'] ?? '');
-        $allowed_sizes = ['A4', 'A6'];
+        $allowed_sizes = ['A4', '100x150'];
         $size = sanitize_text_field($input['label_size'] ?? 'A4');
         $sanitized['label_size']   = in_array($size, $allowed_sizes) ? $size : 'A4';
         return $sanitized;
@@ -593,10 +593,10 @@ class Settings {
                                         </th>
                                         <td>
                                             <select name="expressone_settings[label_size]" id="eo_label_size" class="regular-text">
-                                                <option value="A4" <?php selected($eo_settings['label_size'] ?? 'A4', 'A4'); ?>>A4 (fekvő, alapértelmezett)</option>
-                                                <option value="A6" <?php selected($eo_settings['label_size'] ?? 'A4', 'A6'); ?>>A6 (álló, termál)</option>
+                                                <option value="A4" <?php selected($eo_settings['label_size'] ?? 'A4', 'A4'); ?>>A4 (4 db / lap, fekvő – alapértelmezett)</option>
+                                                <option value="100x150" <?php selected($eo_settings['label_size'] ?? 'A4', '100x150'); ?>>100x150 mm (1 db / lap, álló – termál/A6)</option>
                                             </select>
-                                            <p class="description"><?php _e('Az Express One API által generált PDF címke mérete. A6 esetén a label már eleve álló és kisebb.', 'mygls-woocommerce'); ?></p>
+                                            <p class="description"><?php _e('A4 esetén max 4 db label fér egy lapra. A 100x150mm opciónál minden label külön lapra kerül, termál nyomtatóhoz ideális.', 'mygls-woocommerce'); ?></p>
                                         </td>
                                     </tr>
                                 </table>
