@@ -346,16 +346,13 @@ class BulkActions {
                     $templateId = $pdf->importPage($pageNo);
                     $size = $pdf->getTemplateSize($templateId);
                     
-                    // 1 label per A4 page, portrait; rotate if the label is landscape
-                    $pdf->AddPage('P', 'A4');
+                    // Add a page matching the label's native orientation and dimensions
                     if ($size['width'] > $size['height']) {
-                        // Landscape label: rotate 90 degrees CCW so it reads upright on portrait A4
-                        $pdf->Rotate(90, 0, 0);
-                        $pdf->useTemplate($templateId, -$size['height'], 0, $size['height'], $size['width']);
-                        $pdf->Rotate(0);
+                        $pdf->AddPage('L', [$size['width'], $size['height']]);
                     } else {
-                        $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
+                        $pdf->AddPage('P', [$size['width'], $size['height']]);
                     }
+                    $pdf->useTemplate($templateId, 0, 0, $size['width'], $size['height']);
                 }
             } catch (\Exception $e) {
                 // Ignore individual PDF errors
