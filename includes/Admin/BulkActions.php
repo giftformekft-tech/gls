@@ -22,7 +22,9 @@ class BulkActions {
      */
     public function add_bulk_actions($actions) {
         $actions['mygls_generate_labels'] = __('Szállítási címkék (GLS/EO) generálása', 'mygls-woocommerce');
-        $actions['mygls_download_labels'] = __('Szállítási címkék letöltése', 'mygls-woocommerce');
+        $actions['mygls_download_labels'] = __('Szállítási címkék letöltése (ZIP)', 'mygls-woocommerce');
+        $actions['mygls_download_merged_labels'] = __('Szállítási címkék letöltése (Egyesített PDF)', 'mygls-woocommerce');
+        $actions['mygls_generate_and_download_merged'] = __('Címkék generálása, egyesített PDF letöltése \u0026 Szállítás alatt státusz', 'mygls-woocommerce');
         $actions['mygls_delete_labels'] = __('Szállítási címkék törlése', 'mygls-woocommerce');
         
         return $actions;
@@ -32,7 +34,7 @@ class BulkActions {
      * Handle bulk actions
      */
     public function handle_bulk_actions($redirect_to, $action, $post_ids) {
-        if (!in_array($action, ['mygls_generate_labels', 'mygls_download_labels', 'mygls_delete_labels'])) {
+        if (!in_array($action, ['mygls_generate_labels', 'mygls_download_labels', 'mygls_delete_labels', 'mygls_generate_and_download_merged', 'mygls_download_merged_labels'])) {
             return $redirect_to;
         }
         
@@ -45,6 +47,29 @@ class BulkActions {
                 $processed = $result['success'];
                 $errors = $result['errors'];
                 break;
+                
+            case 'mygls_generate_and_download_merged':
+                // Generate any missing labels
+                $result = $this->bulk_generate_labels($post_ids);
+                $processed = $result['success'];
+                $errors = $result['errors'];
+                
+                // Update order statuses
+                foreach ($post_ids as $order_id) {
+                    $order = wc_get_order($order_id);
+                    if ($order && $order->get_status() !== 'szallitas-alatt') {
+                        $order->update_status('wc-szallitas-alatt', __('Címke egyesítve generálva. Státusz automatikusan frissítve.', 'mygls-woocommerce'));
+                    }
+                }
+                
+                // Download as merged PDF
+                $this->bulk_download_merged_pdf($post_ids);
+                return $redirect_to;
+                
+            case 'mygls_download_merged_labels':
+                // Download as merged PDF without generating or changing status
+                $this->bulk_download_merged_pdf($post_ids);
+                return $redirect_to;
                 
             case 'mygls_download_labels':
                 $this->bulk_download_labels($post_ids);
@@ -265,6 +290,64 @@ class BulkActions {
         readfile($zip_path);
         unlink($zip_path);
         
+        exit;
+    }
+    
+    /**
+     * Bulk download labels as single merged PDF
+     */
+    private function bulk_download_merged_pdf($order_ids) {
+        global $wpdb;
+        
+        $labels = $wpdb->get_results($wpdb->prepare(
+            "SELECT * FROM {$wpdb->prefix}mygls_labels WHERE order_id IN (" . implode(',', array_map('absint', $order_ids)) . ") AND label_pdf IS NOT NULL"
+        ));
+        
+        if (empty($labels)) {
+            wp_die(__('No labels found for selected orders', 'mygls-woocommerce'));
+        }
+        
+        // Load FPDF and FPDI
+        if (!class_exists('FPDF')) {
+            require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdf/FPDF-master/fpdf.php';
+        }
+        if (!class_exists('\\setasign\\Fpdi\\Fpdi')) {
+            require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
+        }
+        
+        $pdf = new \\setasign\\Fpdi\\Fpdi();
+        
+        foreach ($labels as $label) {
+            $pdf_data = base64_decode($label->label_pdf);
+            
+            // FPDI needs a physical file or stream to read from. Creating a temp file.
+            $tmp_file = tempnam(sys_get_temp_dir(), 'mygls_label_');
+            file_put_contents($tmp_file, $pdf_data);
+            
+            try {
+                $pageCount = $pdf->setSourceFile($tmp_file);
+                for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                    $templateId = $pdf->importPage($pageNo);
+                    $size = $pdf->getTemplateSize($templateId);
+                    
+                    if ($size['width'] > $size['height']) {
+                        $pdf->AddPage('L', [$size['width'], $size['height']]);
+                    } else {
+                        $pdf->AddPage('P', [$size['width'], $size['height']]);
+                    }
+                    $pdf->useTemplate($templateId);
+                }
+            } catch (\Exception $e) {
+                // Ignore errors for individual PDFs to allow others to process
+            }
+            
+            @unlink($tmp_file);
+        }
+        
+        $pdf_filename = 'shipping-labels-merged-' . date('Y-m-d-His') . '.pdf';
+        
+        // Output PDF to browser
+        $pdf->Output('D', $pdf_filename);
         exit;
     }
     

@@ -141,6 +141,34 @@ function mygls_register_shipping_method($methods) {
 add_filter('woocommerce_shipping_methods', 'mygls_register_shipping_method');
 
 /**
+ * Register custom order status "Szállítás alatt"
+ */
+add_action('init', 'mygls_register_szallitas_alatt_status');
+function mygls_register_szallitas_alatt_status() {
+    register_post_status('wc-szallitas-alatt', array(
+        'label'                     => _x('Szállítás alatt', 'Order status', 'mygls-woocommerce'),
+        'public'                    => true,
+        'exclude_from_search'       => false,
+        'show_in_admin_all_list'    => true,
+        'show_in_admin_status_list' => true,
+        /* translators: %s: number of orders */
+        'label_count'               => _n_noop('Szállítás alatt <span class="count">(%s)</span>', 'Szállítás alatt <span class="count">(%s)</span>', 'mygls-woocommerce')
+    ));
+}
+
+add_filter('wc_order_statuses', 'mygls_add_szallitas_alatt_to_order_statuses');
+function mygls_add_szallitas_alatt_to_order_statuses($order_statuses) {
+    $new_order_statuses = array();
+    foreach ($order_statuses as $key => $status) {
+        $new_order_statuses[$key] = $status;
+        if ('wc-processing' === $key) {
+            $new_order_statuses['wc-szallitas-alatt'] = _x('Szállítás alatt', 'Order status', 'mygls-woocommerce');
+        }
+    }
+    return $new_order_statuses;
+}
+
+/**
  * Hide shipping methods if free shipping is available
  */
 function mygls_hide_shipping_methods($rates, $package) {
