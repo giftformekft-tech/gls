@@ -315,7 +315,7 @@ class BulkActions {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
         }
         
-        $pdf = new \\setasign\\Fpdi\\Fpdi();
+        $pdf = new \setasign\Fpdi\Fpdi();
         
         foreach ($labels as $label) {
             $pdf_data = base64_decode($label->label_pdf);
