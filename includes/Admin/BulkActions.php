@@ -321,35 +321,6 @@ class BulkActions {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
         }
         
-        if (!class_exists('MyGLS_FPDI')) {
-            class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
-                var $angle = 0;
-
-                function Rotate($angle, $x = -1, $y = -1) {
-                    if ($x == -1) $x = $this->x;
-                    if ($y == -1) $y = $this->y;
-                    if ($this->angle != 0) $this->_out('Q');
-                    $this->angle = $angle;
-                    if ($angle != 0) {
-                        $angle *= M_PI / 180;
-                        $c = cos($angle);
-                        $s = sin($angle);
-                        $cx = $x * $this->k;
-                        $cy = ($this->h - $y) * $this->k;
-                        $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
-                    }
-                }
-
-                function _endpage() {
-                    if ($this->angle != 0) {
-                        $this->angle = 0;
-                        $this->_out('Q');
-                    }
-                    parent::_endpage();
-                }
-            }
-        }
-        
         $pdf = new MyGLS_FPDI();
         
         $label_count = 0;
@@ -476,8 +447,34 @@ class BulkActions {
         if (!isset($_GET['mygls_bulk_action'])) {
             return;
         }
-        
         $action = sanitize_text_field($_GET['mygls_bulk_action']);
+        $processed = isset($_GET['mygls_processed']) ? absint($_GET['mygls_processed']) : 0;
+        $errors = isset($_GET['mygls_errors']) ? absint($_GET['mygls_errors']) : 0;
+        
+        // ... (rest of notices)
+    }
+}
+
+// Define the custom FPDI class outside the main class to avoid redeclaration errors
+if (!class_exists('MyGLS_FPDI') && class_exists('\setasign\Fpdi\Fpdi')) {
+    class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
+        var $angle = 0;
+
+        function Rotate($angle, $x = -1, $y = -1) {
+            if ($x == -1) $x = $this->x;
+            if ($y == -1) $y = $this->y;
+            if ($this->angle != 0) $this->_out('Q');
+            $this->angle = $angle;
+            if ($angle != 0) {
+                $angle *= M_PI / 180;
+                $c = cos($angle);
+                $s = sin($angle);
+                $cx = $x * $this->k;
+                $cy = ($this->h - $y) * $this->k;
+                $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+            }
+        }
+
         $processed = absint($_GET['mygls_processed'] ?? 0);
         $error_count = absint($_GET['mygls_errors'] ?? 0);
         
@@ -509,7 +506,6 @@ class BulkActions {
                 }
             }
             
-            
             echo '</p></div>';
         }
     }
@@ -528,5 +524,35 @@ class BulkActions {
             }
         }
         return 'gls';
+    }
+}
+
+// Define the custom FPDI class outside the main class to avoid redeclaration errors
+if (!class_exists('MyGLS_FPDI') && class_exists('\setasign\Fpdi\Fpdi')) {
+    class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
+        var $angle = 0;
+
+        function Rotate($angle, $x = -1, $y = -1) {
+            if ($x == -1) $x = $this->x;
+            if ($y == -1) $y = $this->y;
+            if ($this->angle != 0) $this->_out('Q');
+            $this->angle = $angle;
+            if ($angle != 0) {
+                $angle *= M_PI / 180;
+                $c = cos($angle);
+                $s = sin($angle);
+                $cx = $x * $this->k;
+                $cy = ($this->h - $y) * $this->k;
+                $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+            }
+        }
+
+        function _endpage() {
+            if ($this->angle != 0) {
+                $this->angle = 0;
+                $this->_out('Q');
+            }
+            parent::_endpage();
+        }
     }
 }
