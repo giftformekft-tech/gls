@@ -27,11 +27,11 @@ class BulkActions {
      * Add bulk actions to orders list
      */
     public function add_bulk_actions($actions) {
-        $actions['mygls_generate_labels'] = __('Szállítási címkék (GLS/EO) generálása', 'mygls-woocommerce');
-        $actions['mygls_download_labels'] = __('Szállítási címkék letöltése (ZIP)', 'mygls-woocommerce');
-        $actions['mygls_download_merged_labels'] = __('Szállítási címkék letöltése (Egyesített PDF)', 'mygls-woocommerce');
-        $actions['mygls_generate_and_download_merged'] = __('Címkék generálása, egyesített PDF letöltése \u0026 Szállítás alatt státusz', 'mygls-woocommerce');
-        $actions['mygls_delete_labels'] = __('Szállítási címkék törlése', 'mygls-woocommerce');
+        $actions['mygls_generate_labels']           = __('Szállítási címkék (GLS/EO) generálása', 'mygls-woocommerce');
+        $actions['mygls_download_labels']           = __('Szállítási címkék letöltése (ZIP)', 'mygls-woocommerce');
+        $actions['mygls_download_merged_labels']    = __('Szállítási címkék letöltése (Egyesített PDF)', 'mygls-woocommerce');
+        $actions['mygls_generate_and_download_merged'] = __('Címkék generálása, egyesített PDF letöltése & Szállítás alatt státusz', 'mygls-woocommerce');
+        $actions['mygls_delete_labels']             = __('Szállítási címkék törlése', 'mygls-woocommerce');
         
         return $actions;
     }
@@ -40,7 +40,15 @@ class BulkActions {
      * Handle bulk actions
      */
     public function handle_bulk_actions($redirect_to, $action, $post_ids) {
-        if (!in_array($action, ['mygls_generate_labels', 'mygls_download_labels', 'mygls_delete_labels', 'mygls_generate_and_download_merged', 'mygls_download_merged_labels'])) {
+        $valid_actions = [
+            'mygls_generate_labels',
+            'mygls_download_labels',
+            'mygls_download_merged_labels',
+            'mygls_generate_and_download_merged',
+            'mygls_delete_labels',
+        ];
+        
+        if (!in_array($action, $valid_actions)) {
             return $redirect_to;
         }
         
@@ -73,13 +81,13 @@ class BulkActions {
                 return $redirect_to;
                 
             case 'mygls_download_merged_labels':
-                // Download as merged PDF without generating or changing status
+                // Download existing labels as merged PDF without generating or changing status
                 $this->bulk_download_merged_pdf($post_ids);
                 return $redirect_to;
                 
             case 'mygls_download_labels':
                 $this->bulk_download_labels($post_ids);
-                return $redirect_to; // Exit after download
+                return $redirect_to;
                 
             case 'mygls_delete_labels':
                 $result = $this->bulk_delete_labels($post_ids);
@@ -90,8 +98,8 @@ class BulkActions {
         
         $redirect_to = add_query_arg([
             'mygls_bulk_action' => $action,
-            'mygls_processed' => $processed,
-            'mygls_errors' => count($errors)
+            'mygls_processed'   => $processed,
+            'mygls_errors'      => count($errors),
         ], $redirect_to);
         
         if (!empty($errors)) {
@@ -181,13 +189,13 @@ class BulkActions {
                                 $wpdb->insert(
                                     $wpdb->prefix . 'mygls_labels',
                                     [
-                                        'order_id' => $order_id,
-                                        'parcel_id' => $parcel_id,
+                                        'order_id'     => $order_id,
+                                        'parcel_id'    => $parcel_id,
                                         'parcel_number' => $parcel_number,
-                                        'carrier' => $carrier,
+                                        'carrier'      => $carrier,
                                         'tracking_url' => 'https://tracking.expressone.hu/?tracking_id=' . $parcel_number,
-                                        'label_pdf' => $label_base64,
-                                        'status' => 'pending'
+                                        'label_pdf'    => $label_base64,
+                                        'status'       => 'pending',
                                     ],
                                     ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
                                 );
@@ -234,13 +242,13 @@ class BulkActions {
                         $wpdb->insert(
                             $wpdb->prefix . 'mygls_labels',
                             [
-                                'order_id' => $order_id,
-                                'parcel_id' => $label_info['ParcelId'],
+                                'order_id'     => $order_id,
+                                'parcel_id'    => $label_info['ParcelId'],
                                 'parcel_number' => $label_info['ParcelNumber'],
-                                'carrier' => 'gls',
+                                'carrier'      => 'gls',
                                 'tracking_url' => 'https://gls-group.eu/HU/hu/csomagkovetes?match=' . $label_info['ParcelNumber'],
-                                'label_pdf' => $label_pdf_base64,
-                                'status' => 'pending'
+                                'label_pdf'    => $label_pdf_base64,
+                                'status'       => 'pending',
                             ],
                             ['%d', '%d', '%d', '%s', '%s', '%s', '%s']
                         );
@@ -259,14 +267,14 @@ class BulkActions {
     }
     
     /**
-     * Bulk download labels as ZIP
+     * Bulk download labels as ZIP archive
      */
     private function bulk_download_labels($order_ids) {
         global $wpdb;
         
-        $labels = $wpdb->get_results($wpdb->prepare(
+        $labels = $wpdb->get_results(
             "SELECT * FROM {$wpdb->prefix}mygls_labels WHERE order_id IN (" . implode(',', array_map('absint', $order_ids)) . ") AND label_pdf IS NOT NULL"
-        ));
+        );
         
         if (empty($labels)) {
             wp_die(__('No labels found for selected orders', 'mygls-woocommerce'));
@@ -288,7 +296,6 @@ class BulkActions {
         
         $zip->close();
         
-        // Send file
         header('Content-Type: application/zip');
         header('Content-Disposition: attachment; filename="' . $zip_filename . '"');
         header('Content-Length: ' . filesize($zip_path));
@@ -300,20 +307,20 @@ class BulkActions {
     }
     
     /**
-     * Bulk download labels as single merged PDF
+     * Bulk download labels as single merged PDF (4 per A4 page)
      */
     private function bulk_download_merged_pdf($order_ids) {
         global $wpdb;
         
-        $labels = $wpdb->get_results($wpdb->prepare(
+        $labels = $wpdb->get_results(
             "SELECT * FROM {$wpdb->prefix}mygls_labels WHERE order_id IN (" . implode(',', array_map('absint', $order_ids)) . ") AND label_pdf IS NOT NULL"
-        ));
+        );
         
         if (empty($labels)) {
             wp_die(__('No labels found for selected orders', 'mygls-woocommerce'));
         }
         
-        // Load FPDF and FPDI
+        // Load FPDF and FPDI libraries
         if (!class_exists('FPDF')) {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdf/FPDF-master/fpdf.php';
         }
@@ -321,20 +328,20 @@ class BulkActions {
             require_once dirname(dirname(dirname(__FILE__))) . '/lib/fpdi/FPDI-master/src/autoload.php';
         }
         
-        $pdf = new MyGLS_FPDI();
+        $pdf = new \MyGLS\Admin\MyGLS_FPDI();
         
+        // A4 portrait = 210mm x 297mm, each quarter = 105mm x 148.5mm (A6)
         $label_count = 0;
         $positions = [
-            0 => ['x' => 0, 'y' => 0],
+            0 => ['x' => 0,   'y' => 0],
             1 => ['x' => 105, 'y' => 0],
-            2 => ['x' => 0, 'y' => 148.5],
-            3 => ['x' => 105, 'y' => 148.5]
+            2 => ['x' => 0,   'y' => 148.5],
+            3 => ['x' => 105, 'y' => 148.5],
         ];
         
         foreach ($labels as $label) {
             $pdf_data = base64_decode($label->label_pdf);
             
-            // FPDI needs a physical file or stream to read from. Creating a temp file.
             $tmp_file = tempnam(sys_get_temp_dir(), 'mygls_label_');
             file_put_contents($tmp_file, $pdf_data);
             
@@ -346,7 +353,6 @@ class BulkActions {
                     
                     $slot_index = $label_count % 4;
                     if ($slot_index === 0) {
-                        // Always add an A4 portrait page
                         $pdf->AddPage('P', 'A4');
                     }
                     
@@ -354,9 +360,7 @@ class BulkActions {
                     $y = $positions[$slot_index]['y'];
                     
                     if ($size['width'] > $size['height']) {
-                        // Landscape label: rotate 90 degrees CCW to fit in portrait slot
-                        // We rotate around the top-left of the slot (x, y)
-                        // To fall into the slot after 90 deg CCW, we draw the image so its top-right is at (x, y)
+                        // Landscape label: rotate 90 degrees to fit portrait slot
                         $pdf->Rotate(90, $x, $y);
                         $pdf->useTemplate($templateId, $x - 148.5, $y, 148.5, 105);
                         $pdf->Rotate(0);
@@ -368,15 +372,13 @@ class BulkActions {
                     $label_count++;
                 }
             } catch (\Exception $e) {
-                // Ignore errors for individual PDFs to allow others to process
+                // Ignore individual PDF errors, continue with others
             }
             
             @unlink($tmp_file);
         }
         
         $pdf_filename = 'shipping-labels-merged-' . date('Y-m-d-His') . '.pdf';
-        
-        // Output PDF to browser
         $pdf->Output('D', $pdf_filename);
         exit;
     }
@@ -420,7 +422,6 @@ class BulkActions {
                     continue;
                 }
                 
-                // Delete from database
                 $wpdb->delete(
                     $wpdb->prefix . 'mygls_labels',
                     ['order_id' => $order_id],
@@ -447,40 +448,14 @@ class BulkActions {
         if (!isset($_GET['mygls_bulk_action'])) {
             return;
         }
-        $action = sanitize_text_field($_GET['mygls_bulk_action']);
-        $processed = isset($_GET['mygls_processed']) ? absint($_GET['mygls_processed']) : 0;
-        $errors = isset($_GET['mygls_errors']) ? absint($_GET['mygls_errors']) : 0;
         
-        // ... (rest of notices)
-    }
-}
-
-// Define the custom FPDI class outside the main class to avoid redeclaration errors
-if (!class_exists('MyGLS_FPDI') && class_exists('\setasign\Fpdi\Fpdi')) {
-    class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
-        var $angle = 0;
-
-        function Rotate($angle, $x = -1, $y = -1) {
-            if ($x == -1) $x = $this->x;
-            if ($y == -1) $y = $this->y;
-            if ($this->angle != 0) $this->_out('Q');
-            $this->angle = $angle;
-            if ($angle != 0) {
-                $angle *= M_PI / 180;
-                $c = cos($angle);
-                $s = sin($angle);
-                $cx = $x * $this->k;
-                $cy = ($this->h - $y) * $this->k;
-                $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
-            }
-        }
-
-        $processed = absint($_GET['mygls_processed'] ?? 0);
+        $action      = sanitize_text_field($_GET['mygls_bulk_action']);
+        $processed   = absint($_GET['mygls_processed'] ?? 0);
         $error_count = absint($_GET['mygls_errors'] ?? 0);
         
         $messages = [
             'mygls_generate_labels' => __('Generated %d shipping labels', 'mygls-woocommerce'),
-            'mygls_delete_labels' => __('Deleted %d shipping labels', 'mygls-woocommerce')
+            'mygls_delete_labels'   => __('Deleted %d shipping labels', 'mygls-woocommerce'),
         ];
         
         if (isset($messages[$action])) {
@@ -527,27 +502,33 @@ if (!class_exists('MyGLS_FPDI') && class_exists('\setasign\Fpdi\Fpdi')) {
     }
 }
 
-// Define the custom FPDI class outside the main class to avoid redeclaration errors
-if (!class_exists('MyGLS_FPDI') && class_exists('\setasign\Fpdi\Fpdi')) {
+/**
+ * Custom FPDI class with rotation support
+ * Must be declared outside the BulkActions class and in the same namespace
+ */
+if (!class_exists('MyGLS\Admin\MyGLS_FPDI')) {
     class MyGLS_FPDI extends \setasign\Fpdi\Fpdi {
-        var $angle = 0;
+        public $angle = 0;
 
-        function Rotate($angle, $x = -1, $y = -1) {
+        public function Rotate($angle, $x = -1, $y = -1) {
             if ($x == -1) $x = $this->x;
             if ($y == -1) $y = $this->y;
             if ($this->angle != 0) $this->_out('Q');
             $this->angle = $angle;
             if ($angle != 0) {
                 $angle *= M_PI / 180;
-                $c = cos($angle);
-                $s = sin($angle);
+                $c  = cos($angle);
+                $s  = sin($angle);
                 $cx = $x * $this->k;
                 $cy = ($this->h - $y) * $this->k;
-                $this->_out(sprintf('q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+                $this->_out(sprintf(
+                    'q %.5F %.5F %.5F %.5F %.2F %.2F cm 1 0 0 1 %.2F %.2F cm',
+                    $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy
+                ));
             }
         }
 
-        function _endpage() {
+        public function _endpage() {
             if ($this->angle != 0) {
                 $this->angle = 0;
                 $this->_out('Q');
