@@ -455,7 +455,15 @@ class OrderMetaBox {
                     wp_send_json_error(['message' => __('Failed to build parcel data', 'mygls-woocommerce')]);
                 }
 
-                $result = $api->createLabels([$parcel]);
+                $eo_settings   = get_option('expressone_settings', []);
+                $eo_label_size = $eo_settings['label_size'] ?? 'A4';
+                $label_settings = [
+                    'data_type'           => 'PDF',
+                    'size'                => $eo_label_size,
+                    'dpi'                 => '300',
+                    'pdf_etiket_position' => '0',
+                ];
+                $result = $api->createLabels([$parcel], $label_settings);
                 
                 if (isset($result['error'])) {
                     wp_send_json_error(['message' => $result['error']]);
@@ -780,7 +788,15 @@ class OrderMetaBox {
 
                 $parcel = $api->buildParcelFromOrder($order_id);
                 if ($parcel) {
-                    $result = $api->createLabels([$parcel]);
+                    $eo_settings   = get_option('expressone_settings', []);
+                    $eo_label_size = $eo_settings['label_size'] ?? 'A4';
+                    $label_settings = [
+                        'data_type'           => 'PDF',
+                        'size'                => $eo_label_size,
+                        'dpi'                 => '300',
+                        'pdf_etiket_position' => '0',
+                    ];
+                    $result = $api->createLabels([$parcel], $label_settings);
                     
                     if (!isset($result['error'])) {
                         $response = $result['response'] ?? [];

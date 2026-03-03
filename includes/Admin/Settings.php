@@ -57,9 +57,12 @@ class Settings {
 
     public function sanitize_expressone_settings($input) {
         $sanitized = [];
-        $sanitized['company_id'] = sanitize_text_field($input['company_id'] ?? '');
-        $sanitized['user_name'] = sanitize_text_field($input['user_name'] ?? '');
-        $sanitized['password'] = sanitize_text_field($input['password'] ?? '');
+        $sanitized['company_id']   = sanitize_text_field($input['company_id'] ?? '');
+        $sanitized['user_name']    = sanitize_text_field($input['user_name'] ?? '');
+        $sanitized['password']     = sanitize_text_field($input['password'] ?? '');
+        $allowed_sizes = ['A4', 'A6'];
+        $size = sanitize_text_field($input['label_size'] ?? 'A4');
+        $sanitized['label_size']   = in_array($size, $allowed_sizes) ? $size : 'A4';
         return $sanitized;
     }
     
@@ -582,6 +585,18 @@ class Settings {
                                         </th>
                                         <td>
                                             <input type="password" name="expressone_settings[password]" id="eo_password" value="<?php echo esc_attr($eo_settings['password'] ?? ''); ?>" class="regular-text">
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">
+                                            <label for="eo_label_size"><?php _e('Címke mérete', 'mygls-woocommerce'); ?></label>
+                                        </th>
+                                        <td>
+                                            <select name="expressone_settings[label_size]" id="eo_label_size" class="regular-text">
+                                                <option value="A4" <?php selected($eo_settings['label_size'] ?? 'A4', 'A4'); ?>>A4 (fekvő, alapértelmezett)</option>
+                                                <option value="A6" <?php selected($eo_settings['label_size'] ?? 'A4', 'A6'); ?>>A6 (álló, termál)</option>
+                                            </select>
+                                            <p class="description"><?php _e('Az Express One API által generált PDF címke mérete. A6 esetén a label már eleve álló és kisebb.', 'mygls-woocommerce'); ?></p>
                                         </td>
                                     </tr>
                                 </table>

@@ -127,8 +127,10 @@ class BulkActions {
         $success = 0;
         $errors = [];
         
-        $settings = mygls_get_settings();
+        $settings    = mygls_get_settings();
         $printer_type = $settings['printer_type'] ?? 'A4_2x2';
+        $eo_settings  = get_option('expressone_settings', []);
+        $eo_label_size = $eo_settings['label_size'] ?? 'A4';
         
         global $wpdb;
         
@@ -169,7 +171,13 @@ class BulkActions {
                         continue;
                     }
 
-                    $result = $api->createLabels([$parcel]);
+                    $label_settings = [
+                        'data_type'           => 'PDF',
+                        'size'                => $eo_label_size,
+                        'dpi'                 => '300',
+                        'pdf_etiket_position' => '0',
+                    ];
+                    $result = $api->createLabels([$parcel], $label_settings);
                     
                     if (isset($result['error'])) {
                         $errors[] = sprintf(__('Rendelés #%d: %s', 'mygls-woocommerce'), $order_id, $result['error']);
