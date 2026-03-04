@@ -120,9 +120,39 @@ function mygls_init() {
     if (class_exists('ExpressOne\\Checkout\\Controller')) {
         ExpressOne\Checkout\Controller::get_instance();
     }
+
+    // Initialize Delivery Status Sync (cron handler)
+    if (class_exists('MyGLS\\Cron\\DeliveryStatusSync')) {
+        new MyGLS\Cron\DeliveryStatusSync();
+    }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
 add_action('woocommerce_loaded', 'mygls_init');
+
+/**
+ * Register custom cron interval: every 6 hours
+ */
+add_filter('cron_schedules', 'mygls_add_cron_intervals');
+function mygls_add_cron_intervals($schedules) {
+    if (!isset($schedules['mygls_sixhours'])) {
+        $schedules['mygls_sixhours'] = [
+            'interval' => 6 * HOUR_IN_SECONDS,
+            'display'  => __('Minden 6 órában (MyGLS)', 'mygls-woocommerce'),
+        ];
+    }
+    return $schedules;
+}
+
+/**
+ * Cron callback: delivery status synchronization
+ */
+add_action('mygls_sync_delivery_statuses', 'mygls_cron_sync_delivery_statuses');
+function mygls_cron_sync_delivery_statuses() {
+    if (class_exists('MyGLS\\Cron\\DeliveryStatusSync')) {
+        $sync = new MyGLS\Cron\DeliveryStatusSync();
+        $sync->run();
+    }
+}
 
 /**
  * Register shipping method
@@ -321,6 +351,11 @@ function mygls_activate() {
         $wpdb->query("ALTER TABLE $table_name ADD carrier VARCHAR(50) DEFAULT 'gls' AFTER parcel_number");
     }
 
+    // Schedule delivery status sync cron (6 hours)
+    if (!wp_next_scheduled('mygls_sync_delivery_statuses')) {
+        wp_schedule_event(time(), 'mygls_sixhours', 'mygls_sync_delivery_statuses');
+    }
+
     // Set default options
     if (!get_option('mygls_settings')) {
         update_option('mygls_settings', array(
@@ -350,6 +385,7 @@ register_activation_hook(__FILE__, 'mygls_activate');
 function mygls_deactivate() {
     // Clean up scheduled events
     wp_clear_scheduled_hook('mygls_sync_statuses');
+    wp_clear_scheduled_hook('mygls_sync_delivery_statuses');
 }
 register_deactivation_hook(__FILE__, 'mygls_deactivate');
 
