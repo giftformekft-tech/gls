@@ -293,7 +293,7 @@ class OrderMetaBox {
         jQuery(document).ready(function($) {
             // Auto-load status if label exists
             <?php if ($label): ?>
-                loadParcelStatus(<?php echo $label->parcel_number; ?>);
+                loadParcelStatus('<?php echo esc_js($label->parcel_number); ?>');
             <?php endif; ?>
             
             // Generate label
