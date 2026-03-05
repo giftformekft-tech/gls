@@ -206,7 +206,7 @@ class DeliveryStatusSync {
                 'user_name'  => $user_name,
                 'password'   => $password,
             ],
-            'parcel_number' => $parcel_number,
+            'parcel_number' => (string) $parcel_number,
         ] );
 
         $response = wp_remote_post( $url, [

@@ -153,7 +153,7 @@ class Client {
      */
     public function getParcelStatus($parcel_number) {
         $data = [
-            'parcel_number' => $parcel_number
+            'parcel_number' => (string) $parcel_number
         ];
         
         return $this->request('tracking', 'get_parcel_status', $data);
@@ -165,7 +165,7 @@ class Client {
      */
     public function getParcelHistory($parcel_number) {
         $data = [
-            'parcel_number' => $parcel_number
+            'parcel_number' => (string) $parcel_number
         ];
 
         return $this->request('tracking', 'get_parcel_history', $data);
