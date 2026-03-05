@@ -700,33 +700,65 @@ class OrderMetaBox {
                     }
                 }
                 $api = expressone_get_api_client();
-                $result = $api->getParcelStatus($parcel_number);
-                
-                if (isset($result['error'])) {
-                    wp_send_json_error(['message' => $result['error']]);
+
+                if (!$api) {
+                    wp_send_json_error(['message' => __('Express One API nem elérhető.', 'mygls-woocommerce')]);
                 }
-                
-                // Express One válasz konvertálása ugyanarra a formátumra, mint a GLS
-                $response = $result['response'] ?? [];
-                $events = $response['events'] ?? ($response['status'] ?? []);
-                if (!is_array($events)) $events = [$events];
 
                 $formatted_statuses = [];
-                foreach ($events as $event) {
-                    if (is_array($event)) {
+
+                // --- Elsőként: teljes nyomkövetési előzmény ---
+                $history_result = $api->getParcelHistory($parcel_number);
+
+                if (!isset($history_result['error']) && !empty($history_result['response'])) {
+                    $response = $history_result['response'];
+                    $history  = $response['history'] ?? [];
+
+                    if (!empty($history) && is_array($history)) {
+                        // Fordított sorrend: legújabb esemény legfelül
+                        $history = array_reverse($history);
+                        foreach ($history as $event) {
+                            $desc = $event['event_name'] ?? ($event['event_code'] ?? 'Ismeretlen esemény');
+                            $info = $event['event_data'] ?? '';
+                            $date = $event['created_at'] ?? '';
+                            $formatted_statuses[] = [
+                                'StatusDescription' => $desc,
+                                'StatusInfo'        => $info,
+                                'StatusDate'        => $date,
+                            ];
+                        }
+                    }
+                }
+
+                // --- Fallback: egyetlen utolsó esemény get_parcel_status-ból ---
+                if (empty($formatted_statuses)) {
+                    $status_result = $api->getParcelStatus($parcel_number);
+
+                    if (!isset($status_result['error']) && !empty($status_result['response'])) {
+                        $resp = $status_result['response'];
+                        // A válasz egyetlen lapos objektum: parcel_number, created_at, event_code, event_name
+                        $desc = $resp['event_name'] ?? ($resp['event_code'] ?? 'Ismeretlen');
+                        $date = $resp['created_at'] ?? '';
                         $formatted_statuses[] = [
-                            'StatusDescription' => $event['status_name'] ?? ($event['status'] ?? 'Ismeretlen'),
-                            'StatusInfo' => $event['reason'] ?? '',
-                            'StatusDate' => $event['date'] ?? current_time('mysql')
+                            'StatusDescription' => $desc,
+                            'StatusInfo'        => '',
+                            'StatusDate'        => $date,
                         ];
                     }
                 }
 
-                wp_send_json_success([
-                    'statuses' => !empty($formatted_statuses) ? $formatted_statuses : [['StatusDescription' => 'Nincs státuszinformáció', 'StatusInfo' => '', 'StatusDate' => '']]
-                ]);
+                if (empty($formatted_statuses)) {
+                    $formatted_statuses[] = [
+                        'StatusDescription' => __('Nincs elérhető státuszinformáció', 'mygls-woocommerce'),
+                        'StatusInfo'        => '',
+                        'StatusDate'        => '',
+                    ];
+                }
+
+                wp_send_json_success(['statuses' => $formatted_statuses]);
 
             } else {
+                // GLS
                 $api = mygls_get_api_client();
                 $result = $api->getParcelStatuses($parcel_number);
                 

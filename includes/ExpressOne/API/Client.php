@@ -149,7 +149,7 @@ class Client {
     }
 
     /**
-     * Get Parcel Status
+     * Get Parcel Status (utolsó esemény)
      */
     public function getParcelStatus($parcel_number) {
         $data = [
@@ -157,6 +157,18 @@ class Client {
         ];
         
         return $this->request('tracking', 'get_parcel_status', $data);
+    }
+
+    /**
+     * Get Parcel History (teljes nyomkövetési előzmény)
+     * Válasz struktúra: response.state, response.history[] = {created_at, event_code, event_name, event_data}
+     */
+    public function getParcelHistory($parcel_number) {
+        $data = [
+            'parcel_number' => $parcel_number
+        ];
+
+        return $this->request('tracking', 'get_parcel_history', $data);
     }
 
     /**
