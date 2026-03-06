@@ -16,6 +16,7 @@ class Settings {
         add_action('admin_menu', [$this, 'add_menu']);
         add_action('admin_init', [$this, 'register_settings']);
         add_action('wp_ajax_mygls_test_connection', [$this, 'test_connection']);
+        add_action('wp_ajax_mygls_manual_delivery_sync', [$this, 'manual_delivery_sync']);
     }
     
     public function add_menu() {
@@ -146,6 +147,29 @@ class Settings {
         $sanitized['cod_fee_taxable'] = isset($input['cod_fee_taxable']) ? '1' : '0';
 
         return $sanitized;
+    }
+
+    /**
+     * Manuális kézbesítési szinkronizáció AJAX hívás
+     */
+    public function manual_delivery_sync() {
+        check_ajax_referer('mygls_admin_nonce', 'nonce');
+        
+        if (!current_user_can('manage_woocommerce')) {
+            wp_send_json_error(['message' => __('Nincs jogosultsága ehhez a művelethez.', 'mygls-woocommerce')]);
+        }
+        
+        if (!class_exists('MyGLS\\Cron\\DeliveryStatusSync')) {
+            wp_send_json_error(['message' => __('A DeliveryStatusSync osztály nem található.', 'mygls-woocommerce')]);
+        }
+        
+        try {
+            $sync = new \MyGLS\Cron\DeliveryStatusSync();
+            $sync->run();
+            wp_send_json_success(['message' => __('Szinkronizáció sikeresen lefutott!', 'mygls-woocommerce')]);
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => __('Hiba történt: ', 'mygls-woocommerce') . $e->getMessage()]);
+        }
     }
     
     public function render_settings_page() {
@@ -376,6 +400,14 @@ class Settings {
                                             <span class="mygls-toggle-slider"></span>
                                         </label>
                                         <p class="description"><?php _e('Automatically sync parcel status with GLS', 'mygls-woocommerce'); ?></p>
+                                        
+                                        <div style="margin-top: 15px;">
+                                            <button type="button" id="manual-delivery-sync-btn" class="button button-secondary">
+                                                <span class="dashicons dashicons-update"></span>
+                                                <?php _e('Kézi Kézbesítés-Szinkronizáció indítása', 'mygls-woocommerce'); ?>
+                                            </button>
+                                            <span id="manual-sync-status" style="margin-left: 10px; display: inline-block;"></span>
+                                        </div>
                                     </td>
                                 </tr>
                                 <tr>

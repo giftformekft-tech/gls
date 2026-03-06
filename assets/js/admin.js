@@ -1,20 +1,21 @@
 /**
  * MyGLS Admin JavaScript
  */
-(function($) {
+(function ($) {
     'use strict';
-    
-    $(document).ready(function() {
+
+    $(document).ready(function () {
         initTestConnection();
         initOrderListEnhancements();
         initButtonPreview();
+        initManualDeliverySync();
     });
-    
+
     /**
      * Test API Connection
      */
     function initTestConnection() {
-        $('#test-connection').on('click', function() {
+        $('#test-connection').on('click', function () {
             const $btn = $(this);
             const $status = $('#connection-status');
 
@@ -32,8 +33,8 @@
             // Validate required fields
             if (!formData.username || !formData.password || !formData.client_number) {
                 $status.html('<span class="dashicons dashicons-no"></span> ' + 'Kérlek töltsd ki az összes kötelező mezőt')
-                       .addClass('error')
-                       .removeClass('success');
+                    .addClass('error')
+                    .removeClass('success');
                 return;
             }
 
@@ -44,49 +45,49 @@
                 url: myglsAdmin.ajaxurl,
                 type: 'POST',
                 data: formData,
-                success: function(response) {
+                success: function (response) {
                     if (response.success) {
                         $status.html('<span class="dashicons dashicons-yes"></span> ' + response.data.message)
-                               .addClass('success')
-                               .removeClass('error');
+                            .addClass('success')
+                            .removeClass('error');
                     } else {
                         $status.html('<span class="dashicons dashicons-no"></span> ' + response.data.message)
-                               .addClass('error')
-                               .removeClass('success');
+                            .addClass('error')
+                            .removeClass('success');
                     }
                 },
-                error: function() {
+                error: function () {
                     $status.html('<span class="dashicons dashicons-no"></span> ' + myglsAdmin.i18n.error)
-                           .addClass('error')
-                           .removeClass('success');
+                        .addClass('error')
+                        .removeClass('success');
                 },
-                complete: function() {
+                complete: function () {
                     $btn.prop('disabled', false)
                         .html('<span class="dashicons dashicons-admin-plugins"></span> Test Connection');
                 }
             });
         });
     }
-    
+
     /**
      * Order List Enhancements
      */
     function initOrderListEnhancements() {
         // Add GLS label indicator to order list
-        $('.wp-list-table tr').each(function() {
+        $('.wp-list-table tr').each(function () {
             const $row = $(this);
             const orderId = $row.attr('id');
-            
+
             if (orderId && orderId.indexOf('post-') === 0) {
                 checkOrderLabel($row, orderId.replace('post-', ''));
             }
         });
     }
-    
+
     function checkOrderLabel($row, orderId) {
         // Check if order has GLS label (this could be enhanced with AJAX)
         const $orderNumber = $row.find('.order_number');
-        
+
         // This is a placeholder - in production, you'd check via AJAX or add data attributes
         // For now, we'll just add the UI structure
     }
@@ -113,5 +114,5 @@
         updatePreview();
         $styleSelect.on('change', updatePreview);
     }
-    
+
 })(jQuery);
