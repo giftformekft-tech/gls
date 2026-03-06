@@ -27,7 +27,7 @@ class DeliveryStatusSync {
 
         // Csak "Szállítás alatt" státuszú rendelések
         $orders = wc_get_orders( [
-            'status'  => 'wc-szallitas-alatt',
+            'status'  => [ 'wc-szallitas-alatt', 'szallitas-alatt' ],
             'limit'   => -1,
             'return'  => 'ids',
         ] );
@@ -147,7 +147,7 @@ class DeliveryStatusSync {
         if ( ! isset( $result['error'] ) ) {
             $response   = $result['response'] ?? [];
             $event_code = $response['event_code'] ?? '';
-            $event_name = strtolower( $response['event_name'] ?? '' );
+            $event_name = mb_strtolower( $response['event_name'] ?? '', 'UTF-8' );
 
             // DEL = Kézbesítve, DLV = Kézbesítve
             // POD = Proof of Delivery
@@ -173,7 +173,7 @@ class DeliveryStatusSync {
             $history = $response['history'] ?? [];
             foreach ( $history as $event ) {
                 $ec = strtoupper( $event['event_code'] ?? '' );
-                $en = strtolower( $event['event_name'] ?? '' );
+                $en = mb_strtolower( $event['event_name'] ?? '', 'UTF-8' );
                 
                 if ( in_array( $ec, [ 'DEL', 'DLV', 'POD' ], true ) || strpos( $en, 'sikeres kézbesítés' ) !== false ) {
                     mygls_log( "DeliveryStatusSync EOne kézbesítve (history event): {$parcel_number} [{$ec}]", 'info' );
