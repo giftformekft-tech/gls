@@ -92,6 +92,46 @@
         // For now, we'll just add the UI structure
     }
 
+    /**
+     * Manual Delivery Status Sync
+     */
+    function initManualDeliverySync() {
+        $('#manual-delivery-sync-btn').on('click', function () {
+            const $btn = $(this);
+            const $status = $('#manual-sync-status');
+
+            $btn.prop('disabled', true)
+                .html('<span class="dashicons dashicons-update spin"></span> ' + myglsAdmin.i18n.processing);
+            $status.html('').removeClass('success error');
+
+            $.ajax({
+                url: myglsAdmin.ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'mygls_manual_delivery_sync',
+                    nonce: myglsAdmin.nonce
+                },
+                success: function (response) {
+                    if (response.success) {
+                        $status.html('<span class="dashicons dashicons-yes" style="color:#46b450"></span> ' + response.data.message)
+                            .addClass('success').removeClass('error');
+                    } else {
+                        $status.html('<span class="dashicons dashicons-no" style="color:#dc3232"></span> ' + response.data.message)
+                            .addClass('error').removeClass('success');
+                    }
+                },
+                error: function () {
+                    $status.html('<span class="dashicons dashicons-no" style="color:#dc3232"></span> ' + myglsAdmin.i18n.error)
+                        .addClass('error').removeClass('success');
+                },
+                complete: function () {
+                    $btn.prop('disabled', false)
+                        .html('<span class="dashicons dashicons-update"></span> Kézi Kézbesítés-Szinkronizáció indítása');
+                }
+            });
+        });
+    }
+
     function initButtonPreview() {
         const $styleSelect = $('#map_button_style');
         const $previewPanel = $('[data-mygls-button-preview]');
