@@ -110,7 +110,9 @@ class DeliveryStatusSync {
             return false;
         }
 
-        $status_list = $result['ParcelStatusList'] ?? [];
+        // A GLS API válasza {"d": {"ParcelStatusList": [...]}} formátumú
+        $data        = $result['d'] ?? $result;
+        $status_list = $data['ParcelStatusList'] ?? [];
 
         foreach ( $status_list as $status ) {
             // A GLS API "DEL" kóddal jelzi a sikeres kézbesítést

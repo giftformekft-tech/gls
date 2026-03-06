@@ -125,6 +125,11 @@ function mygls_init() {
     if (class_exists('MyGLS\\Cron\\DeliveryStatusSync')) {
         new MyGLS\Cron\DeliveryStatusSync();
     }
+
+    // Cron ütemezés biztosítása (ha pl. a plugin aktív volt az ütemezés hozzáadása előtt)
+    if (!wp_next_scheduled('mygls_sync_delivery_statuses')) {
+        wp_schedule_event(time(), 'mygls_sixhours', 'mygls_sync_delivery_statuses');
+    }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
 add_action('woocommerce_loaded', 'mygls_init');
@@ -141,17 +146,6 @@ function mygls_add_cron_intervals($schedules) {
         ];
     }
     return $schedules;
-}
-
-/**
- * Cron callback: delivery status synchronization
- */
-add_action('mygls_sync_delivery_statuses', 'mygls_cron_sync_delivery_statuses');
-function mygls_cron_sync_delivery_statuses() {
-    if (class_exists('MyGLS\\Cron\\DeliveryStatusSync')) {
-        $sync = new MyGLS\Cron\DeliveryStatusSync();
-        $sync->run();
-    }
 }
 
 /**
