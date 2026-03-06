@@ -110,13 +110,19 @@ class DeliveryStatusSync {
             return false;
         }
 
+        // Debug: nyers API válasz naplózása
+        mygls_log( "DeliveryStatusSync GLS nyers válasz ({$parcel_number}): " . wp_json_encode( $result ), 'debug' );
+
         // A GLS API válasza {"d": {"ParcelStatusList": [...]}} formátumú
         $data        = $result['d'] ?? $result;
         $status_list = $data['ParcelStatusList'] ?? [];
 
+        mygls_log( "DeliveryStatusSync GLS státuszok ({$parcel_number}): " . wp_json_encode( $status_list ), 'debug' );
+
         foreach ( $status_list as $status ) {
             // A GLS API "DEL" kóddal jelzi a sikeres kézbesítést
             $code = $status['StatusCode'] ?? '';
+            mygls_log( "DeliveryStatusSync GLS státuszkód ({$parcel_number}): '{$code}'", 'debug' );
             if ( $code === 'DEL' ) {
                 mygls_log( "DeliveryStatusSync GLS kézbesítve: {$parcel_number}", 'info' );
                 return true;
