@@ -120,11 +120,12 @@ class DeliveryStatusSync {
         mygls_log( "DeliveryStatusSync GLS státuszok ({$parcel_number}): " . wp_json_encode( $status_list ), 'debug' );
 
         foreach ( $status_list as $status ) {
-            // A GLS API "DEL" kóddal jelzi a sikeres kézbesítést
-            $code = $status['StatusCode'] ?? '';
-            mygls_log( "DeliveryStatusSync GLS státuszkód ({$parcel_number}): '{$code}'", 'debug' );
-            if ( $code === 'DEL' ) {
-                mygls_log( "DeliveryStatusSync GLS kézbesítve: {$parcel_number}", 'info' );
+            // GLS API numerikus státuszkódokat küld (Appendix G):
+            // 5 = kézbesítve, 92 = kézbesítve
+            $code = (int) ( $status['StatusCode'] ?? 0 );
+            mygls_log( "DeliveryStatusSync GLS státuszkód ({$parcel_number}): {$code}", 'debug' );
+            if ( in_array( $code, [ 5, 92 ], true ) ) {
+                mygls_log( "DeliveryStatusSync GLS kézbesítve (kód={$code}): {$parcel_number}", 'info' );
                 return true;
             }
         }

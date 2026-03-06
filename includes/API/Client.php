@@ -78,8 +78,9 @@ class Client {
         // Merge with endpoint-specific data
         $request_data = array_merge($request_data, $data);
 
-        // WebshopEngine is not required for GetParcelList endpoint
-        if ($endpoint !== 'GetParcelList') {
+        // WebshopEngine only for label operations, not for status/list queries
+        $label_endpoints = ['PrintLabels', 'PrepareLabels', 'GetPrintedLabels', 'DeleteLabels'];
+        if (in_array($endpoint, $label_endpoints, true)) {
             $request_data['WebshopEngine'] = 'WooCommerce';
         }
 
@@ -225,7 +226,7 @@ class Client {
      */
     public function getParcelStatuses($parcel_number, $return_pod = false, $language = 'HU') {
         $data = [
-            'ParcelNumber' => $parcel_number,
+            'ParcelNumber' => (int) $parcel_number,  // GLS API integer-t vár, nem stringet
             'ReturnPOD' => $return_pod,
             'LanguageIsoCode' => $language
         ];
