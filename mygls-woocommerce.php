@@ -512,3 +512,14 @@ function mygls_log($message, $level = 'info') {
         $logger->log($level, $message, array('source' => 'mygls'));
     }
 }
+
+/**
+ * Disable cart fragments on non-cart and non-checkout pages to save server resources
+ */
+add_action('wp_enqueue_scripts', function() {
+    if (function_exists('is_cart') && function_exists('is_checkout')) {
+        if (!is_cart() && !is_checkout()) {
+            wp_dequeue_script('wc-cart-fragments');
+        }
+    }
+}, 99);
