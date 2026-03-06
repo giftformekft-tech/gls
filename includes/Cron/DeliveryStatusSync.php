@@ -147,29 +147,35 @@ class DeliveryStatusSync {
         if ( ! isset( $result['error'] ) ) {
             $response   = $result['response'] ?? [];
             $event_code = $response['event_code'] ?? '';
+            $event_name = strtolower( $response['event_name'] ?? '' );
 
-            // DEL = Kézbesítve, DLV = Kézbesítve (egyes verziókban)
-            if ( in_array( strtoupper( $event_code ), [ 'DEL', 'DLV' ], true ) ) {
+            // DEL = Kézbesítve, DLV = Kézbesítve
+            // POD = Proof of Delivery
+            if ( in_array( strtoupper( $event_code ), [ 'DEL', 'DLV', 'POD' ], true ) || strpos( $event_name, 'sikeres kézbesítés' ) !== false ) {
                 mygls_log( "DeliveryStatusSync EOne kézbesítve (status): {$parcel_number} [{$event_code}]", 'info' );
                 return true;
             }
         }
 
-        // --- 2. próba: get_parcel_history (state = 4 = leadva/kézbesítve) ---
-        $history_result = $this->expressone_get_parcel_history( $client, $parcel_number );
+        // --- 2. próba: get_parcel_history ---
+        $history_result = $client->getParcelHistory( $parcel_number );
 
-        if ( $history_result !== null ) {
-            $state = (int) ( $history_result['state'] ?? -1 );
+        if ( ! isset( $history_result['error'] ) && !empty( $history_result['response'] ) ) {
+            $response = $history_result['response'];
+            $state = (int) ( $response['state'] ?? -1 );
+            
             if ( $state === 4 ) {
                 mygls_log( "DeliveryStatusSync EOne kézbesítve (history state=4): {$parcel_number}", 'info' );
                 return true;
             }
 
             // Alternatíva: az esemény-listából is megállapítható
-            $history = $history_result['history'] ?? [];
+            $history = $response['history'] ?? [];
             foreach ( $history as $event ) {
                 $ec = strtoupper( $event['event_code'] ?? '' );
-                if ( in_array( $ec, [ 'DEL', 'DLV' ], true ) ) {
+                $en = strtolower( $event['event_name'] ?? '' );
+                
+                if ( in_array( $ec, [ 'DEL', 'DLV', 'POD' ], true ) || strpos( $en, 'sikeres kézbesítés' ) !== false ) {
                     mygls_log( "DeliveryStatusSync EOne kézbesítve (history event): {$parcel_number} [{$ec}]", 'info' );
                     return true;
                 }
@@ -177,56 +183,6 @@ class DeliveryStatusSync {
         }
 
         return false;
-    }
-
-    /**
-     * Express One csomag-történet lekérdezése.
-     * Az API kliens egyelőre nem tartalmaz erre dedikált metódust, ezért itt hívjuk.
-     *
-     * @param \ExpressOne\API\Client $client
-     * @param string                 $parcel_number
-     * @return array|null  A response tömb, vagy null hiba esetén
-     */
-    private function expressone_get_parcel_history( $client, $parcel_number ) {
-        // A request() metódus private, ezért wp_remote_request-tel hívjuk
-        $settings = get_option( 'expressone_settings', [] );
-
-        $company_id = $settings['company_id'] ?? '';
-        $user_name  = $settings['user_name']  ?? '';
-        $password   = $settings['password']   ?? '';
-
-        if ( empty( $company_id ) || empty( $user_name ) || empty( $password ) ) {
-            return null;
-        }
-
-        $url  = 'https://webservice.expressone.hu/tracking/get_parcel_history/response_format/json';
-        $body = wp_json_encode( [
-            'auth'          => [
-                'company_id' => $company_id,
-                'user_name'  => $user_name,
-                'password'   => $password,
-            ],
-            'parcel_number' => $parcel_number,
-        ] );
-
-        $response = wp_remote_post( $url, [
-            'headers'     => [ 'Content-Type' => 'application/json' ],
-            'body'        => $body,
-            'timeout'     => 30,
-        ] );
-
-        if ( is_wp_error( $response ) ) {
-            mygls_log( 'DeliveryStatusSync EOne history hiba: ' . $response->get_error_message(), 'error' );
-            return null;
-        }
-
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( ! empty( $data['successfull'] ) && isset( $data['response'] ) ) {
-            return $data['response'];
-        }
-
-        return null;
     }
 
     // -------------------------------------------------------------------------
