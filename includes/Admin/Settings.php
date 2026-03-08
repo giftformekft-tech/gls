@@ -420,6 +420,8 @@ class Settings {
                                         <?php
                                         // Cron státusz megjelenítése
                                         $next_cron = wp_next_scheduled('mygls_sync_delivery_statuses');
+                                        $wp_cron_disabled = defined('DISABLE_WP_CRON') && DISABLE_WP_CRON;
+
                                         if ($next_cron) {
                                             $diff = $next_cron - time();
                                             if ($diff > 0) {
@@ -428,14 +430,27 @@ class Settings {
                                                     human_time_diff(time(), $next_cron)
                                                 ) . '</p>';
                                             } else {
-                                                echo '<p class="description" style="color: green;">✅ ' . __('Hamarosan fut...', 'mygls-woocommerce') . '</p>';
+                                                // Overdue – ütemezve van, de nem futott le (WP Cron nem triggerelt)
+                                                $overdue = human_time_diff($next_cron, time());
+                                                echo '<p class="description" style="color: orange;">⚠️ ' . sprintf(
+                                                    __('Esedékes volt %s-e – de NEM futott le! A WP Cron csak oldalletöltéskor triggerel. Szerver oldali cron ajánlott (lásd lent).', 'mygls-woocommerce'),
+                                                    $overdue
+                                                ) . '</p>';
                                             }
                                         } else {
                                             echo '<p class="description" style="color: red;">❌ ' . __('A cron NEM ütemezett! Mentsd el a beállításokat az újraindításhoz.', 'mygls-woocommerce') . '</p>';
                                         }
-                                        if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) {
-                                            echo '<p class="description" style="color: orange;">⚠️ ' . __('DISABLE_WP_CRON be van kapcsolva – a WordPress cron nem fut automatikusan. Szerver oldali cron szükséges: <code>*/5 * * * * wget -q -O - https://yoursite.com/wp-cron.php?doing_wp_cron</code>', 'mygls-woocommerce') . '</p>';
+
+                                        if ($wp_cron_disabled) {
+                                            echo '<p class="description" style="color: red;">🚫 ' . __('DISABLE_WP_CRON = true → a WordPress cron teljesen ki van kapcsolva!', 'mygls-woocommerce') . '</p>';
                                         }
+
+                                        // Szerver cron útmutató mindig megjelenítjük
+                                        $site_url = esc_url(site_url('/wp-cron.php?doing_wp_cron'));
+                                        echo '<p class="description" style="margin-top:6px;">💡 ' . sprintf(
+                                            __('Megbízható automatikus futáshoz állíts be szerver oldali cront:<br><code>*/5 * * * * wget -q -O - %s >/dev/null 2>&1</code>', 'mygls-woocommerce'),
+                                            $site_url
+                                        ) . '</p>';
                                         ?>
                                     </td>
                                 </tr>
