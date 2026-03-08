@@ -417,6 +417,26 @@ class Settings {
                                     <td>
                                         <input type="number" name="mygls_settings[status_sync_interval]" id="status_sync_interval" value="<?php echo esc_attr($settings['status_sync_interval'] ?? '60'); ?>" class="small-text" min="15" max="1440">
                                         <p class="description"><?php _e('How often to check for status updates (15-1440 minutes)', 'mygls-woocommerce'); ?></p>
+                                        <?php
+                                        // Cron státusz megjelenítése
+                                        $next_cron = wp_next_scheduled('mygls_sync_delivery_statuses');
+                                        if ($next_cron) {
+                                            $diff = $next_cron - time();
+                                            if ($diff > 0) {
+                                                echo '<p class="description" style="color: green;">✅ ' . sprintf(
+                                                    __('Következő automatikus futás: %s múlva', 'mygls-woocommerce'),
+                                                    human_time_diff(time(), $next_cron)
+                                                ) . '</p>';
+                                            } else {
+                                                echo '<p class="description" style="color: green;">✅ ' . __('Hamarosan fut...', 'mygls-woocommerce') . '</p>';
+                                            }
+                                        } else {
+                                            echo '<p class="description" style="color: red;">❌ ' . __('A cron NEM ütemezett! Mentsd el a beállításokat az újraindításhoz.', 'mygls-woocommerce') . '</p>';
+                                        }
+                                        if (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) {
+                                            echo '<p class="description" style="color: orange;">⚠️ ' . __('DISABLE_WP_CRON be van kapcsolva – a WordPress cron nem fut automatikusan. Szerver oldali cron szükséges: <code>*/5 * * * * wget -q -O - https://yoursite.com/wp-cron.php?doing_wp_cron</code>', 'mygls-woocommerce') . '</p>';
+                                        }
+                                        ?>
                                     </td>
                                 </tr>
                             </table>

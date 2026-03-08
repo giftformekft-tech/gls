@@ -126,26 +126,53 @@ function mygls_init() {
         new MyGLS\Cron\DeliveryStatusSync();
     }
 
-    // Cron ütemezés biztosítása (ha pl. a plugin aktív volt az ütemezés hozzáadása előtt)
-    if (!wp_next_scheduled('mygls_sync_delivery_statuses')) {
-        wp_schedule_event(time(), 'mygls_sixhours', 'mygls_sync_delivery_statuses');
+    // Cron ütemezés – régi mygls_sixhours event migrálása + helyes interval biztosítása
+    $next = wp_next_scheduled('mygls_sync_delivery_statuses');
+    if ($next) {
+        // Ha még a régi 'mygls_sixhours' intervallal fut, töröljük és újraütemezzük
+        $crons = _get_cron_array();
+        $event = $crons[$next]['mygls_sync_delivery_statuses'] ?? [];
+        $schedule_name = current($event)['schedule'] ?? '';
+        if ($schedule_name === 'mygls_sixhours') {
+            wp_clear_scheduled_hook('mygls_sync_delivery_statuses');
+            $next = false;
+        }
+    }
+    if (!$next) {
+        wp_schedule_event(time(), 'mygls_sync_interval', 'mygls_sync_delivery_statuses');
     }
 }
 // Use woocommerce_loaded to ensure WooCommerce is fully initialized before our plugin
 add_action('woocommerce_loaded', 'mygls_init');
 
 /**
- * Register custom cron interval: every 6 hours
+ * Register custom cron interval – a beállításokból olvassa a percet
  */
 add_filter('cron_schedules', 'mygls_add_cron_intervals');
 function mygls_add_cron_intervals($schedules) {
-    if (!isset($schedules['mygls_sixhours'])) {
-        $schedules['mygls_sixhours'] = [
-            'interval' => 6 * HOUR_IN_SECONDS,
-            'display'  => __('Minden 6 órában (MyGLS)', 'mygls-woocommerce'),
-        ];
-    }
+    $settings = get_option('mygls_settings', []);
+    $minutes  = max(15, min(1440, absint($settings['status_sync_interval'] ?? 60)));
+
+    $schedules['mygls_sync_interval'] = [
+        'interval' => $minutes * MINUTE_IN_SECONDS,
+        'display'  => sprintf(__('Minden %d percben (MyGLS)', 'mygls-woocommerce'), $minutes),
+    ];
+
     return $schedules;
+}
+
+/**
+ * Ha a sync_interval megváltozik a mentéskor, töröljük és újraütemezzük a cront
+ */
+add_action('update_option_mygls_settings', 'mygls_reschedule_sync_cron', 10, 2);
+function mygls_reschedule_sync_cron($old_value, $new_value) {
+    $old_interval = absint($old_value['status_sync_interval'] ?? 60);
+    $new_interval = absint($new_value['status_sync_interval'] ?? 60);
+
+    if ($old_interval !== $new_interval) {
+        wp_clear_scheduled_hook('mygls_sync_delivery_statuses');
+        // mygls_init() fogja újraütemezni a következő oldalletöltéskor
+    }
 }
 
 /**
@@ -345,9 +372,9 @@ function mygls_activate() {
         $wpdb->query("ALTER TABLE $table_name ADD carrier VARCHAR(50) DEFAULT 'gls' AFTER parcel_number");
     }
 
-    // Schedule delivery status sync cron (6 hours)
+    // Schedule delivery status sync cron
     if (!wp_next_scheduled('mygls_sync_delivery_statuses')) {
-        wp_schedule_event(time(), 'mygls_sixhours', 'mygls_sync_delivery_statuses');
+        wp_schedule_event(time(), 'mygls_sync_interval', 'mygls_sync_delivery_statuses');
     }
 
     // Set default options
@@ -358,7 +385,7 @@ function mygls_activate() {
             'test_mode' => false,
             'auto_generate_labels' => false,
             'auto_status_sync' => false,
-            'sync_interval' => 60,
+            'status_sync_interval' => 60,
             'printer_type' => 'A4_2x2',
             'map_display_mode' => 'modal',
             'map_button_style' => 'primary',
