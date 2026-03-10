@@ -455,10 +455,6 @@ class Client {
      * Get order content description
      */
     private function getOrderContent($order) {
-        $items = [];
-        foreach ($order->get_items() as $item) {
-            $items[] = $item->get_name() . ' x' . $item->get_quantity();
-        }
-        return implode(', ', array_slice($items, 0, 3)) . (count($items) > 3 ? '...' : '');
+        return $order->get_order_number();
     }
 }

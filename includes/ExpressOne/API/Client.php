@@ -232,11 +232,13 @@ class Client {
         
         if ($weight <= 0) $weight = 1; // Min 1 kg (Express One kerekít)
 
+        $parcel_name = $order->get_order_number();
+
         $parcels = [
             'type' => 0, // 0 - parcel, 1 - pallet
             'qty' => 1,
             'weight' => ceil($weight),
-            'parcel_name' => substr(implode(', ', $items), 0, 100)
+            'parcel_name' => mb_substr($parcel_name, 0, 100, 'UTF-8')
         ];
 
         // Services
