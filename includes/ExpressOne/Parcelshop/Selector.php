@@ -96,11 +96,14 @@ class Selector {
             });
 
             // Function to update the display
-            function updateSelectedShopDisplay(data) {
+            // updateHidden=false: only refresh display, keep hidden fields intact (e.g. on re-init from session)
+            function updateSelectedShopDisplay(data, updateHidden) {
                 if (!data || !data.id || !data.name) return;
-                
-                $('#expressone_parcelshop_id').val(data.id);
-                $('#expressone_parcelshop_data').val(JSON.stringify(data));
+
+                if (updateHidden !== false) {
+                    $('#expressone_parcelshop_id').val(data.id);
+                    $('#expressone_parcelshop_data').val(JSON.stringify(data));
+                }
                 
                 let html = '<div class=\"expressone-selected-title\">';
                 html += '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 11.08V12a10 10 0 1 1-5.93-9.14\"></path><polyline points=\"22 4 12 14.01 9 11.01\"></polyline></svg>';
@@ -165,7 +168,8 @@ class Selector {
                                 city: presetData.city,
                                 zip_code: presetData.zip
                             };
-                            updateSelectedShopDisplay(mappedData);
+                            // false = csak a megjelenítést frissíti, a hidden mezőket nem írja felül
+                            updateSelectedShopDisplay(mappedData, false);
                         }
                     } catch(e) {}
                 }
@@ -342,12 +346,15 @@ class Selector {
                 $order->set_shipping_first_name($order->get_billing_first_name());
                 $order->set_shipping_last_name($order->get_billing_last_name());
                 $order->set_shipping_company(sprintf('Express One Csomagpont: %s', $parcelshop_data['name'] ?? ''));
-                // Use address field; fall back to name if address is empty (iframe may omit street)
-                $shipping_address_1 = !empty($parcelshop_data['address']) ? $parcelshop_data['address'] : ($parcelshop_data['name'] ?? '');
+                // Support both key formats: original (address/zip) and remapped (street/zip_code)
+                $raw_address = $parcelshop_data['address'] ?? $parcelshop_data['street'] ?? '';
+                $raw_zip     = $parcelshop_data['zip'] ?? $parcelshop_data['zip_code'] ?? '';
+                // Fall back to name if street address is missing (iframe may omit it)
+                $shipping_address_1 = !empty($raw_address) ? $raw_address : ($parcelshop_data['name'] ?? '');
                 $order->set_shipping_address_1($shipping_address_1);
                 $order->set_shipping_address_2('');
                 $order->set_shipping_city($parcelshop_data['city'] ?? '');
-                $order->set_shipping_postcode($parcelshop_data['zip'] ?? '');
+                $order->set_shipping_postcode($raw_zip);
                 $order->set_shipping_country(!empty($parcelshop_data['country']) ? $parcelshop_data['country'] : ($order->get_billing_country() ?: 'HU'));
                 
                 $order->save();
