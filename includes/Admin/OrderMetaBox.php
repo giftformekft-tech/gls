@@ -107,12 +107,17 @@ class OrderMetaBox {
                             <span class="dashicons dashicons-download"></span>
                             <?php _e('Download Label', 'mygls-woocommerce'); ?>
                         </button>
-                        
+
+                        <button type="button" class="button mygls-generate-label" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-carrier="<?php echo esc_attr($carrier); ?>">
+                            <span class="dashicons dashicons-media-document"></span>
+                            <?php _e('Új Címke Generálása', 'mygls-woocommerce'); ?>
+                        </button>
+
                         <button type="button" class="button mygls-refresh-status" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-parcel-number="<?php echo esc_attr($label->parcel_number); ?>">
                             <span class="dashicons dashicons-update"></span>
                             <?php _e('Refresh Status', 'mygls-woocommerce'); ?>
                         </button>
-                        
+
                         <button type="button" class="button button-link-delete mygls-delete-label" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-parcel-id="<?php echo esc_attr($label->parcel_id); ?>">
                             <span class="dashicons dashicons-trash"></span>
                             <?php _e('Delete Label', 'mygls-woocommerce'); ?>
