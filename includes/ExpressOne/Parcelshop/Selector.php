@@ -124,9 +124,9 @@ class Selector {
                     let shopData = {
                         id: e.data.id || e.data.tof_shop_id || '',
                         name: e.data.name,
-                        address: e.data.street,
+                        address: e.data.street || e.data.address || '',
                         city: e.data.city,
-                        zip: e.data.zip_code,
+                        zip: e.data.zip_code || e.data.zip || '',
                         gis_x: e.data.gis_x || '',
                         gis_y: e.data.gis_y || ''
                     };
@@ -338,11 +338,17 @@ class Selector {
             
             if ($order && !empty($parcelshop_data)) {
                 // Update shipping address with pickup point data
+                // Copy name and country from billing (required by payment gateways like OTP)
+                $order->set_shipping_first_name($order->get_billing_first_name());
+                $order->set_shipping_last_name($order->get_billing_last_name());
                 $order->set_shipping_company(sprintf('Express One Csomagpont: %s', $parcelshop_data['name'] ?? ''));
-                $order->set_shipping_address_1($parcelshop_data['address'] ?? '');
+                // Use address field; fall back to name if address is empty (iframe may omit street)
+                $shipping_address_1 = !empty($parcelshop_data['address']) ? $parcelshop_data['address'] : ($parcelshop_data['name'] ?? '');
+                $order->set_shipping_address_1($shipping_address_1);
                 $order->set_shipping_address_2('');
                 $order->set_shipping_city($parcelshop_data['city'] ?? '');
                 $order->set_shipping_postcode($parcelshop_data['zip'] ?? '');
+                $order->set_shipping_country(!empty($parcelshop_data['country']) ? $parcelshop_data['country'] : ($order->get_billing_country() ?: 'HU'));
                 
                 $order->save();
                 
