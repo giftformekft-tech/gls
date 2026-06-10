@@ -14,6 +14,7 @@ class OrderMetaBox {
     public function __construct() {
         add_action('add_meta_boxes', [$this, 'add_meta_box']);
         add_action('wp_ajax_mygls_generate_label', [$this, 'ajax_generate_label']);
+        add_action('wp_ajax_mygls_generate_replacement_label', [$this, 'ajax_generate_replacement_label']);
         add_action('wp_ajax_mygls_download_label', [$this, 'ajax_download_label']);
         add_action('wp_ajax_mygls_delete_label', [$this, 'ajax_delete_label']);
         add_action('wp_ajax_mygls_refresh_status', [$this, 'ajax_refresh_status']);
@@ -111,6 +112,11 @@ class OrderMetaBox {
                         <button type="button" class="button mygls-generate-label" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-carrier="<?php echo esc_attr($carrier); ?>">
                             <span class="dashicons dashicons-media-document"></span>
                             <?php _e('Új Címke Generálása', 'mygls-woocommerce'); ?>
+                        </button>
+
+                        <button type="button" class="button mygls-generate-replacement-label" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-carrier="<?php echo esc_attr($carrier); ?>">
+                            <span class="dashicons dashicons-update-alt"></span>
+                            <?php _e('Csere Csomag Küldés', 'mygls-woocommerce'); ?>
                         </button>
 
                         <button type="button" class="button mygls-refresh-status" data-order-id="<?php echo esc_attr($order->get_id()); ?>" data-parcel-number="<?php echo esc_attr($label->parcel_number); ?>">
@@ -337,6 +343,42 @@ class OrderMetaBox {
                 });
             });
             
+            // Generate replacement label (no COD)
+            $('.mygls-generate-replacement-label').on('click', function() {
+                var btn = $(this);
+                var orderId = btn.data('order-id');
+                var carrier = btn.data('carrier');
+
+                if (!confirm('Csere csomag küldés: az utánvét értéke 0 lesz, akkor is ha a rendelés utánvétes. Folytatja?')) {
+                    return;
+                }
+
+                btn.prop('disabled', true).html('<span class="dashicons dashicons-update spin"></span> ' + myglsAdmin.i18n.processing);
+
+                $.ajax({
+                    url: myglsAdmin.ajaxurl,
+                    type: 'POST',
+                    data: {
+                        action: 'mygls_generate_replacement_label',
+                        nonce: myglsAdmin.nonce,
+                        order_id: orderId,
+                        carrier: carrier
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert(response.data.message || myglsAdmin.i18n.error);
+                            btn.prop('disabled', false).html('<span class="dashicons dashicons-update-alt"></span> Csere Csomag Küldés');
+                        }
+                    },
+                    error: function() {
+                        alert(myglsAdmin.i18n.error);
+                        btn.prop('disabled', false).html('<span class="dashicons dashicons-update-alt"></span> Csere Csomag Küldés');
+                    }
+                });
+            });
+
             // Download label
             $('.mygls-download-label').on('click', function() {
                 var orderId = $(this).data('order-id');
@@ -585,6 +627,177 @@ class OrderMetaBox {
         }
     }
     
+    /**
+     * AJAX: Generate replacement shipping label (COD always 0)
+     */
+    public function ajax_generate_replacement_label() {
+        check_ajax_referer('mygls_admin_nonce', 'nonce');
+
+        if (!current_user_can('edit_shop_orders')) {
+            wp_send_json_error(['message' => __('Permission denied', 'mygls-woocommerce')]);
+        }
+
+        $order_id = absint($_POST['order_id'] ?? 0);
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            wp_send_json_error(['message' => __('Order not found', 'mygls-woocommerce')]);
+        }
+
+        $carrier = sanitize_text_field($_POST['carrier'] ?? $this->get_carrier_for_order($order));
+
+        try {
+            if ($carrier === 'expressone') {
+                if (!function_exists('expressone_get_api_client')) {
+                    function expressone_get_api_client() {
+                        if (!class_exists('ExpressOne\\API\\Client')) { return null; }
+                        return new \ExpressOne\API\Client();
+                    }
+                }
+                $api = expressone_get_api_client();
+                if (!$api) {
+                    wp_send_json_error(['message' => __('Express One API elérés nem lehetséges.', 'mygls-woocommerce')]);
+                }
+
+                $parcel = $api->buildParcelFromOrder($order_id);
+                if (!$parcel) {
+                    wp_send_json_error(['message' => __('Failed to build parcel data', 'mygls-woocommerce')]);
+                }
+
+                // Force no COD for replacement package
+                unset($parcel['services']['cod']);
+
+                $eo_settings   = get_option('expressone_settings', []);
+                $eo_label_size = $eo_settings['label_size'] ?? 'A4';
+                $label_settings = [
+                    'data_type'           => 'PDF',
+                    'size'                => $eo_label_size,
+                    'dpi'                 => '300',
+                    'pdf_etiket_position' => '0',
+                ];
+                $result = $api->createLabels([$parcel], $label_settings);
+
+                if (isset($result['error'])) {
+                    wp_send_json_error(['message' => $result['error']]);
+                }
+
+                $response = $result['response'] ?? [];
+                $deliveries = $response['deliveries'] ?? [];
+                if (empty($deliveries)) {
+                    wp_send_json_error(['message' => __('No label data received', 'mygls-woocommerce')]);
+                }
+
+                $delivery_result = $deliveries[0];
+                if (($delivery_result['code'] ?? '') !== '0') {
+                    wp_send_json_error(['message' => $delivery_result['message'] ?? 'Unknown error']);
+                }
+
+                $data = $delivery_result['data'] ?? [];
+                $parcel_numbers = $data['parcel_numbers'] ?? [];
+                $parcel_number = $parcel_numbers[0] ?? '';
+                $parcel_id = 0;
+
+                $labels = $response['labels'] ?? ($data['labels'] ?? []);
+                $label_base64 = '';
+                if (!empty($labels) && is_array($labels)) {
+                    if (isset($labels[0]['data'])) {
+                        $label_base64 = $labels[0]['data'];
+                    } elseif (isset($labels['data'])) {
+                        $label_base64 = $labels['data'];
+                    }
+                }
+
+                if (empty($label_base64) || empty($parcel_number)) {
+                    wp_send_json_error(['message' => __('Missing label data from Express One API', 'mygls-woocommerce')]);
+                }
+
+            } else {
+                $api = mygls_get_api_client();
+                $parcel = $api->buildParcelFromOrder($order_id);
+
+                if (!$parcel) {
+                    wp_send_json_error(['message' => __('Failed to build parcel data', 'mygls-woocommerce')]);
+                }
+
+                // Force no COD for replacement package
+                $parcel['CODAmount'] = 0;
+                $parcel['CODReference'] = null;
+                $parcel['CODCurrency'] = null;
+                $parcel['ServiceList'] = array_values(array_filter(
+                    $parcel['ServiceList'] ?? [],
+                    fn($s) => ($s['Code'] ?? '') !== 'COD'
+                ));
+
+                $settings = mygls_get_settings();
+                $printer_type = $settings['printer_type'] ?? 'A4_2x2';
+
+                $result = $api->printLabels([$parcel], $printer_type);
+
+                if (isset($result['error'])) {
+                    wp_send_json_error(['message' => $result['error']]);
+                }
+
+                if (!empty($result['PrintLabelsErrorList'])) {
+                    $error = $result['PrintLabelsErrorList'][0];
+                    wp_send_json_error(['message' => $error['ErrorDescription'] ?? 'Unknown error']);
+                }
+
+                if (empty($result['PrintLabelsInfoList']) || empty($result['Labels'])) {
+                    wp_send_json_error(['message' => __('No label data received', 'mygls-woocommerce')]);
+                }
+
+                $label_info = $result['PrintLabelsInfoList'][0];
+                $parcel_number = $label_info['ParcelNumber'] ?? '';
+                $parcel_id = $label_info['ParcelId'] ?? 0;
+
+                $label_bytes = $result['Labels'];
+                if (is_array($label_bytes)) {
+                    $label_pdf_binary = implode('', array_map('chr', $label_bytes));
+                } else {
+                    $label_pdf_binary = $label_bytes;
+                }
+
+                $label_base64 = base64_encode($label_pdf_binary);
+            }
+
+            // Save to database
+            global $wpdb;
+            $wpdb->insert(
+                $wpdb->prefix . 'mygls_labels',
+                [
+                    'order_id' => $order_id,
+                    'parcel_id' => $parcel_id,
+                    'parcel_number' => $parcel_number,
+                    'carrier' => $carrier,
+                    'tracking_url' => $this->get_tracking_url($parcel_number, $carrier),
+                    'label_pdf' => $label_base64,
+                    'status' => 'pending'
+                ],
+                ['%d', '%d', '%s', '%s', '%s', '%s', '%s']
+            );
+
+            $order->add_order_note(
+                sprintf(
+                    __('%s csere csomag címke generálva (utánvét: 0). Csomagszám: %s', 'mygls-woocommerce'),
+                    strtoupper($carrier),
+                    $parcel_number
+                )
+            );
+
+            update_post_meta($order_id, '_mygls_parcel_number', $parcel_number);
+            update_post_meta($order_id, '_mygls_parcel_id', $parcel_id);
+
+            wp_send_json_success([
+                'message' => __('Csere csomag címke sikeresen generálva', 'mygls-woocommerce'),
+                'parcel_number' => $parcel_number
+            ]);
+
+        } catch (\Exception $e) {
+            mygls_log('Replacement label generation error: ' . $e->getMessage(), 'error');
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
+    }
+
     /**
      * AJAX: Download label PDF
      */
