@@ -611,11 +611,14 @@ class OrderMetaBox {
                     $parcel_number
                 )
             );
-            
+
             // Update order meta
             update_post_meta($order_id, '_mygls_parcel_number', $parcel_number);
             update_post_meta($order_id, '_mygls_parcel_id', $parcel_id);
-            
+
+            // Set order status to "Szállítás alatt"
+            $order->update_status('szallitas-alatt', __('Címke generálva - csomag szállítás alatt.', 'mygls-woocommerce'));
+
             wp_send_json_success([
                 'message' => __('Label generated successfully', 'mygls-woocommerce'),
                 'parcel_number' => $parcel_number
@@ -786,6 +789,9 @@ class OrderMetaBox {
 
             update_post_meta($order_id, '_mygls_parcel_number', $parcel_number);
             update_post_meta($order_id, '_mygls_parcel_id', $parcel_id);
+
+            // Set order status to "Szállítás alatt"
+            $order->update_status('szallitas-alatt', __('Csere csomag címke generálva - csomag szállítás alatt.', 'mygls-woocommerce'));
 
             wp_send_json_success([
                 'message' => __('Csere csomag címke sikeresen generálva', 'mygls-woocommerce'),
